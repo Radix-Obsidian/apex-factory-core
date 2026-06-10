@@ -1,0 +1,89 @@
+# AUTO-GENERATED from corpus.jsonl by build-corpus-promptfoo.mjs — do not hand-edit.
+# Tier-2 g-eval over the labeled corpus (echo provider returns the copy as the graded output).
+# Grounded in promptfoo model-graded assertions + G-Eval (Liu et al., EMNLP 2023).
+#
+# RUN (external/gated like ECC — founder runs it; OPENROUTER_API_KEY in .env, $0 free model):
+#   cd ~/factory-core && npx promptfoo@latest eval -c evals/promptfoo-corpus.yaml --output evals/tier2-results.json
+#   node evals/score-tier2.mjs        # then compares tier-2 P/R/F1 to tier-1's 75%
+# Verify the free model id is still live: https://openrouter.ai/models?max_price=0
+description: Apex copywriter gate — tier-2 corpus grading
+providers: [echo]
+prompts: ["{{copy}}"]
+defaultTest:
+  options:
+    # gpt-oss-20b:free is usable; popular models (llama-3.3-70b, qwen3) are throttled.
+    provider: openrouter:openai/gpt-oss-20b:free
+  assert:
+    # llm-rubric = ONE judge call per case (g-eval fan-outs many calls and blows the free rate limit).
+    - type: llm-rubric
+      value: "The copy targets a \"{{surface}}\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing."
+      threshold: 0.7
+tests:
+  - description: "#1 (label=good)"
+    vars:
+      copy: "For those who refuse to wait. Lock in your seat with a 30-day money-back guarantee, no questions asked. By application only."
+      surface: "offer/checkout/pricing/sales"
+  - description: "#2 (label=good)"
+    vars:
+      copy: "People like you don't settle for beige tools. Join the inner circle of operators who ship."
+      surface: "non-offer (landing/marketing)"
+  - description: "#3 (label=good)"
+    vars:
+      copy: "Insiders lock in founder pricing. Full refund within 14 days if it isn't for you."
+      surface: "offer/checkout/pricing/sales"
+  - description: "#4 (label=good)"
+    vars:
+      copy: "Apply to join. Risk-free — cancel anytime for a full refund. Not for everyone."
+      surface: "offer/checkout/pricing/sales"
+  - description: "#5 (label=good)"
+    vars:
+      copy: "Not for everyone. If it doesn't double your output in 30 days, money-back, no questions asked."
+      surface: "offer/checkout/pricing/sales"
+  - description: "#6 (label=good)"
+    vars:
+      copy: "This is for those who build in public. Members get first access to every drop."
+      surface: "non-offer (landing/marketing)"
+  - description: "#7 (label=bad)"
+    vars:
+      copy: "We deliver world-class, seamless, cutting-edge solutions to unlock your potential."
+      surface: "non-offer (landing/marketing)"
+  - description: "#8 (label=bad)"
+    vars:
+      copy: "Buy now. Premium membership for insiders only."
+      surface: "offer/checkout/pricing/sales"
+  - description: "#9 (label=bad)"
+    vars:
+      copy: "Best-in-class, state-of-the-art pricing to elevate your workflow."
+      surface: "offer/checkout/pricing/sales"
+  - description: "#10 (label=bad)"
+    vars:
+      copy: "Revolutionize how your team ships. A real game-changer."
+      surface: "non-offer (landing/marketing)"
+  - description: "#11 (label=bad)"
+    vars:
+      copy: "Unlock synergy across your stack with our one-stop solution."
+      surface: "offer/checkout/pricing/sales"
+  - description: "#12 (label=bad)"
+    vars:
+      copy: "Seamless, robust marketing automation that delivers synergy."
+      surface: "non-offer (landing/marketing)"
+  - description: "#13 (label=bad)"
+    vars:
+      copy: "Our platform helps teams do more. Sign up today. It's simple and easy to get started."
+      surface: "non-offer (landing/marketing)"
+  - description: "#14 (label=bad)"
+    vars:
+      copy: "Get started in minutes. We offer a money-back guarantee. Trusted by thousands of teams."
+      surface: "offer/checkout/pricing/sales"
+  - description: "#15 (label=bad)"
+    vars:
+      copy: "Simple pricing for everyone. Cancel anytime with a full refund. Affordable plans for all teams."
+      surface: "offer/checkout/pricing/sales"
+  - description: "#16 (label=good)"
+    vars:
+      copy: "No buzzwords here. Just a 30-day guarantee and a seat at the table for serious operators."
+      surface: "offer/checkout/pricing/sales"
+  - description: "#17 (label=good)"
+    vars:
+      copy: "We refuse to ship robust, bloated dashboards. Love it in 30 days or full refund. By application."
+      surface: "offer/checkout/pricing/sales"

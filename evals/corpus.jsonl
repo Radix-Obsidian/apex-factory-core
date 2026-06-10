@@ -1,0 +1,22 @@
+{"id":1,"file":"src/app/checkout/page.tsx","content":"For those who refuse to wait. Lock in your seat with a 30-day money-back guarantee, no questions asked. By application only.","label":"good","note":"status + risk reversal + authority gate"}
+{"id":2,"file":"src/app/landing/hero.tsx","content":"People like you don't settle for beige tools. Join the inner circle of operators who ship.","label":"good","note":"landing (no offer) — strong tribe framing"}
+{"id":3,"file":"src/app/pricing/page.tsx","content":"Insiders lock in founder pricing. Full refund within 14 days if it isn't for you.","label":"good","note":"offer surface with guarantee + status"}
+{"id":4,"file":"src/components/offer/Card.tsx","content":"Apply to join. Risk-free — cancel anytime for a full refund. Not for everyone.","label":"good","note":"authority gate + risk reversal"}
+{"id":5,"file":"src/content/sales.md","content":"Not for everyone. If it doesn't double your output in 30 days, money-back, no questions asked.","label":"good","note":"specific claim + guarantee"}
+{"id":6,"file":"src/app/marketing/email.tsx","content":"This is for those who build in public. Members get first access to every drop.","label":"good","note":"marketing (no offer) — tribe framing"}
+{"id":7,"file":"src/app/landing/hero.tsx","content":"We deliver world-class, seamless, cutting-edge solutions to unlock your potential.","label":"bad","note":"banned generic stack"}
+{"id":8,"file":"src/app/checkout/page.tsx","content":"Buy now. Premium membership for insiders only.","label":"bad","note":"offer surface, no risk reversal"}
+{"id":9,"file":"src/app/pricing/page.tsx","content":"Best-in-class, state-of-the-art pricing to elevate your workflow.","label":"bad","note":"banned + offer without risk reversal"}
+{"id":10,"file":"src/components/cta/Banner.tsx","content":"Revolutionize how your team ships. A real game-changer.","label":"bad","note":"banned buzzwords"}
+{"id":11,"file":"src/components/offer/Card.tsx","content":"Unlock synergy across your stack with our one-stop solution.","label":"bad","note":"banned + offer without risk reversal"}
+{"id":12,"file":"src/app/marketing/email.tsx","content":"Seamless, robust marketing automation that delivers synergy.","label":"bad","note":"banned buzzwords"}
+{"id":13,"file":"src/app/landing/hero.tsx","content":"Our platform helps teams do more. Sign up today. It's simple and easy to get started.","label":"bad","note":"ADVERSARIAL: generic/commoditized but uses no banned words — regex will MISS this (false negative)"}
+{"id":14,"file":"src/app/checkout/page.tsx","content":"Get started in minutes. We offer a money-back guarantee. Trusted by thousands of teams.","label":"bad","note":"ADVERSARIAL: has a guarantee + no banned words, but it is bland/horizontal — regex MISSES"}
+{"id":15,"file":"src/app/pricing/page.tsx","content":"Simple pricing for everyone. Cancel anytime with a full refund. Affordable plans for all teams.","label":"bad","note":"ADVERSARIAL: horizontal 'for everyone/all teams', has refund, no banned words — regex MISSES"}
+{"id":16,"file":"src/app/checkout/page.tsx","content":"No buzzwords here. Just a 30-day guarantee and a seat at the table for serious operators.","label":"good","note":"clean, status + guarantee — should pass"}
+{"id":17,"file":"src/components/offer/Card.tsx","content":"We refuse to ship robust, bloated dashboards. Love it in 30 days or full refund. By application.","label":"good","note":"ADVERSARIAL: genuinely good, but the word 'robust' trips the substring matcher — regex FALSE POSITIVE"}
+{"id":18,"file":"src/lib/stripe-client.ts","content":"export const k = 1; // world-class robust tapestry synergy","label":"ignore","note":"code file — must NOT be enforced even though it contains banned words"}
+{"id":19,"file":"src/utils/helpers.ts","content":"export function add(a, b) { return a + b }","label":"ignore","note":"ordinary code"}
+{"id":20,"file":"README.md","content":"# The Native Factory\nDocs and setup.","label":"ignore","note":"docs — path is not a copy surface"}
+{"id":21,"file":"src/app/landing/Hero.tsx","content":"","label":"ignore","note":"empty content on a copy path — not enforced"}
+{"id":22,"file":"src/db/schema.ts","content":"create table offers (id int); -- world-class","label":"ignore","note":"schema file — path not a copy surface despite 'offers' in SQL"}

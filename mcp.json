@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "higgsfield": {
+      "type": "http",
+      "url": "https://mcp.higgsfield.ai/mcp",
+      "_comment": "Remote OAuth MCP. NO API key — auth is browser OAuth, already connected. The fictional 'npx @higgsfield/mcp-cli' from the original blueprint is intentionally NOT used (E404)."
+    },
+    "gbrain": {
+      "type": "stdio",
+      "command": "/Users/the-hive/.bun/bin/gbrain",
+      "args": ["serve"],
+      "_comment": "Local knowledge brain. Verify the path matches your install (which gbrain)."
+    }
+  }
+}

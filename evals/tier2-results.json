@@ -1,0 +1,2487 @@
+{
+  "evalId": "eval-9eC-2026-06-09T15:34:34",
+  "results": {
+    "version": 3,
+    "timestamp": "2026-06-09T15:34:34.933Z",
+    "prompts": [
+      {
+        "id": "1659e57582ac0df24056ad076dcab092fd94fbceac7f6835e4572efec6908166",
+        "raw": "{{copy}}",
+        "label": "{{copy}}",
+        "provider": "echo",
+        "metrics": {
+          "score": 5,
+          "testPassCount": 5,
+          "testFailCount": 12,
+          "testErrorCount": 0,
+          "assertPassCount": 5,
+          "assertFailCount": 12,
+          "totalLatencyMs": 3,
+          "tokenUsage": {
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "total": 0,
+            "numRequests": 17,
+            "completionDetails": {
+              "reasoning": 0,
+              "acceptedPrediction": 0,
+              "rejectedPrediction": 0,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0
+            },
+            "assertions": {
+              "total": 10832,
+              "prompt": 7452,
+              "completion": 3380,
+              "cached": 0,
+              "numRequests": 0,
+              "completionDetails": {
+                "reasoning": 0,
+                "acceptedPrediction": 0,
+                "rejectedPrediction": 0,
+                "cacheReadInputTokens": 0,
+                "cacheCreationInputTokens": 0
+              }
+            }
+          },
+          "namedScores": {},
+          "namedScoresCount": {},
+          "namedScoreWeights": {},
+          "cost": 0
+        }
+      }
+    ],
+    "results": [
+      {
+        "cost": 0,
+        "gradingResult": {
+          "pass": true,
+          "score": 1,
+          "reason": "All assertions passed",
+          "namedScores": {},
+          "tokensUsed": {
+            "total": 647,
+            "prompt": 449,
+            "completion": 198,
+            "cached": 0,
+            "numRequests": 1
+          },
+          "componentResults": [
+            {
+              "assertion": {
+                "type": "llm-rubric",
+                "value": "The copy targets a \"{{surface}}\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing.",
+                "threshold": 0.7
+              },
+              "pass": true,
+              "score": 1,
+              "reason": "The copy includes a clear tribe (“for those who refuse to wait”), uses an application‑only authority stance, avoids generic filler, and provides an explicit 30‑day money‑back guarantee. All required criteria are met.",
+              "tokensUsed": {
+                "total": 647,
+                "prompt": 449,
+                "completion": 198,
+                "cached": 0,
+                "numRequests": 1,
+                "completionDetails": {
+                  "reasoning": 141,
+                  "cacheReadInputTokens": 64
+                }
+              },
+              "metadata": {
+                "renderedGradingPrompt": "[{\"role\":\"system\",\"content\":\"You are grading output according to a user-specified rubric. If the statement in the rubric is true, then the output passes the test. You respond with a JSON object with this structure: {reason: string, pass: boolean, score: number}\\n\\nExamples:\\n\\n<Output>Hello world</Output>\\n<Rubric>Content contains a greeting</Rubric>\\n{\\\"reason\\\": \\\"the content contains the word 'Hello'\\\", \\\"pass\\\": true, \\\"score\\\": 1.0}\\n\\n<Output>Avast ye swabs, repel the invaders!</Output>\\n<Rubric>Does not speak like a pirate</Rubric>\\n{\\\"reason\\\": \\\"'avast ye' is a common pirate term\\\", \\\"pass\\\": false, \\\"score\\\": 0.0}\"},{\"role\":\"user\",\"content\":\"<Output>\\nFor those who refuse to wait. Lock in your seat with a 30-day money-back guarantee, no questions asked. By application only.\\n</Output>\\n<Rubric>\\nThe copy targets a \\\"offer/checkout/pricing/sales\\\" surface. Grade PASS only if all applicable criteria hold:\\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\\\"for those who…\\\", \\\"not for everyone\\\", named insiders/members) — not generic appeals.\\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \\\"sign up today, it is easy\\\".\\n- NOT COMMODITIZED: avoids horizontal filler (\\\"for everyone\\\", \\\"do more\\\", \\\"simple and easy\\\", \\\"trusted by thousands\\\").\\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\\nGrade FAIL only if a required criterion is clearly missing.\\n</Rubric>\"}]",
+                "renderedAssertionValue": "The copy targets a \"offer/checkout/pricing/sales\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing."
+              }
+            }
+          ]
+        },
+        "id": "14de8c3d-a3ad-4363-8259-c1038870d4a5",
+        "latencyMs": 0,
+        "namedScores": {},
+        "prompt": {
+          "raw": "For those who refuse to wait. Lock in your seat with a 30-day money-back guarantee, no questions asked. By application only.",
+          "label": "{{copy}}",
+          "config": {
+            "provider": "openrouter:openai/gpt-oss-20b:free"
+          }
+        },
+        "promptId": "1659e57582ac0df24056ad076dcab092fd94fbceac7f6835e4572efec6908166",
+        "promptIdx": 0,
+        "provider": {
+          "id": "echo",
+          "label": ""
+        },
+        "response": {
+          "output": "For those who refuse to wait. Lock in your seat with a 30-day money-back guarantee, no questions asked. By application only.",
+          "raw": "For those who refuse to wait. Lock in your seat with a 30-day money-back guarantee, no questions asked. By application only.",
+          "cost": 0,
+          "cached": false,
+          "tokenUsage": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "numRequests": 1
+          },
+          "isRefusal": false,
+          "metadata": {}
+        },
+        "score": 1,
+        "success": true,
+        "testCase": {
+          "description": "#1 (label=good)",
+          "vars": {
+            "copy": "For those who refuse to wait. Lock in your seat with a 30-day money-back guarantee, no questions asked. By application only.",
+            "surface": "offer/checkout/pricing/sales"
+          },
+          "assert": [
+            {
+              "type": "llm-rubric",
+              "value": "The copy targets a \"{{surface}}\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing.",
+              "threshold": 0.7
+            }
+          ],
+          "options": {
+            "provider": "openrouter:openai/gpt-oss-20b:free"
+          },
+          "metadata": {}
+        },
+        "testIdx": 0,
+        "tokenUsage": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "numRequests": 1,
+          "completionDetails": {
+            "reasoning": 0,
+            "acceptedPrediction": 0,
+            "rejectedPrediction": 0,
+            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 0
+          },
+          "assertions": {
+            "total": 647,
+            "prompt": 449,
+            "completion": 198,
+            "cached": 0,
+            "numRequests": 1,
+            "completionDetails": {
+              "reasoning": 0,
+              "acceptedPrediction": 0,
+              "rejectedPrediction": 0,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0
+            }
+          }
+        },
+        "vars": {
+          "copy": "For those who refuse to wait. Lock in your seat with a 30-day money-back guarantee, no questions asked. By application only.",
+          "surface": "offer/checkout/pricing/sales"
+        },
+        "metadata": {
+          "_promptfooFileMetadata": {}
+        },
+        "failureReason": 0
+      },
+      {
+        "cost": 0,
+        "gradingResult": {
+          "pass": true,
+          "score": 1,
+          "reason": "All assertions passed",
+          "namedScores": {},
+          "tokensUsed": {
+            "total": 640,
+            "prompt": 439,
+            "completion": 201,
+            "cached": 0,
+            "numRequests": 1
+          },
+          "componentResults": [
+            {
+              "assertion": {
+                "type": "llm-rubric",
+                "value": "The copy targets a \"{{surface}}\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing.",
+                "threshold": 0.7
+              },
+              "pass": true,
+              "score": 1,
+              "reason": "The copy explicitly addresses a specific group (“inner circle of operators”), uses an invitation‑style authority (“join the inner circle”), and avoids generic, commoditized language. No risk‑reversal requirement applies on a non‑offer surface, so all required criteria are satisfied.",
+              "tokensUsed": {
+                "total": 640,
+                "prompt": 439,
+                "completion": 201,
+                "cached": 0,
+                "numRequests": 1,
+                "completionDetails": {
+                  "reasoning": 122,
+                  "cacheReadInputTokens": 64
+                }
+              },
+              "metadata": {
+                "renderedGradingPrompt": "[{\"role\":\"system\",\"content\":\"You are grading output according to a user-specified rubric. If the statement in the rubric is true, then the output passes the test. You respond with a JSON object with this structure: {reason: string, pass: boolean, score: number}\\n\\nExamples:\\n\\n<Output>Hello world</Output>\\n<Rubric>Content contains a greeting</Rubric>\\n{\\\"reason\\\": \\\"the content contains the word 'Hello'\\\", \\\"pass\\\": true, \\\"score\\\": 1.0}\\n\\n<Output>Avast ye swabs, repel the invaders!</Output>\\n<Rubric>Does not speak like a pirate</Rubric>\\n{\\\"reason\\\": \\\"'avast ye' is a common pirate term\\\", \\\"pass\\\": false, \\\"score\\\": 0.0}\"},{\"role\":\"user\",\"content\":\"<Output>\\nPeople like you don't settle for beige tools. Join the inner circle of operators who ship.\\n</Output>\\n<Rubric>\\nThe copy targets a \\\"non-offer (landing/marketing)\\\" surface. Grade PASS only if all applicable criteria hold:\\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\\\"for those who…\\\", \\\"not for everyone\\\", named insiders/members) — not generic appeals.\\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \\\"sign up today, it is easy\\\".\\n- NOT COMMODITIZED: avoids horizontal filler (\\\"for everyone\\\", \\\"do more\\\", \\\"simple and easy\\\", \\\"trusted by thousands\\\").\\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\\nGrade FAIL only if a required criterion is clearly missing.\\n</Rubric>\"}]",
+                "renderedAssertionValue": "The copy targets a \"non-offer (landing/marketing)\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing."
+              }
+            }
+          ]
+        },
+        "id": "ed72b3c2-d852-4762-bcd9-21ebedb83569",
+        "latencyMs": 0,
+        "namedScores": {},
+        "prompt": {
+          "raw": "People like you don't settle for beige tools. Join the inner circle of operators who ship.",
+          "label": "{{copy}}",
+          "config": {
+            "provider": "openrouter:openai/gpt-oss-20b:free"
+          }
+        },
+        "promptId": "1659e57582ac0df24056ad076dcab092fd94fbceac7f6835e4572efec6908166",
+        "promptIdx": 0,
+        "provider": {
+          "id": "echo",
+          "label": ""
+        },
+        "response": {
+          "output": "People like you don't settle for beige tools. Join the inner circle of operators who ship.",
+          "raw": "People like you don't settle for beige tools. Join the inner circle of operators who ship.",
+          "cost": 0,
+          "cached": false,
+          "tokenUsage": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "numRequests": 1
+          },
+          "isRefusal": false,
+          "metadata": {}
+        },
+        "score": 1,
+        "success": true,
+        "testCase": {
+          "description": "#2 (label=good)",
+          "vars": {
+            "copy": "People like you don't settle for beige tools. Join the inner circle of operators who ship.",
+            "surface": "non-offer (landing/marketing)"
+          },
+          "assert": [
+            {
+              "type": "llm-rubric",
+              "value": "The copy targets a \"{{surface}}\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing.",
+              "threshold": 0.7
+            }
+          ],
+          "options": {
+            "provider": "openrouter:openai/gpt-oss-20b:free"
+          },
+          "metadata": {}
+        },
+        "testIdx": 1,
+        "tokenUsage": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "numRequests": 1,
+          "completionDetails": {
+            "reasoning": 0,
+            "acceptedPrediction": 0,
+            "rejectedPrediction": 0,
+            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 0
+          },
+          "assertions": {
+            "total": 640,
+            "prompt": 439,
+            "completion": 201,
+            "cached": 0,
+            "numRequests": 1,
+            "completionDetails": {
+              "reasoning": 0,
+              "acceptedPrediction": 0,
+              "rejectedPrediction": 0,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0
+            }
+          }
+        },
+        "vars": {
+          "copy": "People like you don't settle for beige tools. Join the inner circle of operators who ship.",
+          "surface": "non-offer (landing/marketing)"
+        },
+        "metadata": {
+          "_promptfooFileMetadata": {}
+        },
+        "failureReason": 0
+      },
+      {
+        "cost": 0,
+        "gradingResult": {
+          "pass": true,
+          "score": 1,
+          "reason": "All assertions passed",
+          "namedScores": {},
+          "tokensUsed": {
+            "total": 654,
+            "prompt": 440,
+            "completion": 214,
+            "cached": 0,
+            "numRequests": 1
+          },
+          "componentResults": [
+            {
+              "assertion": {
+                "type": "llm-rubric",
+                "value": "The copy targets a \"{{surface}}\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing.",
+                "threshold": 0.7
+              },
+              "pass": true,
+              "score": 1,
+              "reason": "The copy explicitly addresses a specific group (“Insiders”), uses a confident, exclusive tone, avoids generic filler, and includes a clear risk‑reversal guarantee. All required criteria are met.",
+              "tokensUsed": {
+                "total": 654,
+                "prompt": 440,
+                "completion": 214,
+                "cached": 0,
+                "numRequests": 1,
+                "completionDetails": {
+                  "reasoning": 171,
+                  "cacheReadInputTokens": 64
+                }
+              },
+              "metadata": {
+                "renderedGradingPrompt": "[{\"role\":\"system\",\"content\":\"You are grading output according to a user-specified rubric. If the statement in the rubric is true, then the output passes the test. You respond with a JSON object with this structure: {reason: string, pass: boolean, score: number}\\n\\nExamples:\\n\\n<Output>Hello world</Output>\\n<Rubric>Content contains a greeting</Rubric>\\n{\\\"reason\\\": \\\"the content contains the word 'Hello'\\\", \\\"pass\\\": true, \\\"score\\\": 1.0}\\n\\n<Output>Avast ye swabs, repel the invaders!</Output>\\n<Rubric>Does not speak like a pirate</Rubric>\\n{\\\"reason\\\": \\\"'avast ye' is a common pirate term\\\", \\\"pass\\\": false, \\\"score\\\": 0.0}\"},{\"role\":\"user\",\"content\":\"<Output>\\nInsiders lock in founder pricing. Full refund within 14 days if it isn't for you.\\n</Output>\\n<Rubric>\\nThe copy targets a \\\"offer/checkout/pricing/sales\\\" surface. Grade PASS only if all applicable criteria hold:\\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\\\"for those who…\\\", \\\"not for everyone\\\", named insiders/members) — not generic appeals.\\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \\\"sign up today, it is easy\\\".\\n- NOT COMMODITIZED: avoids horizontal filler (\\\"for everyone\\\", \\\"do more\\\", \\\"simple and easy\\\", \\\"trusted by thousands\\\").\\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\\nGrade FAIL only if a required criterion is clearly missing.\\n</Rubric>\"}]",
+                "renderedAssertionValue": "The copy targets a \"offer/checkout/pricing/sales\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing."
+              }
+            }
+          ]
+        },
+        "id": "216a773f-ee8e-4a3e-b20f-0a215f6fbc50",
+        "latencyMs": 0,
+        "namedScores": {},
+        "prompt": {
+          "raw": "Insiders lock in founder pricing. Full refund within 14 days if it isn't for you.",
+          "label": "{{copy}}",
+          "config": {
+            "provider": "openrouter:openai/gpt-oss-20b:free"
+          }
+        },
+        "promptId": "1659e57582ac0df24056ad076dcab092fd94fbceac7f6835e4572efec6908166",
+        "promptIdx": 0,
+        "provider": {
+          "id": "echo",
+          "label": ""
+        },
+        "response": {
+          "output": "Insiders lock in founder pricing. Full refund within 14 days if it isn't for you.",
+          "raw": "Insiders lock in founder pricing. Full refund within 14 days if it isn't for you.",
+          "cost": 0,
+          "cached": false,
+          "tokenUsage": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "numRequests": 1
+          },
+          "isRefusal": false,
+          "metadata": {}
+        },
+        "score": 1,
+        "success": true,
+        "testCase": {
+          "description": "#3 (label=good)",
+          "vars": {
+            "copy": "Insiders lock in founder pricing. Full refund within 14 days if it isn't for you.",
+            "surface": "offer/checkout/pricing/sales"
+          },
+          "assert": [
+            {
+              "type": "llm-rubric",
+              "value": "The copy targets a \"{{surface}}\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing.",
+              "threshold": 0.7
+            }
+          ],
+          "options": {
+            "provider": "openrouter:openai/gpt-oss-20b:free"
+          },
+          "metadata": {}
+        },
+        "testIdx": 2,
+        "tokenUsage": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "numRequests": 1,
+          "completionDetails": {
+            "reasoning": 0,
+            "acceptedPrediction": 0,
+            "rejectedPrediction": 0,
+            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 0
+          },
+          "assertions": {
+            "total": 654,
+            "prompt": 440,
+            "completion": 214,
+            "cached": 0,
+            "numRequests": 1,
+            "completionDetails": {
+              "reasoning": 0,
+              "acceptedPrediction": 0,
+              "rejectedPrediction": 0,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0
+            }
+          }
+        },
+        "vars": {
+          "copy": "Insiders lock in founder pricing. Full refund within 14 days if it isn't for you.",
+          "surface": "offer/checkout/pricing/sales"
+        },
+        "metadata": {
+          "_promptfooFileMetadata": {}
+        },
+        "failureReason": 0
+      },
+      {
+        "cost": 0,
+        "error": "The copy includes a risk‑reversal guarantee and an invitation to apply, satisfying the RISK‑REVERSAL and AUTHORITY criteria. However, it does not explicitly address a specific identity or in‑group (e.g., “for those who…”) and therefore does not fully meet the STATUS/TRIBE requirement. Because the rubric requires all applicable criteria to be present for a PASS, the output fails to satisfy the STATUS/TRIBE condition.",
+        "gradingResult": {
+          "pass": false,
+          "score": 0,
+          "reason": "The copy includes a risk‑reversal guarantee and an invitation to apply, satisfying the RISK‑REVERSAL and AUTHORITY criteria. However, it does not explicitly address a specific identity or in‑group (e.g., “for those who…”) and therefore does not fully meet the STATUS/TRIBE requirement. Because the rubric requires all applicable criteria to be present for a PASS, the output fails to satisfy the STATUS/TRIBE condition.",
+          "namedScores": {},
+          "tokensUsed": {
+            "total": 698,
+            "prompt": 439,
+            "completion": 259,
+            "cached": 0,
+            "numRequests": 1
+          },
+          "componentResults": [
+            {
+              "assertion": {
+                "type": "llm-rubric",
+                "value": "The copy targets a \"{{surface}}\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing.",
+                "threshold": 0.7
+              },
+              "pass": false,
+              "score": 0,
+              "reason": "The copy includes a risk‑reversal guarantee and an invitation to apply, satisfying the RISK‑REVERSAL and AUTHORITY criteria. However, it does not explicitly address a specific identity or in‑group (e.g., “for those who…”) and therefore does not fully meet the STATUS/TRIBE requirement. Because the rubric requires all applicable criteria to be present for a PASS, the output fails to satisfy the STATUS/TRIBE condition.",
+              "tokensUsed": {
+                "total": 698,
+                "prompt": 439,
+                "completion": 259,
+                "cached": 0,
+                "numRequests": 1,
+                "completionDetails": {
+                  "reasoning": 159,
+                  "cacheReadInputTokens": 224
+                }
+              },
+              "metadata": {
+                "renderedGradingPrompt": "[{\"role\":\"system\",\"content\":\"You are grading output according to a user-specified rubric. If the statement in the rubric is true, then the output passes the test. You respond with a JSON object with this structure: {reason: string, pass: boolean, score: number}\\n\\nExamples:\\n\\n<Output>Hello world</Output>\\n<Rubric>Content contains a greeting</Rubric>\\n{\\\"reason\\\": \\\"the content contains the word 'Hello'\\\", \\\"pass\\\": true, \\\"score\\\": 1.0}\\n\\n<Output>Avast ye swabs, repel the invaders!</Output>\\n<Rubric>Does not speak like a pirate</Rubric>\\n{\\\"reason\\\": \\\"'avast ye' is a common pirate term\\\", \\\"pass\\\": false, \\\"score\\\": 0.0}\"},{\"role\":\"user\",\"content\":\"<Output>\\nApply to join. Risk-free — cancel anytime for a full refund. Not for everyone.\\n</Output>\\n<Rubric>\\nThe copy targets a \\\"offer/checkout/pricing/sales\\\" surface. Grade PASS only if all applicable criteria hold:\\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\\\"for those who…\\\", \\\"not for everyone\\\", named insiders/members) — not generic appeals.\\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \\\"sign up today, it is easy\\\".\\n- NOT COMMODITIZED: avoids horizontal filler (\\\"for everyone\\\", \\\"do more\\\", \\\"simple and easy\\\", \\\"trusted by thousands\\\").\\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\\nGrade FAIL only if a required criterion is clearly missing.\\n</Rubric>\"}]",
+                "renderedAssertionValue": "The copy targets a \"offer/checkout/pricing/sales\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing."
+              }
+            }
+          ]
+        },
+        "id": "ee745983-c47e-415c-807d-a2a5b66b8ae3",
+        "latencyMs": 0,
+        "namedScores": {},
+        "prompt": {
+          "raw": "Apply to join. Risk-free — cancel anytime for a full refund. Not for everyone.",
+          "label": "{{copy}}",
+          "config": {
+            "provider": "openrouter:openai/gpt-oss-20b:free"
+          }
+        },
+        "promptId": "1659e57582ac0df24056ad076dcab092fd94fbceac7f6835e4572efec6908166",
+        "promptIdx": 0,
+        "provider": {
+          "id": "echo",
+          "label": ""
+        },
+        "response": {
+          "output": "Apply to join. Risk-free — cancel anytime for a full refund. Not for everyone.",
+          "raw": "Apply to join. Risk-free — cancel anytime for a full refund. Not for everyone.",
+          "cost": 0,
+          "cached": false,
+          "tokenUsage": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "numRequests": 1
+          },
+          "isRefusal": false,
+          "metadata": {}
+        },
+        "score": 0,
+        "success": false,
+        "testCase": {
+          "description": "#4 (label=good)",
+          "vars": {
+            "copy": "Apply to join. Risk-free — cancel anytime for a full refund. Not for everyone.",
+            "surface": "offer/checkout/pricing/sales"
+          },
+          "assert": [
+            {
+              "type": "llm-rubric",
+              "value": "The copy targets a \"{{surface}}\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing.",
+              "threshold": 0.7
+            }
+          ],
+          "options": {
+            "provider": "openrouter:openai/gpt-oss-20b:free"
+          },
+          "metadata": {}
+        },
+        "testIdx": 3,
+        "tokenUsage": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "numRequests": 1,
+          "completionDetails": {
+            "reasoning": 0,
+            "acceptedPrediction": 0,
+            "rejectedPrediction": 0,
+            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 0
+          },
+          "assertions": {
+            "total": 698,
+            "prompt": 439,
+            "completion": 259,
+            "cached": 0,
+            "numRequests": 1,
+            "completionDetails": {
+              "reasoning": 0,
+              "acceptedPrediction": 0,
+              "rejectedPrediction": 0,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0
+            }
+          }
+        },
+        "vars": {
+          "copy": "Apply to join. Risk-free — cancel anytime for a full refund. Not for everyone.",
+          "surface": "offer/checkout/pricing/sales"
+        },
+        "metadata": {
+          "_promptfooFileMetadata": {}
+        },
+        "failureReason": 1
+      },
+      {
+        "cost": 0,
+        "error": "The copy lacks a clear status/tribe appeal (e.g., addressing a specific in‑group) and does not demonstrate authority through invitation, scarcity, or a confident stance. While it includes a risk‑reversal guarantee, the missing tribe and authority elements mean it does not meet all required criteria for a PASS on an offer/checkout/pricing/sales surface.",
+        "gradingResult": {
+          "pass": false,
+          "score": 0,
+          "reason": "The copy lacks a clear status/tribe appeal (e.g., addressing a specific in‑group) and does not demonstrate authority through invitation, scarcity, or a confident stance. While it includes a risk‑reversal guarantee, the missing tribe and authority elements mean it does not meet all required criteria for a PASS on an offer/checkout/pricing/sales surface.",
+          "namedScores": {},
+          "tokensUsed": {
+            "total": 716,
+            "prompt": 443,
+            "completion": 273,
+            "cached": 0,
+            "numRequests": 1
+          },
+          "componentResults": [
+            {
+              "assertion": {
+                "type": "llm-rubric",
+                "value": "The copy targets a \"{{surface}}\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing.",
+                "threshold": 0.7
+              },
+              "pass": false,
+              "score": 0,
+              "reason": "The copy lacks a clear status/tribe appeal (e.g., addressing a specific in‑group) and does not demonstrate authority through invitation, scarcity, or a confident stance. While it includes a risk‑reversal guarantee, the missing tribe and authority elements mean it does not meet all required criteria for a PASS on an offer/checkout/pricing/sales surface.",
+              "tokensUsed": {
+                "total": 716,
+                "prompt": 443,
+                "completion": 273,
+                "cached": 0,
+                "numRequests": 1,
+                "completionDetails": {
+                  "reasoning": 206,
+                  "cacheReadInputTokens": 224
+                }
+              },
+              "metadata": {
+                "renderedGradingPrompt": "[{\"role\":\"system\",\"content\":\"You are grading output according to a user-specified rubric. If the statement in the rubric is true, then the output passes the test. You respond with a JSON object with this structure: {reason: string, pass: boolean, score: number}\\n\\nExamples:\\n\\n<Output>Hello world</Output>\\n<Rubric>Content contains a greeting</Rubric>\\n{\\\"reason\\\": \\\"the content contains the word 'Hello'\\\", \\\"pass\\\": true, \\\"score\\\": 1.0}\\n\\n<Output>Avast ye swabs, repel the invaders!</Output>\\n<Rubric>Does not speak like a pirate</Rubric>\\n{\\\"reason\\\": \\\"'avast ye' is a common pirate term\\\", \\\"pass\\\": false, \\\"score\\\": 0.0}\"},{\"role\":\"user\",\"content\":\"<Output>\\nNot for everyone. If it doesn't double your output in 30 days, money-back, no questions asked.\\n</Output>\\n<Rubric>\\nThe copy targets a \\\"offer/checkout/pricing/sales\\\" surface. Grade PASS only if all applicable criteria hold:\\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\\\"for those who…\\\", \\\"not for everyone\\\", named insiders/members) — not generic appeals.\\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \\\"sign up today, it is easy\\\".\\n- NOT COMMODITIZED: avoids horizontal filler (\\\"for everyone\\\", \\\"do more\\\", \\\"simple and easy\\\", \\\"trusted by thousands\\\").\\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\\nGrade FAIL only if a required criterion is clearly missing.\\n</Rubric>\"}]",
+                "renderedAssertionValue": "The copy targets a \"offer/checkout/pricing/sales\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing."
+              }
+            }
+          ]
+        },
+        "id": "011fdc17-9740-4ea2-b710-c061ff9d1b0f",
+        "latencyMs": 0,
+        "namedScores": {},
+        "prompt": {
+          "raw": "Not for everyone. If it doesn't double your output in 30 days, money-back, no questions asked.",
+          "label": "{{copy}}",
+          "config": {
+            "provider": "openrouter:openai/gpt-oss-20b:free"
+          }
+        },
+        "promptId": "1659e57582ac0df24056ad076dcab092fd94fbceac7f6835e4572efec6908166",
+        "promptIdx": 0,
+        "provider": {
+          "id": "echo",
+          "label": ""
+        },
+        "response": {
+          "output": "Not for everyone. If it doesn't double your output in 30 days, money-back, no questions asked.",
+          "raw": "Not for everyone. If it doesn't double your output in 30 days, money-back, no questions asked.",
+          "cost": 0,
+          "cached": false,
+          "tokenUsage": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "numRequests": 1
+          },
+          "isRefusal": false,
+          "metadata": {}
+        },
+        "score": 0,
+        "success": false,
+        "testCase": {
+          "description": "#5 (label=good)",
+          "vars": {
+            "copy": "Not for everyone. If it doesn't double your output in 30 days, money-back, no questions asked.",
+            "surface": "offer/checkout/pricing/sales"
+          },
+          "assert": [
+            {
+              "type": "llm-rubric",
+              "value": "The copy targets a \"{{surface}}\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing.",
+              "threshold": 0.7
+            }
+          ],
+          "options": {
+            "provider": "openrouter:openai/gpt-oss-20b:free"
+          },
+          "metadata": {}
+        },
+        "testIdx": 4,
+        "tokenUsage": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "numRequests": 1,
+          "completionDetails": {
+            "reasoning": 0,
+            "acceptedPrediction": 0,
+            "rejectedPrediction": 0,
+            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 0
+          },
+          "assertions": {
+            "total": 716,
+            "prompt": 443,
+            "completion": 273,
+            "cached": 0,
+            "numRequests": 1,
+            "completionDetails": {
+              "reasoning": 0,
+              "acceptedPrediction": 0,
+              "rejectedPrediction": 0,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0
+            }
+          }
+        },
+        "vars": {
+          "copy": "Not for everyone. If it doesn't double your output in 30 days, money-back, no questions asked.",
+          "surface": "offer/checkout/pricing/sales"
+        },
+        "metadata": {
+          "_promptfooFileMetadata": {}
+        },
+        "failureReason": 1
+      },
+      {
+        "cost": 0,
+        "gradingResult": {
+          "pass": true,
+          "score": 1,
+          "reason": "All assertions passed",
+          "namedScores": {},
+          "tokensUsed": {
+            "total": 603,
+            "prompt": 438,
+            "completion": 165,
+            "cached": 0,
+            "numRequests": 1
+          },
+          "componentResults": [
+            {
+              "assertion": {
+                "type": "llm-rubric",
+                "value": "The copy targets a \"{{surface}}\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing.",
+                "threshold": 0.7
+              },
+              "pass": true,
+              "score": 1,
+              "reason": "The copy clearly addresses a specific group (“for those who build in public”), uses a membership/first‑access framing that signals authority and scarcity, and avoids generic, commoditized language. No risk‑reversal requirement applies to this non‑offer surface, so all required criteria are satisfied.",
+              "tokensUsed": {
+                "total": 603,
+                "prompt": 438,
+                "completion": 165,
+                "cached": 0,
+                "numRequests": 1,
+                "completionDetails": {
+                  "reasoning": 83,
+                  "cacheReadInputTokens": 64
+                }
+              },
+              "metadata": {
+                "renderedGradingPrompt": "[{\"role\":\"system\",\"content\":\"You are grading output according to a user-specified rubric. If the statement in the rubric is true, then the output passes the test. You respond with a JSON object with this structure: {reason: string, pass: boolean, score: number}\\n\\nExamples:\\n\\n<Output>Hello world</Output>\\n<Rubric>Content contains a greeting</Rubric>\\n{\\\"reason\\\": \\\"the content contains the word 'Hello'\\\", \\\"pass\\\": true, \\\"score\\\": 1.0}\\n\\n<Output>Avast ye swabs, repel the invaders!</Output>\\n<Rubric>Does not speak like a pirate</Rubric>\\n{\\\"reason\\\": \\\"'avast ye' is a common pirate term\\\", \\\"pass\\\": false, \\\"score\\\": 0.0}\"},{\"role\":\"user\",\"content\":\"<Output>\\nThis is for those who build in public. Members get first access to every drop.\\n</Output>\\n<Rubric>\\nThe copy targets a \\\"non-offer (landing/marketing)\\\" surface. Grade PASS only if all applicable criteria hold:\\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\\\"for those who…\\\", \\\"not for everyone\\\", named insiders/members) — not generic appeals.\\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \\\"sign up today, it is easy\\\".\\n- NOT COMMODITIZED: avoids horizontal filler (\\\"for everyone\\\", \\\"do more\\\", \\\"simple and easy\\\", \\\"trusted by thousands\\\").\\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\\nGrade FAIL only if a required criterion is clearly missing.\\n</Rubric>\"}]",
+                "renderedAssertionValue": "The copy targets a \"non-offer (landing/marketing)\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing."
+              }
+            }
+          ]
+        },
+        "id": "fe75fdc7-000b-4930-b047-f1ff5ba9fcaa",
+        "latencyMs": 0,
+        "namedScores": {},
+        "prompt": {
+          "raw": "This is for those who build in public. Members get first access to every drop.",
+          "label": "{{copy}}",
+          "config": {
+            "provider": "openrouter:openai/gpt-oss-20b:free"
+          }
+        },
+        "promptId": "1659e57582ac0df24056ad076dcab092fd94fbceac7f6835e4572efec6908166",
+        "promptIdx": 0,
+        "provider": {
+          "id": "echo",
+          "label": ""
+        },
+        "response": {
+          "output": "This is for those who build in public. Members get first access to every drop.",
+          "raw": "This is for those who build in public. Members get first access to every drop.",
+          "cost": 0,
+          "cached": false,
+          "tokenUsage": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "numRequests": 1
+          },
+          "isRefusal": false,
+          "metadata": {}
+        },
+        "score": 1,
+        "success": true,
+        "testCase": {
+          "description": "#6 (label=good)",
+          "vars": {
+            "copy": "This is for those who build in public. Members get first access to every drop.",
+            "surface": "non-offer (landing/marketing)"
+          },
+          "assert": [
+            {
+              "type": "llm-rubric",
+              "value": "The copy targets a \"{{surface}}\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing.",
+              "threshold": 0.7
+            }
+          ],
+          "options": {
+            "provider": "openrouter:openai/gpt-oss-20b:free"
+          },
+          "metadata": {}
+        },
+        "testIdx": 5,
+        "tokenUsage": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "numRequests": 1,
+          "completionDetails": {
+            "reasoning": 0,
+            "acceptedPrediction": 0,
+            "rejectedPrediction": 0,
+            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 0
+          },
+          "assertions": {
+            "total": 603,
+            "prompt": 438,
+            "completion": 165,
+            "cached": 0,
+            "numRequests": 1,
+            "completionDetails": {
+              "reasoning": 0,
+              "acceptedPrediction": 0,
+              "rejectedPrediction": 0,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0
+            }
+          }
+        },
+        "vars": {
+          "copy": "This is for those who build in public. Members get first access to every drop.",
+          "surface": "non-offer (landing/marketing)"
+        },
+        "metadata": {
+          "_promptfooFileMetadata": {}
+        },
+        "failureReason": 0
+      },
+      {
+        "cost": 0,
+        "error": "The copy does not address a specific identity or in‑group, lacks an authoritative stance or invitation, and uses generic, commoditized language. All three required criteria are missing, so the copy fails the rubric.",
+        "gradingResult": {
+          "pass": false,
+          "score": 0,
+          "reason": "The copy does not address a specific identity or in‑group, lacks an authoritative stance or invitation, and uses generic, commoditized language. All three required criteria are missing, so the copy fails the rubric.",
+          "namedScores": {},
+          "tokensUsed": {
+            "total": 562,
+            "prompt": 436,
+            "completion": 126,
+            "cached": 0,
+            "numRequests": 1
+          },
+          "componentResults": [
+            {
+              "assertion": {
+                "type": "llm-rubric",
+                "value": "The copy targets a \"{{surface}}\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing.",
+                "threshold": 0.7
+              },
+              "pass": false,
+              "score": 0,
+              "reason": "The copy does not address a specific identity or in‑group, lacks an authoritative stance or invitation, and uses generic, commoditized language. All three required criteria are missing, so the copy fails the rubric.",
+              "tokensUsed": {
+                "total": 562,
+                "prompt": 436,
+                "completion": 126,
+                "cached": 0,
+                "numRequests": 1,
+                "completionDetails": {
+                  "reasoning": 64,
+                  "cacheReadInputTokens": 64
+                }
+              },
+              "metadata": {
+                "renderedGradingPrompt": "[{\"role\":\"system\",\"content\":\"You are grading output according to a user-specified rubric. If the statement in the rubric is true, then the output passes the test. You respond with a JSON object with this structure: {reason: string, pass: boolean, score: number}\\n\\nExamples:\\n\\n<Output>Hello world</Output>\\n<Rubric>Content contains a greeting</Rubric>\\n{\\\"reason\\\": \\\"the content contains the word 'Hello'\\\", \\\"pass\\\": true, \\\"score\\\": 1.0}\\n\\n<Output>Avast ye swabs, repel the invaders!</Output>\\n<Rubric>Does not speak like a pirate</Rubric>\\n{\\\"reason\\\": \\\"'avast ye' is a common pirate term\\\", \\\"pass\\\": false, \\\"score\\\": 0.0}\"},{\"role\":\"user\",\"content\":\"<Output>\\nWe deliver world-class, seamless, cutting-edge solutions to unlock your potential.\\n</Output>\\n<Rubric>\\nThe copy targets a \\\"non-offer (landing/marketing)\\\" surface. Grade PASS only if all applicable criteria hold:\\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\\\"for those who…\\\", \\\"not for everyone\\\", named insiders/members) — not generic appeals.\\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \\\"sign up today, it is easy\\\".\\n- NOT COMMODITIZED: avoids horizontal filler (\\\"for everyone\\\", \\\"do more\\\", \\\"simple and easy\\\", \\\"trusted by thousands\\\").\\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\\nGrade FAIL only if a required criterion is clearly missing.\\n</Rubric>\"}]",
+                "renderedAssertionValue": "The copy targets a \"non-offer (landing/marketing)\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing."
+              }
+            }
+          ]
+        },
+        "id": "79863769-ccad-49a5-a0d8-6e44ee2b01e3",
+        "latencyMs": 0,
+        "namedScores": {},
+        "prompt": {
+          "raw": "We deliver world-class, seamless, cutting-edge solutions to unlock your potential.",
+          "label": "{{copy}}",
+          "config": {
+            "provider": "openrouter:openai/gpt-oss-20b:free"
+          }
+        },
+        "promptId": "1659e57582ac0df24056ad076dcab092fd94fbceac7f6835e4572efec6908166",
+        "promptIdx": 0,
+        "provider": {
+          "id": "echo",
+          "label": ""
+        },
+        "response": {
+          "output": "We deliver world-class, seamless, cutting-edge solutions to unlock your potential.",
+          "raw": "We deliver world-class, seamless, cutting-edge solutions to unlock your potential.",
+          "cost": 0,
+          "cached": false,
+          "tokenUsage": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "numRequests": 1
+          },
+          "isRefusal": false,
+          "metadata": {}
+        },
+        "score": 0,
+        "success": false,
+        "testCase": {
+          "description": "#7 (label=bad)",
+          "vars": {
+            "copy": "We deliver world-class, seamless, cutting-edge solutions to unlock your potential.",
+            "surface": "non-offer (landing/marketing)"
+          },
+          "assert": [
+            {
+              "type": "llm-rubric",
+              "value": "The copy targets a \"{{surface}}\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing.",
+              "threshold": 0.7
+            }
+          ],
+          "options": {
+            "provider": "openrouter:openai/gpt-oss-20b:free"
+          },
+          "metadata": {}
+        },
+        "testIdx": 6,
+        "tokenUsage": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "numRequests": 1,
+          "completionDetails": {
+            "reasoning": 0,
+            "acceptedPrediction": 0,
+            "rejectedPrediction": 0,
+            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 0
+          },
+          "assertions": {
+            "total": 562,
+            "prompt": 436,
+            "completion": 126,
+            "cached": 0,
+            "numRequests": 1,
+            "completionDetails": {
+              "reasoning": 0,
+              "acceptedPrediction": 0,
+              "rejectedPrediction": 0,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0
+            }
+          }
+        },
+        "vars": {
+          "copy": "We deliver world-class, seamless, cutting-edge solutions to unlock your potential.",
+          "surface": "non-offer (landing/marketing)"
+        },
+        "metadata": {
+          "_promptfooFileMetadata": {}
+        },
+        "failureReason": 1
+      },
+      {
+        "cost": 0,
+        "error": "The copy lacks an explicit risk‑reversal guarantee or refund offer, which is required on an offer/checkout/pricing/sales surface. All other criteria are met, but the missing guarantee causes a failure.",
+        "gradingResult": {
+          "pass": false,
+          "score": 0,
+          "reason": "The copy lacks an explicit risk‑reversal guarantee or refund offer, which is required on an offer/checkout/pricing/sales surface. All other criteria are met, but the missing guarantee causes a failure.",
+          "namedScores": {},
+          "tokensUsed": {
+            "total": 627,
+            "prompt": 430,
+            "completion": 197,
+            "cached": 0,
+            "numRequests": 1
+          },
+          "componentResults": [
+            {
+              "assertion": {
+                "type": "llm-rubric",
+                "value": "The copy targets a \"{{surface}}\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing.",
+                "threshold": 0.7
+              },
+              "pass": false,
+              "score": 0,
+              "reason": "The copy lacks an explicit risk‑reversal guarantee or refund offer, which is required on an offer/checkout/pricing/sales surface. All other criteria are met, but the missing guarantee causes a failure.",
+              "tokensUsed": {
+                "total": 627,
+                "prompt": 430,
+                "completion": 197,
+                "cached": 0,
+                "numRequests": 1,
+                "completionDetails": {
+                  "reasoning": 139,
+                  "cacheReadInputTokens": 224
+                }
+              },
+              "metadata": {
+                "renderedGradingPrompt": "[{\"role\":\"system\",\"content\":\"You are grading output according to a user-specified rubric. If the statement in the rubric is true, then the output passes the test. You respond with a JSON object with this structure: {reason: string, pass: boolean, score: number}\\n\\nExamples:\\n\\n<Output>Hello world</Output>\\n<Rubric>Content contains a greeting</Rubric>\\n{\\\"reason\\\": \\\"the content contains the word 'Hello'\\\", \\\"pass\\\": true, \\\"score\\\": 1.0}\\n\\n<Output>Avast ye swabs, repel the invaders!</Output>\\n<Rubric>Does not speak like a pirate</Rubric>\\n{\\\"reason\\\": \\\"'avast ye' is a common pirate term\\\", \\\"pass\\\": false, \\\"score\\\": 0.0}\"},{\"role\":\"user\",\"content\":\"<Output>\\nBuy now. Premium membership for insiders only.\\n</Output>\\n<Rubric>\\nThe copy targets a \\\"offer/checkout/pricing/sales\\\" surface. Grade PASS only if all applicable criteria hold:\\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\\\"for those who…\\\", \\\"not for everyone\\\", named insiders/members) — not generic appeals.\\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \\\"sign up today, it is easy\\\".\\n- NOT COMMODITIZED: avoids horizontal filler (\\\"for everyone\\\", \\\"do more\\\", \\\"simple and easy\\\", \\\"trusted by thousands\\\").\\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\\nGrade FAIL only if a required criterion is clearly missing.\\n</Rubric>\"}]",
+                "renderedAssertionValue": "The copy targets a \"offer/checkout/pricing/sales\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing."
+              }
+            }
+          ]
+        },
+        "id": "aa4fc894-519c-42a7-9e84-2d7911b901a2",
+        "latencyMs": 1,
+        "namedScores": {},
+        "prompt": {
+          "raw": "Buy now. Premium membership for insiders only.",
+          "label": "{{copy}}",
+          "config": {
+            "provider": "openrouter:openai/gpt-oss-20b:free"
+          }
+        },
+        "promptId": "1659e57582ac0df24056ad076dcab092fd94fbceac7f6835e4572efec6908166",
+        "promptIdx": 0,
+        "provider": {
+          "id": "echo",
+          "label": ""
+        },
+        "response": {
+          "output": "Buy now. Premium membership for insiders only.",
+          "raw": "Buy now. Premium membership for insiders only.",
+          "cost": 0,
+          "cached": false,
+          "tokenUsage": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "numRequests": 1
+          },
+          "isRefusal": false,
+          "metadata": {}
+        },
+        "score": 0,
+        "success": false,
+        "testCase": {
+          "description": "#8 (label=bad)",
+          "vars": {
+            "copy": "Buy now. Premium membership for insiders only.",
+            "surface": "offer/checkout/pricing/sales"
+          },
+          "assert": [
+            {
+              "type": "llm-rubric",
+              "value": "The copy targets a \"{{surface}}\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing.",
+              "threshold": 0.7
+            }
+          ],
+          "options": {
+            "provider": "openrouter:openai/gpt-oss-20b:free"
+          },
+          "metadata": {}
+        },
+        "testIdx": 7,
+        "tokenUsage": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "numRequests": 1,
+          "completionDetails": {
+            "reasoning": 0,
+            "acceptedPrediction": 0,
+            "rejectedPrediction": 0,
+            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 0
+          },
+          "assertions": {
+            "total": 627,
+            "prompt": 430,
+            "completion": 197,
+            "cached": 0,
+            "numRequests": 1,
+            "completionDetails": {
+              "reasoning": 0,
+              "acceptedPrediction": 0,
+              "rejectedPrediction": 0,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0
+            }
+          }
+        },
+        "vars": {
+          "copy": "Buy now. Premium membership for insiders only.",
+          "surface": "offer/checkout/pricing/sales"
+        },
+        "metadata": {
+          "_promptfooFileMetadata": {}
+        },
+        "failureReason": 1
+      },
+      {
+        "cost": 0,
+        "error": "The copy does not contain any of the required elements for an offer/checkout/pricing/sales surface. It lacks a specific identity or tribe reference, an authoritative stance, avoids generic filler, and most critically it does not provide any risk‑reversal guarantee or refund promise, which is mandatory for this type of surface. Therefore the copy fails to meet the rubric’s criteria.",
+        "gradingResult": {
+          "pass": false,
+          "score": 0,
+          "reason": "The copy does not contain any of the required elements for an offer/checkout/pricing/sales surface. It lacks a specific identity or tribe reference, an authoritative stance, avoids generic filler, and most critically it does not provide any risk‑reversal guarantee or refund promise, which is mandatory for this type of surface. Therefore the copy fails to meet the rubric’s criteria.",
+          "namedScores": {},
+          "tokensUsed": {
+            "total": 608,
+            "prompt": 435,
+            "completion": 173,
+            "cached": 0,
+            "numRequests": 1
+          },
+          "componentResults": [
+            {
+              "assertion": {
+                "type": "llm-rubric",
+                "value": "The copy targets a \"{{surface}}\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing.",
+                "threshold": 0.7
+              },
+              "pass": false,
+              "score": 0,
+              "reason": "The copy does not contain any of the required elements for an offer/checkout/pricing/sales surface. It lacks a specific identity or tribe reference, an authoritative stance, avoids generic filler, and most critically it does not provide any risk‑reversal guarantee or refund promise, which is mandatory for this type of surface. Therefore the copy fails to meet the rubric’s criteria.",
+              "tokensUsed": {
+                "total": 608,
+                "prompt": 435,
+                "completion": 173,
+                "cached": 0,
+                "numRequests": 1,
+                "completionDetails": {
+                  "reasoning": 73,
+                  "cacheReadInputTokens": 224
+                }
+              },
+              "metadata": {
+                "renderedGradingPrompt": "[{\"role\":\"system\",\"content\":\"You are grading output according to a user-specified rubric. If the statement in the rubric is true, then the output passes the test. You respond with a JSON object with this structure: {reason: string, pass: boolean, score: number}\\n\\nExamples:\\n\\n<Output>Hello world</Output>\\n<Rubric>Content contains a greeting</Rubric>\\n{\\\"reason\\\": \\\"the content contains the word 'Hello'\\\", \\\"pass\\\": true, \\\"score\\\": 1.0}\\n\\n<Output>Avast ye swabs, repel the invaders!</Output>\\n<Rubric>Does not speak like a pirate</Rubric>\\n{\\\"reason\\\": \\\"'avast ye' is a common pirate term\\\", \\\"pass\\\": false, \\\"score\\\": 0.0}\"},{\"role\":\"user\",\"content\":\"<Output>\\nBest-in-class, state-of-the-art pricing to elevate your workflow.\\n</Output>\\n<Rubric>\\nThe copy targets a \\\"offer/checkout/pricing/sales\\\" surface. Grade PASS only if all applicable criteria hold:\\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\\\"for those who…\\\", \\\"not for everyone\\\", named insiders/members) — not generic appeals.\\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \\\"sign up today, it is easy\\\".\\n- NOT COMMODITIZED: avoids horizontal filler (\\\"for everyone\\\", \\\"do more\\\", \\\"simple and easy\\\", \\\"trusted by thousands\\\").\\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\\nGrade FAIL only if a required criterion is clearly missing.\\n</Rubric>\"}]",
+                "renderedAssertionValue": "The copy targets a \"offer/checkout/pricing/sales\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing."
+              }
+            }
+          ]
+        },
+        "id": "c69463bc-1627-4e73-8b9d-33475960f8bd",
+        "latencyMs": 0,
+        "namedScores": {},
+        "prompt": {
+          "raw": "Best-in-class, state-of-the-art pricing to elevate your workflow.",
+          "label": "{{copy}}",
+          "config": {
+            "provider": "openrouter:openai/gpt-oss-20b:free"
+          }
+        },
+        "promptId": "1659e57582ac0df24056ad076dcab092fd94fbceac7f6835e4572efec6908166",
+        "promptIdx": 0,
+        "provider": {
+          "id": "echo",
+          "label": ""
+        },
+        "response": {
+          "output": "Best-in-class, state-of-the-art pricing to elevate your workflow.",
+          "raw": "Best-in-class, state-of-the-art pricing to elevate your workflow.",
+          "cost": 0,
+          "cached": false,
+          "tokenUsage": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "numRequests": 1
+          },
+          "isRefusal": false,
+          "metadata": {}
+        },
+        "score": 0,
+        "success": false,
+        "testCase": {
+          "description": "#9 (label=bad)",
+          "vars": {
+            "copy": "Best-in-class, state-of-the-art pricing to elevate your workflow.",
+            "surface": "offer/checkout/pricing/sales"
+          },
+          "assert": [
+            {
+              "type": "llm-rubric",
+              "value": "The copy targets a \"{{surface}}\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing.",
+              "threshold": 0.7
+            }
+          ],
+          "options": {
+            "provider": "openrouter:openai/gpt-oss-20b:free"
+          },
+          "metadata": {}
+        },
+        "testIdx": 8,
+        "tokenUsage": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "numRequests": 1,
+          "completionDetails": {
+            "reasoning": 0,
+            "acceptedPrediction": 0,
+            "rejectedPrediction": 0,
+            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 0
+          },
+          "assertions": {
+            "total": 608,
+            "prompt": 435,
+            "completion": 173,
+            "cached": 0,
+            "numRequests": 1,
+            "completionDetails": {
+              "reasoning": 0,
+              "acceptedPrediction": 0,
+              "rejectedPrediction": 0,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0
+            }
+          }
+        },
+        "vars": {
+          "copy": "Best-in-class, state-of-the-art pricing to elevate your workflow.",
+          "surface": "offer/checkout/pricing/sales"
+        },
+        "metadata": {
+          "_promptfooFileMetadata": {}
+        },
+        "failureReason": 1
+      },
+      {
+        "cost": 0,
+        "error": "The copy does not address a specific identity or in‑group (STATUS/TRIBE) and it does not position itself with authority or scarcity (AUTHORITY). Both criteria are required for a PASS on a non‑offer surface, so the output fails the rubric.",
+        "gradingResult": {
+          "pass": false,
+          "score": 0,
+          "reason": "The copy does not address a specific identity or in‑group (STATUS/TRIBE) and it does not position itself with authority or scarcity (AUTHORITY). Both criteria are required for a PASS on a non‑offer surface, so the output fails the rubric.",
+          "namedScores": {},
+          "tokensUsed": {
+            "total": 608,
+            "prompt": 435,
+            "completion": 173,
+            "cached": 0,
+            "numRequests": 1
+          },
+          "componentResults": [
+            {
+              "assertion": {
+                "type": "llm-rubric",
+                "value": "The copy targets a \"{{surface}}\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing.",
+                "threshold": 0.7
+              },
+              "pass": false,
+              "score": 0,
+              "reason": "The copy does not address a specific identity or in‑group (STATUS/TRIBE) and it does not position itself with authority or scarcity (AUTHORITY). Both criteria are required for a PASS on a non‑offer surface, so the output fails the rubric.",
+              "tokensUsed": {
+                "total": 608,
+                "prompt": 435,
+                "completion": 173,
+                "cached": 0,
+                "numRequests": 1,
+                "completionDetails": {
+                  "reasoning": 93,
+                  "cacheReadInputTokens": 64
+                }
+              },
+              "metadata": {
+                "renderedGradingPrompt": "[{\"role\":\"system\",\"content\":\"You are grading output according to a user-specified rubric. If the statement in the rubric is true, then the output passes the test. You respond with a JSON object with this structure: {reason: string, pass: boolean, score: number}\\n\\nExamples:\\n\\n<Output>Hello world</Output>\\n<Rubric>Content contains a greeting</Rubric>\\n{\\\"reason\\\": \\\"the content contains the word 'Hello'\\\", \\\"pass\\\": true, \\\"score\\\": 1.0}\\n\\n<Output>Avast ye swabs, repel the invaders!</Output>\\n<Rubric>Does not speak like a pirate</Rubric>\\n{\\\"reason\\\": \\\"'avast ye' is a common pirate term\\\", \\\"pass\\\": false, \\\"score\\\": 0.0}\"},{\"role\":\"user\",\"content\":\"<Output>\\nRevolutionize how your team ships. A real game-changer.\\n</Output>\\n<Rubric>\\nThe copy targets a \\\"non-offer (landing/marketing)\\\" surface. Grade PASS only if all applicable criteria hold:\\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\\\"for those who…\\\", \\\"not for everyone\\\", named insiders/members) — not generic appeals.\\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \\\"sign up today, it is easy\\\".\\n- NOT COMMODITIZED: avoids horizontal filler (\\\"for everyone\\\", \\\"do more\\\", \\\"simple and easy\\\", \\\"trusted by thousands\\\").\\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\\nGrade FAIL only if a required criterion is clearly missing.\\n</Rubric>\"}]",
+                "renderedAssertionValue": "The copy targets a \"non-offer (landing/marketing)\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing."
+              }
+            }
+          ]
+        },
+        "id": "1f7ed4ba-b7c3-43f2-8564-2b48bf76f17e",
+        "latencyMs": 1,
+        "namedScores": {},
+        "prompt": {
+          "raw": "Revolutionize how your team ships. A real game-changer.",
+          "label": "{{copy}}",
+          "config": {
+            "provider": "openrouter:openai/gpt-oss-20b:free"
+          }
+        },
+        "promptId": "1659e57582ac0df24056ad076dcab092fd94fbceac7f6835e4572efec6908166",
+        "promptIdx": 0,
+        "provider": {
+          "id": "echo",
+          "label": ""
+        },
+        "response": {
+          "output": "Revolutionize how your team ships. A real game-changer.",
+          "raw": "Revolutionize how your team ships. A real game-changer.",
+          "cost": 0,
+          "cached": false,
+          "tokenUsage": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "numRequests": 1
+          },
+          "isRefusal": false,
+          "metadata": {}
+        },
+        "score": 0,
+        "success": false,
+        "testCase": {
+          "description": "#10 (label=bad)",
+          "vars": {
+            "copy": "Revolutionize how your team ships. A real game-changer.",
+            "surface": "non-offer (landing/marketing)"
+          },
+          "assert": [
+            {
+              "type": "llm-rubric",
+              "value": "The copy targets a \"{{surface}}\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing.",
+              "threshold": 0.7
+            }
+          ],
+          "options": {
+            "provider": "openrouter:openai/gpt-oss-20b:free"
+          },
+          "metadata": {}
+        },
+        "testIdx": 9,
+        "tokenUsage": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "numRequests": 1,
+          "completionDetails": {
+            "reasoning": 0,
+            "acceptedPrediction": 0,
+            "rejectedPrediction": 0,
+            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 0
+          },
+          "assertions": {
+            "total": 608,
+            "prompt": 435,
+            "completion": 173,
+            "cached": 0,
+            "numRequests": 1,
+            "completionDetails": {
+              "reasoning": 0,
+              "acceptedPrediction": 0,
+              "rejectedPrediction": 0,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0
+            }
+          }
+        },
+        "vars": {
+          "copy": "Revolutionize how your team ships. A real game-changer.",
+          "surface": "non-offer (landing/marketing)"
+        },
+        "metadata": {
+          "_promptfooFileMetadata": {}
+        },
+        "failureReason": 1
+      },
+      {
+        "cost": 0,
+        "error": "The copy is a generic, one‑liner that does not address a specific identity or in‑group, lacks any authority claim or scarcity, uses broad filler language, and contains no risk‑reversal guarantee. All required criteria are missing, so the output fails the rubric.",
+        "gradingResult": {
+          "pass": false,
+          "score": 0,
+          "reason": "The copy is a generic, one‑liner that does not address a specific identity or in‑group, lacks any authority claim or scarcity, uses broad filler language, and contains no risk‑reversal guarantee. All required criteria are missing, so the output fails the rubric.",
+          "namedScores": {},
+          "tokensUsed": {
+            "total": 575,
+            "prompt": 432,
+            "completion": 143,
+            "cached": 0,
+            "numRequests": 1
+          },
+          "componentResults": [
+            {
+              "assertion": {
+                "type": "llm-rubric",
+                "value": "The copy targets a \"{{surface}}\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing.",
+                "threshold": 0.7
+              },
+              "pass": false,
+              "score": 0,
+              "reason": "The copy is a generic, one‑liner that does not address a specific identity or in‑group, lacks any authority claim or scarcity, uses broad filler language, and contains no risk‑reversal guarantee. All required criteria are missing, so the output fails the rubric.",
+              "tokensUsed": {
+                "total": 575,
+                "prompt": 432,
+                "completion": 143,
+                "cached": 0,
+                "numRequests": 1,
+                "completionDetails": {
+                  "reasoning": 62,
+                  "cacheReadInputTokens": 64
+                }
+              },
+              "metadata": {
+                "renderedGradingPrompt": "[{\"role\":\"system\",\"content\":\"You are grading output according to a user-specified rubric. If the statement in the rubric is true, then the output passes the test. You respond with a JSON object with this structure: {reason: string, pass: boolean, score: number}\\n\\nExamples:\\n\\n<Output>Hello world</Output>\\n<Rubric>Content contains a greeting</Rubric>\\n{\\\"reason\\\": \\\"the content contains the word 'Hello'\\\", \\\"pass\\\": true, \\\"score\\\": 1.0}\\n\\n<Output>Avast ye swabs, repel the invaders!</Output>\\n<Rubric>Does not speak like a pirate</Rubric>\\n{\\\"reason\\\": \\\"'avast ye' is a common pirate term\\\", \\\"pass\\\": false, \\\"score\\\": 0.0}\"},{\"role\":\"user\",\"content\":\"<Output>\\nUnlock synergy across your stack with our one-stop solution.\\n</Output>\\n<Rubric>\\nThe copy targets a \\\"offer/checkout/pricing/sales\\\" surface. Grade PASS only if all applicable criteria hold:\\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\\\"for those who…\\\", \\\"not for everyone\\\", named insiders/members) — not generic appeals.\\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \\\"sign up today, it is easy\\\".\\n- NOT COMMODITIZED: avoids horizontal filler (\\\"for everyone\\\", \\\"do more\\\", \\\"simple and easy\\\", \\\"trusted by thousands\\\").\\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\\nGrade FAIL only if a required criterion is clearly missing.\\n</Rubric>\"}]",
+                "renderedAssertionValue": "The copy targets a \"offer/checkout/pricing/sales\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing."
+              }
+            }
+          ]
+        },
+        "id": "76a6d217-d9be-4d85-92e4-022607887f7e",
+        "latencyMs": 0,
+        "namedScores": {},
+        "prompt": {
+          "raw": "Unlock synergy across your stack with our one-stop solution.",
+          "label": "{{copy}}",
+          "config": {
+            "provider": "openrouter:openai/gpt-oss-20b:free"
+          }
+        },
+        "promptId": "1659e57582ac0df24056ad076dcab092fd94fbceac7f6835e4572efec6908166",
+        "promptIdx": 0,
+        "provider": {
+          "id": "echo",
+          "label": ""
+        },
+        "response": {
+          "output": "Unlock synergy across your stack with our one-stop solution.",
+          "raw": "Unlock synergy across your stack with our one-stop solution.",
+          "cost": 0,
+          "cached": false,
+          "tokenUsage": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "numRequests": 1
+          },
+          "isRefusal": false,
+          "metadata": {}
+        },
+        "score": 0,
+        "success": false,
+        "testCase": {
+          "description": "#11 (label=bad)",
+          "vars": {
+            "copy": "Unlock synergy across your stack with our one-stop solution.",
+            "surface": "offer/checkout/pricing/sales"
+          },
+          "assert": [
+            {
+              "type": "llm-rubric",
+              "value": "The copy targets a \"{{surface}}\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing.",
+              "threshold": 0.7
+            }
+          ],
+          "options": {
+            "provider": "openrouter:openai/gpt-oss-20b:free"
+          },
+          "metadata": {}
+        },
+        "testIdx": 10,
+        "tokenUsage": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "numRequests": 1,
+          "completionDetails": {
+            "reasoning": 0,
+            "acceptedPrediction": 0,
+            "rejectedPrediction": 0,
+            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 0
+          },
+          "assertions": {
+            "total": 575,
+            "prompt": 432,
+            "completion": 143,
+            "cached": 0,
+            "numRequests": 1,
+            "completionDetails": {
+              "reasoning": 0,
+              "acceptedPrediction": 0,
+              "rejectedPrediction": 0,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0
+            }
+          }
+        },
+        "vars": {
+          "copy": "Unlock synergy across your stack with our one-stop solution.",
+          "surface": "offer/checkout/pricing/sales"
+        },
+        "metadata": {
+          "_promptfooFileMetadata": {}
+        },
+        "failureReason": 1
+      },
+      {
+        "cost": 0,
+        "error": "The copy does not contain any of the required elements: it does not speak to a specific identity or in‑group (STATUS/TRIBE), it does not position itself with authority or scarcity (AUTHORITY), and it uses generic, commoditized language (“seamless, robust…”) rather than avoiding horizontal filler (NOT COMMODITIZED). Because these criteria are explicitly required for a PASS, the output fails the rubric.",
+        "gradingResult": {
+          "pass": false,
+          "score": 0,
+          "reason": "The copy does not contain any of the required elements: it does not speak to a specific identity or in‑group (STATUS/TRIBE), it does not position itself with authority or scarcity (AUTHORITY), and it uses generic, commoditized language (“seamless, robust…”) rather than avoiding horizontal filler (NOT COMMODITIZED). Because these criteria are explicitly required for a PASS, the output fails the rubric.",
+          "namedScores": {},
+          "tokensUsed": {
+            "total": 601,
+            "prompt": 432,
+            "completion": 169,
+            "cached": 0,
+            "numRequests": 1
+          },
+          "componentResults": [
+            {
+              "assertion": {
+                "type": "llm-rubric",
+                "value": "The copy targets a \"{{surface}}\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing.",
+                "threshold": 0.7
+              },
+              "pass": false,
+              "score": 0,
+              "reason": "The copy does not contain any of the required elements: it does not speak to a specific identity or in‑group (STATUS/TRIBE), it does not position itself with authority or scarcity (AUTHORITY), and it uses generic, commoditized language (“seamless, robust…”) rather than avoiding horizontal filler (NOT COMMODITIZED). Because these criteria are explicitly required for a PASS, the output fails the rubric.",
+              "tokensUsed": {
+                "total": 601,
+                "prompt": 432,
+                "completion": 169,
+                "cached": 0,
+                "numRequests": 1,
+                "completionDetails": {
+                  "reasoning": 61,
+                  "cacheReadInputTokens": 224
+                }
+              },
+              "metadata": {
+                "renderedGradingPrompt": "[{\"role\":\"system\",\"content\":\"You are grading output according to a user-specified rubric. If the statement in the rubric is true, then the output passes the test. You respond with a JSON object with this structure: {reason: string, pass: boolean, score: number}\\n\\nExamples:\\n\\n<Output>Hello world</Output>\\n<Rubric>Content contains a greeting</Rubric>\\n{\\\"reason\\\": \\\"the content contains the word 'Hello'\\\", \\\"pass\\\": true, \\\"score\\\": 1.0}\\n\\n<Output>Avast ye swabs, repel the invaders!</Output>\\n<Rubric>Does not speak like a pirate</Rubric>\\n{\\\"reason\\\": \\\"'avast ye' is a common pirate term\\\", \\\"pass\\\": false, \\\"score\\\": 0.0}\"},{\"role\":\"user\",\"content\":\"<Output>\\nSeamless, robust marketing automation that delivers synergy.\\n</Output>\\n<Rubric>\\nThe copy targets a \\\"non-offer (landing/marketing)\\\" surface. Grade PASS only if all applicable criteria hold:\\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\\\"for those who…\\\", \\\"not for everyone\\\", named insiders/members) — not generic appeals.\\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \\\"sign up today, it is easy\\\".\\n- NOT COMMODITIZED: avoids horizontal filler (\\\"for everyone\\\", \\\"do more\\\", \\\"simple and easy\\\", \\\"trusted by thousands\\\").\\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\\nGrade FAIL only if a required criterion is clearly missing.\\n</Rubric>\"}]",
+                "renderedAssertionValue": "The copy targets a \"non-offer (landing/marketing)\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing."
+              }
+            }
+          ]
+        },
+        "id": "5a0d3c3d-6063-4002-baf4-e79f6087089a",
+        "latencyMs": 0,
+        "namedScores": {},
+        "prompt": {
+          "raw": "Seamless, robust marketing automation that delivers synergy.",
+          "label": "{{copy}}",
+          "config": {
+            "provider": "openrouter:openai/gpt-oss-20b:free"
+          }
+        },
+        "promptId": "1659e57582ac0df24056ad076dcab092fd94fbceac7f6835e4572efec6908166",
+        "promptIdx": 0,
+        "provider": {
+          "id": "echo",
+          "label": ""
+        },
+        "response": {
+          "output": "Seamless, robust marketing automation that delivers synergy.",
+          "raw": "Seamless, robust marketing automation that delivers synergy.",
+          "cost": 0,
+          "cached": false,
+          "tokenUsage": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "numRequests": 1
+          },
+          "isRefusal": false,
+          "metadata": {}
+        },
+        "score": 0,
+        "success": false,
+        "testCase": {
+          "description": "#12 (label=bad)",
+          "vars": {
+            "copy": "Seamless, robust marketing automation that delivers synergy.",
+            "surface": "non-offer (landing/marketing)"
+          },
+          "assert": [
+            {
+              "type": "llm-rubric",
+              "value": "The copy targets a \"{{surface}}\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing.",
+              "threshold": 0.7
+            }
+          ],
+          "options": {
+            "provider": "openrouter:openai/gpt-oss-20b:free"
+          },
+          "metadata": {}
+        },
+        "testIdx": 11,
+        "tokenUsage": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "numRequests": 1,
+          "completionDetails": {
+            "reasoning": 0,
+            "acceptedPrediction": 0,
+            "rejectedPrediction": 0,
+            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 0
+          },
+          "assertions": {
+            "total": 601,
+            "prompt": 432,
+            "completion": 169,
+            "cached": 0,
+            "numRequests": 1,
+            "completionDetails": {
+              "reasoning": 0,
+              "acceptedPrediction": 0,
+              "rejectedPrediction": 0,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0
+            }
+          }
+        },
+        "vars": {
+          "copy": "Seamless, robust marketing automation that delivers synergy.",
+          "surface": "non-offer (landing/marketing)"
+        },
+        "metadata": {
+          "_promptfooFileMetadata": {}
+        },
+        "failureReason": 1
+      },
+      {
+        "cost": 0,
+        "error": "The copy lacks a specific identity or in‑group appeal (STATUS/TRIBE), does not establish authority or scarcity (AUTHORITY), and uses generic, commoditized language such as \"do more\" and \"simple and easy\". All of these criteria are required for a PASS on a non‑offer landing/marketing surface, so the output fails the rubric.",
+        "gradingResult": {
+          "pass": false,
+          "score": 0,
+          "reason": "The copy lacks a specific identity or in‑group appeal (STATUS/TRIBE), does not establish authority or scarcity (AUTHORITY), and uses generic, commoditized language such as \"do more\" and \"simple and easy\". All of these criteria are required for a PASS on a non‑offer landing/marketing surface, so the output fails the rubric.",
+          "namedScores": {},
+          "tokensUsed": {
+            "total": 602,
+            "prompt": 440,
+            "completion": 162,
+            "cached": 0,
+            "numRequests": 1
+          },
+          "componentResults": [
+            {
+              "assertion": {
+                "type": "llm-rubric",
+                "value": "The copy targets a \"{{surface}}\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing.",
+                "threshold": 0.7
+              },
+              "pass": false,
+              "score": 0,
+              "reason": "The copy lacks a specific identity or in‑group appeal (STATUS/TRIBE), does not establish authority or scarcity (AUTHORITY), and uses generic, commoditized language such as \"do more\" and \"simple and easy\". All of these criteria are required for a PASS on a non‑offer landing/marketing surface, so the output fails the rubric.",
+              "tokensUsed": {
+                "total": 602,
+                "prompt": 440,
+                "completion": 162,
+                "cached": 0,
+                "numRequests": 1,
+                "completionDetails": {
+                  "reasoning": 67,
+                  "cacheReadInputTokens": 224
+                }
+              },
+              "metadata": {
+                "renderedGradingPrompt": "[{\"role\":\"system\",\"content\":\"You are grading output according to a user-specified rubric. If the statement in the rubric is true, then the output passes the test. You respond with a JSON object with this structure: {reason: string, pass: boolean, score: number}\\n\\nExamples:\\n\\n<Output>Hello world</Output>\\n<Rubric>Content contains a greeting</Rubric>\\n{\\\"reason\\\": \\\"the content contains the word 'Hello'\\\", \\\"pass\\\": true, \\\"score\\\": 1.0}\\n\\n<Output>Avast ye swabs, repel the invaders!</Output>\\n<Rubric>Does not speak like a pirate</Rubric>\\n{\\\"reason\\\": \\\"'avast ye' is a common pirate term\\\", \\\"pass\\\": false, \\\"score\\\": 0.0}\"},{\"role\":\"user\",\"content\":\"<Output>\\nOur platform helps teams do more. Sign up today. It's simple and easy to get started.\\n</Output>\\n<Rubric>\\nThe copy targets a \\\"non-offer (landing/marketing)\\\" surface. Grade PASS only if all applicable criteria hold:\\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\\\"for those who…\\\", \\\"not for everyone\\\", named insiders/members) — not generic appeals.\\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \\\"sign up today, it is easy\\\".\\n- NOT COMMODITIZED: avoids horizontal filler (\\\"for everyone\\\", \\\"do more\\\", \\\"simple and easy\\\", \\\"trusted by thousands\\\").\\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\\nGrade FAIL only if a required criterion is clearly missing.\\n</Rubric>\"}]",
+                "renderedAssertionValue": "The copy targets a \"non-offer (landing/marketing)\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing."
+              }
+            }
+          ]
+        },
+        "id": "4ee50a8d-b13c-436d-b037-417fb666222f",
+        "latencyMs": 0,
+        "namedScores": {},
+        "prompt": {
+          "raw": "Our platform helps teams do more. Sign up today. It's simple and easy to get started.",
+          "label": "{{copy}}",
+          "config": {
+            "provider": "openrouter:openai/gpt-oss-20b:free"
+          }
+        },
+        "promptId": "1659e57582ac0df24056ad076dcab092fd94fbceac7f6835e4572efec6908166",
+        "promptIdx": 0,
+        "provider": {
+          "id": "echo",
+          "label": ""
+        },
+        "response": {
+          "output": "Our platform helps teams do more. Sign up today. It's simple and easy to get started.",
+          "raw": "Our platform helps teams do more. Sign up today. It's simple and easy to get started.",
+          "cost": 0,
+          "cached": false,
+          "tokenUsage": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "numRequests": 1
+          },
+          "isRefusal": false,
+          "metadata": {}
+        },
+        "score": 0,
+        "success": false,
+        "testCase": {
+          "description": "#13 (label=bad)",
+          "vars": {
+            "copy": "Our platform helps teams do more. Sign up today. It's simple and easy to get started.",
+            "surface": "non-offer (landing/marketing)"
+          },
+          "assert": [
+            {
+              "type": "llm-rubric",
+              "value": "The copy targets a \"{{surface}}\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing.",
+              "threshold": 0.7
+            }
+          ],
+          "options": {
+            "provider": "openrouter:openai/gpt-oss-20b:free"
+          },
+          "metadata": {}
+        },
+        "testIdx": 12,
+        "tokenUsage": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "numRequests": 1,
+          "completionDetails": {
+            "reasoning": 0,
+            "acceptedPrediction": 0,
+            "rejectedPrediction": 0,
+            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 0
+          },
+          "assertions": {
+            "total": 602,
+            "prompt": 440,
+            "completion": 162,
+            "cached": 0,
+            "numRequests": 1,
+            "completionDetails": {
+              "reasoning": 0,
+              "acceptedPrediction": 0,
+              "rejectedPrediction": 0,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0
+            }
+          }
+        },
+        "vars": {
+          "copy": "Our platform helps teams do more. Sign up today. It's simple and easy to get started.",
+          "surface": "non-offer (landing/marketing)"
+        },
+        "metadata": {
+          "_promptfooFileMetadata": {}
+        },
+        "failureReason": 1
+      },
+      {
+        "cost": 0,
+        "error": "The copy does not address a specific identity or in‑group (STATUS/TRIBE), lacks an authoritative or scarce positioning (AUTHORITY), and includes generic filler such as \"trusted by thousands\" (NOT COMMODITIZED). Although it contains a money‑back guarantee (RISK‑REVERSAL), the missing required criteria cause the copy to fail the rubric.",
+        "gradingResult": {
+          "pass": false,
+          "score": 0,
+          "reason": "The copy does not address a specific identity or in‑group (STATUS/TRIBE), lacks an authoritative or scarce positioning (AUTHORITY), and includes generic filler such as \"trusted by thousands\" (NOT COMMODITIZED). Although it contains a money‑back guarantee (RISK‑REVERSAL), the missing required criteria cause the copy to fail the rubric.",
+          "namedScores": {},
+          "tokensUsed": {
+            "total": 672,
+            "prompt": 439,
+            "completion": 233,
+            "cached": 0,
+            "numRequests": 1
+          },
+          "componentResults": [
+            {
+              "assertion": {
+                "type": "llm-rubric",
+                "value": "The copy targets a \"{{surface}}\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing.",
+                "threshold": 0.7
+              },
+              "pass": false,
+              "score": 0,
+              "reason": "The copy does not address a specific identity or in‑group (STATUS/TRIBE), lacks an authoritative or scarce positioning (AUTHORITY), and includes generic filler such as \"trusted by thousands\" (NOT COMMODITIZED). Although it contains a money‑back guarantee (RISK‑REVERSAL), the missing required criteria cause the copy to fail the rubric.",
+              "tokensUsed": {
+                "total": 672,
+                "prompt": 439,
+                "completion": 233,
+                "cached": 0,
+                "numRequests": 1,
+                "completionDetails": {
+                  "reasoning": 158,
+                  "cacheReadInputTokens": 64
+                }
+              },
+              "metadata": {
+                "renderedGradingPrompt": "[{\"role\":\"system\",\"content\":\"You are grading output according to a user-specified rubric. If the statement in the rubric is true, then the output passes the test. You respond with a JSON object with this structure: {reason: string, pass: boolean, score: number}\\n\\nExamples:\\n\\n<Output>Hello world</Output>\\n<Rubric>Content contains a greeting</Rubric>\\n{\\\"reason\\\": \\\"the content contains the word 'Hello'\\\", \\\"pass\\\": true, \\\"score\\\": 1.0}\\n\\n<Output>Avast ye swabs, repel the invaders!</Output>\\n<Rubric>Does not speak like a pirate</Rubric>\\n{\\\"reason\\\": \\\"'avast ye' is a common pirate term\\\", \\\"pass\\\": false, \\\"score\\\": 0.0}\"},{\"role\":\"user\",\"content\":\"<Output>\\nGet started in minutes. We offer a money-back guarantee. Trusted by thousands of teams.\\n</Output>\\n<Rubric>\\nThe copy targets a \\\"offer/checkout/pricing/sales\\\" surface. Grade PASS only if all applicable criteria hold:\\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\\\"for those who…\\\", \\\"not for everyone\\\", named insiders/members) — not generic appeals.\\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \\\"sign up today, it is easy\\\".\\n- NOT COMMODITIZED: avoids horizontal filler (\\\"for everyone\\\", \\\"do more\\\", \\\"simple and easy\\\", \\\"trusted by thousands\\\").\\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\\nGrade FAIL only if a required criterion is clearly missing.\\n</Rubric>\"}]",
+                "renderedAssertionValue": "The copy targets a \"offer/checkout/pricing/sales\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing."
+              }
+            }
+          ]
+        },
+        "id": "962ca567-35f4-4f90-ad8d-cab7f27fb5e9",
+        "latencyMs": 1,
+        "namedScores": {},
+        "prompt": {
+          "raw": "Get started in minutes. We offer a money-back guarantee. Trusted by thousands of teams.",
+          "label": "{{copy}}",
+          "config": {
+            "provider": "openrouter:openai/gpt-oss-20b:free"
+          }
+        },
+        "promptId": "1659e57582ac0df24056ad076dcab092fd94fbceac7f6835e4572efec6908166",
+        "promptIdx": 0,
+        "provider": {
+          "id": "echo",
+          "label": ""
+        },
+        "response": {
+          "output": "Get started in minutes. We offer a money-back guarantee. Trusted by thousands of teams.",
+          "raw": "Get started in minutes. We offer a money-back guarantee. Trusted by thousands of teams.",
+          "cost": 0,
+          "cached": false,
+          "tokenUsage": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "numRequests": 1
+          },
+          "isRefusal": false,
+          "metadata": {}
+        },
+        "score": 0,
+        "success": false,
+        "testCase": {
+          "description": "#14 (label=bad)",
+          "vars": {
+            "copy": "Get started in minutes. We offer a money-back guarantee. Trusted by thousands of teams.",
+            "surface": "offer/checkout/pricing/sales"
+          },
+          "assert": [
+            {
+              "type": "llm-rubric",
+              "value": "The copy targets a \"{{surface}}\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing.",
+              "threshold": 0.7
+            }
+          ],
+          "options": {
+            "provider": "openrouter:openai/gpt-oss-20b:free"
+          },
+          "metadata": {}
+        },
+        "testIdx": 13,
+        "tokenUsage": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "numRequests": 1,
+          "completionDetails": {
+            "reasoning": 0,
+            "acceptedPrediction": 0,
+            "rejectedPrediction": 0,
+            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 0
+          },
+          "assertions": {
+            "total": 672,
+            "prompt": 439,
+            "completion": 233,
+            "cached": 0,
+            "numRequests": 1,
+            "completionDetails": {
+              "reasoning": 0,
+              "acceptedPrediction": 0,
+              "rejectedPrediction": 0,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0
+            }
+          }
+        },
+        "vars": {
+          "copy": "Get started in minutes. We offer a money-back guarantee. Trusted by thousands of teams.",
+          "surface": "offer/checkout/pricing/sales"
+        },
+        "metadata": {
+          "_promptfooFileMetadata": {}
+        },
+        "failureReason": 1
+      },
+      {
+        "cost": 0,
+        "error": "The copy does not address a specific identity or in‑group (STATUS/TRIBE), lacks an authoritative stance (AUTHORITY), and uses generic, commoditized language (NOT COMMODITIZED). Although it includes a risk‑reversal guarantee, the missing criteria cause the overall grade to fail.",
+        "gradingResult": {
+          "pass": false,
+          "score": 0,
+          "reason": "The copy does not address a specific identity or in‑group (STATUS/TRIBE), lacks an authoritative stance (AUTHORITY), and uses generic, commoditized language (NOT COMMODITIZED). Although it includes a risk‑reversal guarantee, the missing criteria cause the overall grade to fail.",
+          "namedScores": {},
+          "tokensUsed": {
+            "total": 636,
+            "prompt": 439,
+            "completion": 197,
+            "cached": 0,
+            "numRequests": 1
+          },
+          "componentResults": [
+            {
+              "assertion": {
+                "type": "llm-rubric",
+                "value": "The copy targets a \"{{surface}}\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing.",
+                "threshold": 0.7
+              },
+              "pass": false,
+              "score": 0,
+              "reason": "The copy does not address a specific identity or in‑group (STATUS/TRIBE), lacks an authoritative stance (AUTHORITY), and uses generic, commoditized language (NOT COMMODITIZED). Although it includes a risk‑reversal guarantee, the missing criteria cause the overall grade to fail.",
+              "tokensUsed": {
+                "total": 636,
+                "prompt": 439,
+                "completion": 197,
+                "cached": 0,
+                "numRequests": 1,
+                "completionDetails": {
+                  "reasoning": 132,
+                  "cacheReadInputTokens": 224
+                }
+              },
+              "metadata": {
+                "renderedGradingPrompt": "[{\"role\":\"system\",\"content\":\"You are grading output according to a user-specified rubric. If the statement in the rubric is true, then the output passes the test. You respond with a JSON object with this structure: {reason: string, pass: boolean, score: number}\\n\\nExamples:\\n\\n<Output>Hello world</Output>\\n<Rubric>Content contains a greeting</Rubric>\\n{\\\"reason\\\": \\\"the content contains the word 'Hello'\\\", \\\"pass\\\": true, \\\"score\\\": 1.0}\\n\\n<Output>Avast ye swabs, repel the invaders!</Output>\\n<Rubric>Does not speak like a pirate</Rubric>\\n{\\\"reason\\\": \\\"'avast ye' is a common pirate term\\\", \\\"pass\\\": false, \\\"score\\\": 0.0}\"},{\"role\":\"user\",\"content\":\"<Output>\\nSimple pricing for everyone. Cancel anytime with a full refund. Affordable plans for all teams.\\n</Output>\\n<Rubric>\\nThe copy targets a \\\"offer/checkout/pricing/sales\\\" surface. Grade PASS only if all applicable criteria hold:\\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\\\"for those who…\\\", \\\"not for everyone\\\", named insiders/members) — not generic appeals.\\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \\\"sign up today, it is easy\\\".\\n- NOT COMMODITIZED: avoids horizontal filler (\\\"for everyone\\\", \\\"do more\\\", \\\"simple and easy\\\", \\\"trusted by thousands\\\").\\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\\nGrade FAIL only if a required criterion is clearly missing.\\n</Rubric>\"}]",
+                "renderedAssertionValue": "The copy targets a \"offer/checkout/pricing/sales\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing."
+              }
+            }
+          ]
+        },
+        "id": "33ed44f8-37c6-45fd-becf-5ce5b5496837",
+        "latencyMs": 0,
+        "namedScores": {},
+        "prompt": {
+          "raw": "Simple pricing for everyone. Cancel anytime with a full refund. Affordable plans for all teams.",
+          "label": "{{copy}}",
+          "config": {
+            "provider": "openrouter:openai/gpt-oss-20b:free"
+          }
+        },
+        "promptId": "1659e57582ac0df24056ad076dcab092fd94fbceac7f6835e4572efec6908166",
+        "promptIdx": 0,
+        "provider": {
+          "id": "echo",
+          "label": ""
+        },
+        "response": {
+          "output": "Simple pricing for everyone. Cancel anytime with a full refund. Affordable plans for all teams.",
+          "raw": "Simple pricing for everyone. Cancel anytime with a full refund. Affordable plans for all teams.",
+          "cost": 0,
+          "cached": false,
+          "tokenUsage": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "numRequests": 1
+          },
+          "isRefusal": false,
+          "metadata": {}
+        },
+        "score": 0,
+        "success": false,
+        "testCase": {
+          "description": "#15 (label=bad)",
+          "vars": {
+            "copy": "Simple pricing for everyone. Cancel anytime with a full refund. Affordable plans for all teams.",
+            "surface": "offer/checkout/pricing/sales"
+          },
+          "assert": [
+            {
+              "type": "llm-rubric",
+              "value": "The copy targets a \"{{surface}}\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing.",
+              "threshold": 0.7
+            }
+          ],
+          "options": {
+            "provider": "openrouter:openai/gpt-oss-20b:free"
+          },
+          "metadata": {}
+        },
+        "testIdx": 14,
+        "tokenUsage": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "numRequests": 1,
+          "completionDetails": {
+            "reasoning": 0,
+            "acceptedPrediction": 0,
+            "rejectedPrediction": 0,
+            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 0
+          },
+          "assertions": {
+            "total": 636,
+            "prompt": 439,
+            "completion": 197,
+            "cached": 0,
+            "numRequests": 1,
+            "completionDetails": {
+              "reasoning": 0,
+              "acceptedPrediction": 0,
+              "rejectedPrediction": 0,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0
+            }
+          }
+        },
+        "vars": {
+          "copy": "Simple pricing for everyone. Cancel anytime with a full refund. Affordable plans for all teams.",
+          "surface": "offer/checkout/pricing/sales"
+        },
+        "metadata": {
+          "_promptfooFileMetadata": {}
+        },
+        "failureReason": 1
+      },
+      {
+        "cost": 0,
+        "gradingResult": {
+          "pass": true,
+          "score": 1,
+          "reason": "All assertions passed",
+          "namedScores": {},
+          "tokensUsed": {
+            "total": 640,
+            "prompt": 442,
+            "completion": 198,
+            "cached": 0,
+            "numRequests": 1
+          },
+          "componentResults": [
+            {
+              "assertion": {
+                "type": "llm-rubric",
+                "value": "The copy targets a \"{{surface}}\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing.",
+                "threshold": 0.7
+              },
+              "pass": true,
+              "score": 1,
+              "reason": "The copy addresses a specific group (“serious operators”), uses an invitation tone (“seat at the table”), avoids generic filler, and includes an explicit 30‑day guarantee, satisfying all required criteria.",
+              "tokensUsed": {
+                "total": 640,
+                "prompt": 442,
+                "completion": 198,
+                "cached": 0,
+                "numRequests": 1,
+                "completionDetails": {
+                  "reasoning": 149,
+                  "cacheReadInputTokens": 224
+                }
+              },
+              "metadata": {
+                "renderedGradingPrompt": "[{\"role\":\"system\",\"content\":\"You are grading output according to a user-specified rubric. If the statement in the rubric is true, then the output passes the test. You respond with a JSON object with this structure: {reason: string, pass: boolean, score: number}\\n\\nExamples:\\n\\n<Output>Hello world</Output>\\n<Rubric>Content contains a greeting</Rubric>\\n{\\\"reason\\\": \\\"the content contains the word 'Hello'\\\", \\\"pass\\\": true, \\\"score\\\": 1.0}\\n\\n<Output>Avast ye swabs, repel the invaders!</Output>\\n<Rubric>Does not speak like a pirate</Rubric>\\n{\\\"reason\\\": \\\"'avast ye' is a common pirate term\\\", \\\"pass\\\": false, \\\"score\\\": 0.0}\"},{\"role\":\"user\",\"content\":\"<Output>\\nNo buzzwords here. Just a 30-day guarantee and a seat at the table for serious operators.\\n</Output>\\n<Rubric>\\nThe copy targets a \\\"offer/checkout/pricing/sales\\\" surface. Grade PASS only if all applicable criteria hold:\\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\\\"for those who…\\\", \\\"not for everyone\\\", named insiders/members) — not generic appeals.\\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \\\"sign up today, it is easy\\\".\\n- NOT COMMODITIZED: avoids horizontal filler (\\\"for everyone\\\", \\\"do more\\\", \\\"simple and easy\\\", \\\"trusted by thousands\\\").\\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\\nGrade FAIL only if a required criterion is clearly missing.\\n</Rubric>\"}]",
+                "renderedAssertionValue": "The copy targets a \"offer/checkout/pricing/sales\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing."
+              }
+            }
+          ]
+        },
+        "id": "8106a594-0fc0-41ee-9061-533761677f98",
+        "latencyMs": 0,
+        "namedScores": {},
+        "prompt": {
+          "raw": "No buzzwords here. Just a 30-day guarantee and a seat at the table for serious operators.",
+          "label": "{{copy}}",
+          "config": {
+            "provider": "openrouter:openai/gpt-oss-20b:free"
+          }
+        },
+        "promptId": "1659e57582ac0df24056ad076dcab092fd94fbceac7f6835e4572efec6908166",
+        "promptIdx": 0,
+        "provider": {
+          "id": "echo",
+          "label": ""
+        },
+        "response": {
+          "output": "No buzzwords here. Just a 30-day guarantee and a seat at the table for serious operators.",
+          "raw": "No buzzwords here. Just a 30-day guarantee and a seat at the table for serious operators.",
+          "cost": 0,
+          "cached": false,
+          "tokenUsage": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "numRequests": 1
+          },
+          "isRefusal": false,
+          "metadata": {}
+        },
+        "score": 1,
+        "success": true,
+        "testCase": {
+          "description": "#16 (label=good)",
+          "vars": {
+            "copy": "No buzzwords here. Just a 30-day guarantee and a seat at the table for serious operators.",
+            "surface": "offer/checkout/pricing/sales"
+          },
+          "assert": [
+            {
+              "type": "llm-rubric",
+              "value": "The copy targets a \"{{surface}}\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing.",
+              "threshold": 0.7
+            }
+          ],
+          "options": {
+            "provider": "openrouter:openai/gpt-oss-20b:free"
+          },
+          "metadata": {}
+        },
+        "testIdx": 15,
+        "tokenUsage": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "numRequests": 1,
+          "completionDetails": {
+            "reasoning": 0,
+            "acceptedPrediction": 0,
+            "rejectedPrediction": 0,
+            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 0
+          },
+          "assertions": {
+            "total": 640,
+            "prompt": 442,
+            "completion": 198,
+            "cached": 0,
+            "numRequests": 1,
+            "completionDetails": {
+              "reasoning": 0,
+              "acceptedPrediction": 0,
+              "rejectedPrediction": 0,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0
+            }
+          }
+        },
+        "vars": {
+          "copy": "No buzzwords here. Just a 30-day guarantee and a seat at the table for serious operators.",
+          "surface": "offer/checkout/pricing/sales"
+        },
+        "metadata": {
+          "_promptfooFileMetadata": {}
+        },
+        "failureReason": 0
+      },
+      {
+        "cost": 0,
+        "error": "The copy does not address a specific identity or in‑group (STATUS/TRIBE) and therefore fails that required criterion. The other criteria (AUTHORITY, NOT COMMODITIZED, RISK‑REVERSAL) are met, but the rubric requires all applicable criteria to hold for a PASS. Consequently the output fails the test.",
+        "gradingResult": {
+          "pass": false,
+          "score": 0,
+          "reason": "The copy does not address a specific identity or in‑group (STATUS/TRIBE) and therefore fails that required criterion. The other criteria (AUTHORITY, NOT COMMODITIZED, RISK‑REVERSAL) are met, but the rubric requires all applicable criteria to hold for a PASS. Consequently the output fails the test.",
+          "namedScores": {},
+          "tokensUsed": {
+            "total": 743,
+            "prompt": 444,
+            "completion": 299,
+            "cached": 0,
+            "numRequests": 1
+          },
+          "componentResults": [
+            {
+              "assertion": {
+                "type": "llm-rubric",
+                "value": "The copy targets a \"{{surface}}\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing.",
+                "threshold": 0.7
+              },
+              "pass": false,
+              "score": 0,
+              "reason": "The copy does not address a specific identity or in‑group (STATUS/TRIBE) and therefore fails that required criterion. The other criteria (AUTHORITY, NOT COMMODITIZED, RISK‑REVERSAL) are met, but the rubric requires all applicable criteria to hold for a PASS. Consequently the output fails the test.",
+              "tokensUsed": {
+                "total": 743,
+                "prompt": 444,
+                "completion": 299,
+                "cached": 0,
+                "numRequests": 1,
+                "completionDetails": {
+                  "reasoning": 222,
+                  "cacheReadInputTokens": 64
+                }
+              },
+              "metadata": {
+                "renderedGradingPrompt": "[{\"role\":\"system\",\"content\":\"You are grading output according to a user-specified rubric. If the statement in the rubric is true, then the output passes the test. You respond with a JSON object with this structure: {reason: string, pass: boolean, score: number}\\n\\nExamples:\\n\\n<Output>Hello world</Output>\\n<Rubric>Content contains a greeting</Rubric>\\n{\\\"reason\\\": \\\"the content contains the word 'Hello'\\\", \\\"pass\\\": true, \\\"score\\\": 1.0}\\n\\n<Output>Avast ye swabs, repel the invaders!</Output>\\n<Rubric>Does not speak like a pirate</Rubric>\\n{\\\"reason\\\": \\\"'avast ye' is a common pirate term\\\", \\\"pass\\\": false, \\\"score\\\": 0.0}\"},{\"role\":\"user\",\"content\":\"<Output>\\nWe refuse to ship robust, bloated dashboards. Love it in 30 days or full refund. By application.\\n</Output>\\n<Rubric>\\nThe copy targets a \\\"offer/checkout/pricing/sales\\\" surface. Grade PASS only if all applicable criteria hold:\\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\\\"for those who…\\\", \\\"not for everyone\\\", named insiders/members) — not generic appeals.\\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \\\"sign up today, it is easy\\\".\\n- NOT COMMODITIZED: avoids horizontal filler (\\\"for everyone\\\", \\\"do more\\\", \\\"simple and easy\\\", \\\"trusted by thousands\\\").\\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\\nGrade FAIL only if a required criterion is clearly missing.\\n</Rubric>\"}]",
+                "renderedAssertionValue": "The copy targets a \"offer/checkout/pricing/sales\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing."
+              }
+            }
+          ]
+        },
+        "id": "07a7453f-0b78-4cf8-868b-90e205a150ca",
+        "latencyMs": 0,
+        "namedScores": {},
+        "prompt": {
+          "raw": "We refuse to ship robust, bloated dashboards. Love it in 30 days or full refund. By application.",
+          "label": "{{copy}}",
+          "config": {
+            "provider": "openrouter:openai/gpt-oss-20b:free"
+          }
+        },
+        "promptId": "1659e57582ac0df24056ad076dcab092fd94fbceac7f6835e4572efec6908166",
+        "promptIdx": 0,
+        "provider": {
+          "id": "echo",
+          "label": ""
+        },
+        "response": {
+          "output": "We refuse to ship robust, bloated dashboards. Love it in 30 days or full refund. By application.",
+          "raw": "We refuse to ship robust, bloated dashboards. Love it in 30 days or full refund. By application.",
+          "cost": 0,
+          "cached": false,
+          "tokenUsage": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "numRequests": 1
+          },
+          "isRefusal": false,
+          "metadata": {}
+        },
+        "score": 0,
+        "success": false,
+        "testCase": {
+          "description": "#17 (label=good)",
+          "vars": {
+            "copy": "We refuse to ship robust, bloated dashboards. Love it in 30 days or full refund. By application.",
+            "surface": "offer/checkout/pricing/sales"
+          },
+          "assert": [
+            {
+              "type": "llm-rubric",
+              "value": "The copy targets a \"{{surface}}\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing.",
+              "threshold": 0.7
+            }
+          ],
+          "options": {
+            "provider": "openrouter:openai/gpt-oss-20b:free"
+          },
+          "metadata": {}
+        },
+        "testIdx": 16,
+        "tokenUsage": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "numRequests": 1,
+          "completionDetails": {
+            "reasoning": 0,
+            "acceptedPrediction": 0,
+            "rejectedPrediction": 0,
+            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 0
+          },
+          "assertions": {
+            "total": 743,
+            "prompt": 444,
+            "completion": 299,
+            "cached": 0,
+            "numRequests": 1,
+            "completionDetails": {
+              "reasoning": 0,
+              "acceptedPrediction": 0,
+              "rejectedPrediction": 0,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0
+            }
+          }
+        },
+        "vars": {
+          "copy": "We refuse to ship robust, bloated dashboards. Love it in 30 days or full refund. By application.",
+          "surface": "offer/checkout/pricing/sales"
+        },
+        "metadata": {
+          "_promptfooFileMetadata": {}
+        },
+        "failureReason": 1
+      }
+    ],
+    "stats": {
+      "successes": 5,
+      "failures": 12,
+      "errors": 0,
+      "tokenUsage": {
+        "prompt": 0,
+        "completion": 0,
+        "cached": 0,
+        "total": 0,
+        "numRequests": 17,
+        "completionDetails": {
+          "reasoning": 0,
+          "acceptedPrediction": 0,
+          "rejectedPrediction": 0,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 0
+        },
+        "assertions": {
+          "total": 10832,
+          "prompt": 7452,
+          "completion": 3380,
+          "cached": 0,
+          "numRequests": 0,
+          "completionDetails": {
+            "reasoning": 0,
+            "acceptedPrediction": 0,
+            "rejectedPrediction": 0,
+            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 0
+          }
+        }
+      },
+      "durationMs": 353277,
+      "evaluationDurationMs": 353277
+    }
+  },
+  "config": {
+    "tags": {},
+    "description": "Apex copywriter gate — tier-2 corpus grading",
+    "prompts": [
+      "{{copy}}"
+    ],
+    "providers": [
+      "echo"
+    ],
+    "tests": [
+      {
+        "description": "#1 (label=good)",
+        "vars": {
+          "copy": "For those who refuse to wait. Lock in your seat with a 30-day money-back guarantee, no questions asked. By application only.",
+          "surface": "offer/checkout/pricing/sales"
+        }
+      },
+      {
+        "description": "#2 (label=good)",
+        "vars": {
+          "copy": "People like you don't settle for beige tools. Join the inner circle of operators who ship.",
+          "surface": "non-offer (landing/marketing)"
+        }
+      },
+      {
+        "description": "#3 (label=good)",
+        "vars": {
+          "copy": "Insiders lock in founder pricing. Full refund within 14 days if it isn't for you.",
+          "surface": "offer/checkout/pricing/sales"
+        }
+      },
+      {
+        "description": "#4 (label=good)",
+        "vars": {
+          "copy": "Apply to join. Risk-free — cancel anytime for a full refund. Not for everyone.",
+          "surface": "offer/checkout/pricing/sales"
+        }
+      },
+      {
+        "description": "#5 (label=good)",
+        "vars": {
+          "copy": "Not for everyone. If it doesn't double your output in 30 days, money-back, no questions asked.",
+          "surface": "offer/checkout/pricing/sales"
+        }
+      },
+      {
+        "description": "#6 (label=good)",
+        "vars": {
+          "copy": "This is for those who build in public. Members get first access to every drop.",
+          "surface": "non-offer (landing/marketing)"
+        }
+      },
+      {
+        "description": "#7 (label=bad)",
+        "vars": {
+          "copy": "We deliver world-class, seamless, cutting-edge solutions to unlock your potential.",
+          "surface": "non-offer (landing/marketing)"
+        }
+      },
+      {
+        "description": "#8 (label=bad)",
+        "vars": {
+          "copy": "Buy now. Premium membership for insiders only.",
+          "surface": "offer/checkout/pricing/sales"
+        }
+      },
+      {
+        "description": "#9 (label=bad)",
+        "vars": {
+          "copy": "Best-in-class, state-of-the-art pricing to elevate your workflow.",
+          "surface": "offer/checkout/pricing/sales"
+        }
+      },
+      {
+        "description": "#10 (label=bad)",
+        "vars": {
+          "copy": "Revolutionize how your team ships. A real game-changer.",
+          "surface": "non-offer (landing/marketing)"
+        }
+      },
+      {
+        "description": "#11 (label=bad)",
+        "vars": {
+          "copy": "Unlock synergy across your stack with our one-stop solution.",
+          "surface": "offer/checkout/pricing/sales"
+        }
+      },
+      {
+        "description": "#12 (label=bad)",
+        "vars": {
+          "copy": "Seamless, robust marketing automation that delivers synergy.",
+          "surface": "non-offer (landing/marketing)"
+        }
+      },
+      {
+        "description": "#13 (label=bad)",
+        "vars": {
+          "copy": "Our platform helps teams do more. Sign up today. It's simple and easy to get started.",
+          "surface": "non-offer (landing/marketing)"
+        }
+      },
+      {
+        "description": "#14 (label=bad)",
+        "vars": {
+          "copy": "Get started in minutes. We offer a money-back guarantee. Trusted by thousands of teams.",
+          "surface": "offer/checkout/pricing/sales"
+        }
+      },
+      {
+        "description": "#15 (label=bad)",
+        "vars": {
+          "copy": "Simple pricing for everyone. Cancel anytime with a full refund. Affordable plans for all teams.",
+          "surface": "offer/checkout/pricing/sales"
+        }
+      },
+      {
+        "description": "#16 (label=good)",
+        "vars": {
+          "copy": "No buzzwords here. Just a 30-day guarantee and a seat at the table for serious operators.",
+          "surface": "offer/checkout/pricing/sales"
+        }
+      },
+      {
+        "description": "#17 (label=good)",
+        "vars": {
+          "copy": "We refuse to ship robust, bloated dashboards. Love it in 30 days or full refund. By application.",
+          "surface": "offer/checkout/pricing/sales"
+        }
+      }
+    ],
+    "env": {},
+    "defaultTest": {
+      "options": {
+        "provider": "openrouter:openai/gpt-oss-20b:free"
+      },
+      "assert": [
+        {
+          "type": "llm-rubric",
+          "value": "The copy targets a \"{{surface}}\" surface. Grade PASS only if all applicable criteria hold:\n- STATUS/TRIBE (Godin): speaks to a specific identity or in-group (\"for those who…\", \"not for everyone\", named insiders/members) — not generic appeals.\n- AUTHORITY (Enns): positions via application/invitation/scarcity or a confident stance, not \"sign up today, it is easy\".\n- NOT COMMODITIZED: avoids horizontal filler (\"for everyone\", \"do more\", \"simple and easy\", \"trusted by thousands\").\n- RISK-REVERSAL (Hormozi): an explicit guarantee/refund/risk-free is REQUIRED ONLY on offer/checkout/pricing/sales surfaces; on non-offer (landing/marketing) surfaces its absence must NOT fail the copy.\nGrade FAIL only if a required criterion is clearly missing.",
+          "threshold": 0.7
+        }
+      ],
+      "vars": {},
+      "metadata": {}
+    },
+    "outputPath": [
+      "evals/tier2-results.json"
+    ],
+    "extensions": [],
+    "metadata": {},
+    "evaluateOptions": {}
+  },
+  "shareableUrl": null,
+  "metadata": {
+    "promptfooVersion": "0.121.15",
+    "nodeVersion": "v22.22.1",
+    "platform": "darwin",
+    "arch": "arm64",
+    "exportedAt": "2026-06-09T15:40:28.241Z",
+    "evaluationCreatedAt": "2026-06-09T15:34:34.933Z"
+  },
+  "vars": [
+    "copy",
+    "surface"
+  ],
+  "runtimeOptions": {
+    "eventSource": "cli",
+    "showProgressBar": true,
+    "repeat": 1,
+    "maxConcurrency": 2,
+    "cache": false
+  }
+}

@@ -1,0 +1,48 @@
+# .cursorrules — Apex Factory Master Physics Engine
+
+These rules bind every agent in this workspace (Claude Code, Cursor, Codex, OpenCode via ECC's
+cross-harness `AGENTS.md`). They are not suggestions.
+
+## Engine mode
+Autonomous MEP generator. First-principles 0-to-1, post-AI-era shipping. The only scoreboard is
+Stripe revenue.
+
+## Banned concepts
+- "MVP" — we ship the full status artifact, not a minimum viable stub.
+- Horizontal / generic software, generic layouts, commoditized copy.
+- Human-in-the-loop dependencies for anything *reversible*. (The ONE exception is the irreversible
+  publish+charge boundary — see the gate below. That gate is non-negotiable.)
+
+## Financial thermodynamics
+- Runway is tracked against OUR slice of shared pools, not the whole pool.
+- **Shared credit pools:** Anthropic compute AND Higgsfield generation are shared across THREE
+  projects. No single run may drain either. Cheap LLM calls (heartbeats) go to OpenRouter free
+  models. Media generation is capped per run; reuse over regenerate.
+- Day 29: first dollar of Stripe revenue must be secured, else isolate the failure, pivot the SKU,
+  redeploy. Day 45: net profitability target.
+- If burn approaches a pool limit without corresponding revenue, HEARTBEAT halts non-essential cron
+  jobs first and hyper-focuses remaining compute on the conversion funnel.
+
+## The publish+charge gate (HARD STOP)
+- No live Stripe key, no live charging, no flip out of test mode without the founder's one-tap
+  Telegram approval token (`PUBLISH_APPROVAL_TOKEN`).
+- Run #1 ends at preview deploy + PR + Telegram ping. It does NOT charge anyone.
+
+## Copywriting guardrails
+All external copy must pass the copywriter-auditor PreToolUse hook, enforcing:
+- **Seth Godin** — status / tribe / "people like us do things like this".
+- **Alex Hormozi** — grand-slam offer, value stack, risk reversal / guarantee.
+- **Blair Enns** — authority, no pitching, application/payment barriers over free trials.
+Generic or commoditized copy is rejected at write time.
+
+## Execution harness
+- Loop: ECC `loop-operator` against `PRD.md`, run inside tmux on the stable socket `~/.tmux/sock`.
+- `ralphy` is NOT trusted: never installed-as-loop and never handles secrets until `ecc-agentshield
+  scan` clears it.
+- TDD enforced: failing test first, implement, green before deploy.
+- Deploy target: Railway (`railway init` / `railway up`) from inside the loop.
+
+## Security
+- No secrets in chat, in committed files, or inline in `mcp.json`. Keys live only in gitignored
+  `.env`, referenced by name. ECC's secret-detection hook + AgentShield enforce this on every push.
+- Verify third-party provider auth against official docs before relying on it. Never assume.

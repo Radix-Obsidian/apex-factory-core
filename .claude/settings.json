@@ -1,0 +1,16 @@
+{
+  "_comment": "Project-scoped Claude Code settings for the Apex factory. Registers the copywriter-auditor PreToolUse hook so it fires for any `claude` run launched from ~/factory-core (i.e. loop.sh). Layers on top of ECC's global hooks in ~/.claude; not managed by the ECC installer, so it survives ECC reinstalls.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /Users/the-hive/factory-core/hooks/copywriter-auditor.mjs"
+          }
+        ]
+      }
+    ]
+  }
+}

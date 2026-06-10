@@ -1,0 +1,49 @@
+# promptfooconfig.yaml — TIER-2 LLM-as-judge eval for the Apex copywriter gate.
+#
+# Grounded in (not invented):
+#   - promptfoo model-graded assertions: `g-eval` + `llm-rubric`
+#     https://www.promptfoo.dev/docs/configuration/expected-outputs/model-graded/
+#   - G-Eval (Liu et al., EMNLP 2023): LLM-as-judge w/ chain-of-thought + form-filling
+#   - Anthropic eval guide: detailed rubric, "reason then score", judge with a DIFFERENT model
+#     https://platform.claude.com/docs/en/docs/test-and-evaluate/develop-tests
+#
+# WHY this exists: the tier-1 regex gate scored F1 75% and MISSED generic-but-clean copy
+# (corpus #13/#14/#15). g-eval reads for quality the regex can't see.
+#
+# RUN (external/gated like ECC — founder runs it):
+#   cd ~/factory-core && npx promptfoo@latest eval -c evals/promptfooconfig.yaml
+# Needs OPENROUTER_API_KEY in .env. Judge + generator both run on OpenRouter FREE models ($0).
+# NOTE: verify current free model IDs at https://openrouter.ai/models?max_price=0 — free model
+# availability rotates; swap the ids below if one is retired.
+
+description: Apex copywriter gate — Godin/Hormozi/Enns quality judge
+
+# Generator under test (writes the copy). Different model from the grader, per Anthropic guidance.
+providers:
+  - id: openrouter:meta-llama/llama-3.3-70b-instruct:free
+
+prompts:
+  - |
+    Write {{surface}} copy for: {{brief}}.
+    Constraints: concrete status/tribe framing (Godin), an explicit risk-reversal/guarantee
+    (Hormozi), authority gating over free trials (Enns). No generic/commoditized buzzwords.
+
+defaultTest:
+  options:
+    # Grader = a DIFFERENT free model from the generator (Anthropic best practice).
+    provider: openrouter:openai/gpt-oss-120b:free
+  assert:
+    - type: g-eval
+      value:
+        - Uses concrete status/tribe framing ("for those who…", "not for everyone", a named insider group) — not generic appeals
+        - Contains an explicit risk-reversal or guarantee (money-back, refund window, risk-free, no questions asked)
+        - Reads as authority/scarcity (application, invite-only, no free trial) rather than "sign up today"
+        - Avoids commoditized/horizontal phrasing — fails on "for everyone", "do more", "simple and easy", "trusted by thousands"
+      threshold: 0.7
+
+tests:
+  - vars: { surface: checkout, brief: a $2k cohort for senior infrastructure engineers }
+  - vars: { surface: landing,  brief: an invite-only trading-signals desk }
+  - vars: { surface: pricing,  brief: a done-with-you AI automation engagement }
+  # Regression guard: feed the corpus false-negatives back through g-eval to confirm it catches
+  # what the regex missed. See evals/README.md for the corpus-grading recipe.
