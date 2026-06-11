@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "recycled/frozen-archive-note",
+  "title": "FrozenArchiveNote",
+  "description": "Advisory label for truly-dead code. Recycled NEVER deletes or archives — it only writes this note.",
+  "type": "object",
+  "required": ["repo", "verdict", "reason", "archive_action", "reversible"],
+  "additionalProperties": false,
+  "properties": {
+    "repo": { "type": "string" },
+    "verdict": { "type": "string", "const": "TRULY-DEAD" },
+    "reason": { "type": "string" },
+    "archive_action": { "type": "string", "const": "label-only" },
+    "recommended_label": { "type": "string" },
+    "note": { "type": "string" },
+    "reversible": { "type": "boolean", "const": true }
+  }
+}

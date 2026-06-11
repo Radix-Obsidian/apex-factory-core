@@ -68,8 +68,12 @@ fails → stop + Telegram alert), crash-marker-FIRST + EXIT-trap alert (closes t
 `usage.mjs --claude-gate` allowance enforcement (no-op until `CLAUDE_*_BUDGET` set), anchored `ALL_DONE`
 sentinel (`runs/done.flag`), log rotation (keep 5), `caffeinate` on launch.
 
-**Deferred (conscious, noted — not silently dropped):** (a) demoting GLOBAL `~/.claude/agents/planner.md`
-opus→sonnet — it's cross-project, needs founder OK, mitigated by the factory using its own `factory-planner`;
-(b) a 30-min lightweight crash-check cron — the EXIT-trap immediate alert covers early-stage; (c) a hard
-per-run Fable invocation COUNTER in loop.sh — currently structural (Fable only via `factory-architect`) + documented
-cap; (d) per-rung token instrumentation. Revisit (c)/(d) once the first real run produces log data.
+**Now done (founder approved 2026-06-11):** (b) 30-min pure-shell crash-check launchd agent
+(`crash-check.sh` + `launchd/com.apex.factory.crashcheck.plist`, `make crashcron-install`) — recovers a
+crashed loop within 30 min at $0/no model calls, companion to the 6h heartbeat; (c) hard Fable per-run
+counter — `hooks/fable-budget.mjs` PreToolUse(Task) hook blocks the 3rd+ `factory-architect` (Fable)
+invocation per run (`FABLE_MAX_PER_RUN`, default 2), counter reset by loop.sh each run.
+
+**Still deferred (conscious):** (a) demoting GLOBAL `~/.claude/agents/planner.md` opus→sonnet — cross-project,
+needs founder OK, mitigated by the factory using its own `factory-planner`; (d) per-rung token instrumentation —
+revisit once the first real run produces log data.

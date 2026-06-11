@@ -28,6 +28,12 @@ heartbeat: ## AC6 — run one heartbeat (DRY_RESTART: never spawns a real loop)
 usage: ## read + analyze BOTH pools (Claude plan usage + Higgsfield live credits)
 	@node usage.mjs
 
+recycled-verify: ## Recycled — deterministic guardrail tests (R1/R2/R4/R7), $0 LLM
+	@node --test recycled/recycled.test.mjs && echo "── recycled-verify GREEN ──"
+
+recycled-scan: ## Recycled — Stage 0: enumerate own dormant/dead repos (metadata only, $0)
+	@node recycled/recycled-scan.mjs
+
 verify: preflight guard-test gate ## run mechanical acceptance checks (fast)
 	@echo "── verify GREEN ──"
 
@@ -42,4 +48,17 @@ cron-enable: ## enable the 6h heartbeat cron (resolves id by name)
 cron-disable: ## disable the 6h heartbeat cron (resolves id by name)
 	@id=$$($(HEARTBEAT_ID)); if [ -n "$$id" ]; then openclaw cron disable "$$id" >/dev/null && echo "✓ apex-heartbeat disabled ($$id)"; else echo "✗ apex-heartbeat not found"; fi
 
-.PHONY: help preflight copytest guard-test gate dryrun heartbeat usage verify launch cron-enable cron-disable
+PLIST = $(HOME)/Library/LaunchAgents/com.apex.factory.crashcheck.plist
+
+crashcron-install: ## install the 30-min pure-shell crash-check launchd agent ($0, no model calls)
+	@mkdir -p $(HOME)/Library/LaunchAgents && cp launchd/com.apex.factory.crashcheck.plist "$(PLIST)"
+	@launchctl unload "$(PLIST)" 2>/dev/null; launchctl load -w "$(PLIST)" 2>/dev/null \
+	  && echo "✓ crash-check agent loaded (every 30 min)" \
+	  || { launchctl bootstrap gui/$$(id -u) "$(PLIST)" 2>/dev/null && echo "✓ crash-check agent bootstrapped"; } \
+	  || echo "✗ launchctl failed — load manually: launchctl load -w $(PLIST)"
+
+crashcron-uninstall: ## remove the 30-min crash-check launchd agent
+	@launchctl unload "$(PLIST)" 2>/dev/null; launchctl bootout gui/$$(id -u)/com.apex.factory.crashcheck 2>/dev/null; \
+	rm -f "$(PLIST)" && echo "✓ crash-check agent removed"
+
+.PHONY: help preflight copytest guard-test gate dryrun heartbeat usage recycled-verify recycled-scan verify launch cron-enable cron-disable crashcron-install crashcron-uninstall

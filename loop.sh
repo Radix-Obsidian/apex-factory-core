@@ -35,7 +35,7 @@ run_loop() {
   local log="$HERE/runs/loop.log"
   [ -f "$log" ] && mv "$log" "${log%.log}.$(date -u +%Y%m%dT%H%M%S).log" 2>/dev/null || true
   ls -1t "$HERE"/runs/loop.*.log 2>/dev/null | tail -n +6 | xargs rm -f 2>/dev/null || true
-  : > "$log"; rm -f "$HERE/runs/done.flag"
+  : > "$log"; rm -f "$HERE/runs/done.flag" "$HERE/runs/.fable-budget"   # reset the Fable per-run budget
 
   # Pre-flight auth: one cheap Haiku ping distinguishes an expired token from a real build error.
   if [ -z "${LOOP_CMD:-}" ]; then

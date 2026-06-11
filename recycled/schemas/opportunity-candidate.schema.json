@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "recycled/opportunity-candidate",
+  "title": "OpportunityCandidate",
+  "description": "Stage 3 output: a candidate product mapped from a capability.",
+  "type": "object",
+  "required": ["candidate_id", "capability_id", "lane", "product", "ai_native_test", "zero_to_one_rank", "scores"],
+  "additionalProperties": false,
+  "properties": {
+    "candidate_id": { "type": "string" },
+    "capability_id": { "type": "string" },
+    "lane": { "type": "string", "enum": ["consumer", "SMB", "AI-native-service"] },
+    "product": { "type": "string" },
+    "vertical": { "type": "string" },
+    "icp": { "type": "string" },
+    "wedge": { "type": "string" },
+    "ai_native_test": { "type": "string", "enum": ["PASS", "FAIL"], "description": "remove the AI — does it collapse? collapse=PASS" },
+    "zero_to_one_rank": { "type": "string", "enum": ["true-zero-to-one", "incremental", "me-too"] },
+    "scores": {
+      "type": "object",
+      "required": ["self_containedness", "dependency_cost_inverted", "capability_novelty", "hours_saved_vs_rebuild", "market_pull"],
+      "additionalProperties": false,
+      "properties": {
+        "self_containedness": { "type": "integer", "minimum": 0, "maximum": 5 },
+        "dependency_cost_inverted": { "type": "integer", "minimum": 0, "maximum": 5 },
+        "capability_novelty": { "type": "integer", "minimum": 0, "maximum": 5 },
+        "hours_saved_vs_rebuild": { "type": "integer", "minimum": 0, "maximum": 5 },
+        "market_pull": { "type": "integer", "minimum": 0, "maximum": 5 }
+      }
+    },
+    "score_total": { "type": "integer", "minimum": 0, "maximum": 25 }
+  }
+}

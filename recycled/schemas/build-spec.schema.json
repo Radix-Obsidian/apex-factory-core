@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "recycled/build-spec",
+  "title": "BuildSpec",
+  "description": "Stage 5 output: a greenlit, build-ready opportunity. At most one per source_repo.",
+  "type": "object",
+  "required": ["spec_id", "candidate_id", "source_repo", "rank", "product", "extract_list", "wrap_plan", "ai_native_test"],
+  "additionalProperties": false,
+  "properties": {
+    "spec_id": { "type": "string" },
+    "candidate_id": { "type": "string" },
+    "source_repo": { "type": "string" },
+    "rank": { "type": "integer", "minimum": 1 },
+    "product": { "type": "string" },
+    "icp": { "type": "string" },
+    "wedge": { "type": "string" },
+    "extract_list": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["from", "symbols", "status"],
+        "additionalProperties": false,
+        "properties": {
+          "from": { "type": "string", "description": "source path" },
+          "symbols": { "type": "array", "items": { "type": "string" } },
+          "status": { "type": "string", "enum": ["lift-as-is", "lift-with-refactor"] },
+          "refactor": { "type": "string" }
+        }
+      }
+    },
+    "wrap_plan": { "type": "string", "description": "the thin new layer to add around the lifted core" },
+    "rough_dev_effort": { "type": "string" },
+    "ai_native_test": { "type": "string", "enum": ["PASS", "FAIL"] },
+    "parts_bin_refs": { "type": "array", "items": { "type": "string" } }
+  }
+}

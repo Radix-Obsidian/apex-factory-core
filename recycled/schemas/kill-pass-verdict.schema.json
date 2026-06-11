@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "recycled/kill-pass-verdict",
+  "title": "KillPassVerdict",
+  "description": "Stage 4 output: one skeptic's verdict on one candidate. A SURVIVE requires ALL bars PASS.",
+  "type": "object",
+  "required": ["candidate_id", "skeptic", "bars", "verdict", "confidence"],
+  "additionalProperties": false,
+  "properties": {
+    "candidate_id": { "type": "string" },
+    "skeptic": { "description": "1..N, or 'rollup'", "oneOf": [{ "type": "integer" }, { "type": "string" }] },
+    "bars": {
+      "type": "object",
+      "required": ["not_frankenstein", "not_horizontal_sprawl", "ai_native_not_feature", "is_zero_to_one", "salvage_cheaper_than_rebuild"],
+      "additionalProperties": false,
+      "properties": {
+        "not_frankenstein": { "type": "string", "enum": ["PASS", "FAIL"] },
+        "not_horizontal_sprawl": { "type": "string", "enum": ["PASS", "FAIL"] },
+        "ai_native_not_feature": { "type": "string", "enum": ["PASS", "FAIL"] },
+        "is_zero_to_one": { "type": "string", "enum": ["PASS", "FAIL"] },
+        "salvage_cheaper_than_rebuild": { "type": "string", "enum": ["PASS", "FAIL"] }
+      }
+    },
+    "verdict": { "type": "string", "enum": ["SURVIVE", "KILL"] },
+    "kill_reason": { "type": "string" },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+  }
+}

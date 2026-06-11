@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "recycled/capability-record",
+  "title": "CapabilityRecord",
+  "description": "Stage 2 output: a reusable capability stripped of its dead product.",
+  "type": "object",
+  "required": ["capability_id", "source_repo", "capability_name", "description", "self_containedness", "frankenstein_risk"],
+  "additionalProperties": false,
+  "properties": {
+    "capability_id": { "type": "string", "description": "stable slug, e.g. cap-herday-nlplan" },
+    "source_repo": { "type": "string" },
+    "source_system": { "type": "string" },
+    "capability_name": { "type": "string" },
+    "description": { "type": "string" },
+    "stripped_of": { "type": "string", "description": "the dead-product shell discarded" },
+    "lift_files": { "type": "array", "items": { "type": "string" } },
+    "lift_functions": { "type": "array", "items": { "type": "string" } },
+    "hard_deps": { "type": "array", "items": { "type": "string" } },
+    "soft_deps_removable": { "type": "array", "items": { "type": "string" } },
+    "self_containedness": { "type": "integer", "minimum": 0, "maximum": 5 },
+    "extraction_notes": { "type": "string" },
+    "frankenstein_risk": { "type": "string", "enum": ["low", "med", "high"] }
+  }
+}

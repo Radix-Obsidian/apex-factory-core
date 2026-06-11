@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "recycled/parts-bin-entry",
+  "title": "PartsBinEntry",
+  "description": "A reusable proven module the factory can compose into future builds. Pointer + lift command, never a copy.",
+  "type": "object",
+  "required": ["part_id", "name", "capability_id", "source_repo", "source_path", "purity", "self_containedness", "license", "lift_command"],
+  "additionalProperties": false,
+  "properties": {
+    "part_id": { "type": "string" },
+    "name": { "type": "string" },
+    "capability_id": { "type": "string" },
+    "source_repo": { "type": "string" },
+    "source_path": { "type": "string" },
+    "exports": { "type": "array", "items": { "type": "string" } },
+    "deps": { "type": "array", "items": { "type": "string" } },
+    "purity": { "type": "string", "enum": ["pure", "needs-injection", "side-effecting"] },
+    "self_containedness": { "type": "integer", "minimum": 0, "maximum": 5 },
+    "license": { "type": "string", "description": "OWN | MIT | Apache-2.0 | ..." },
+    "lift_command": { "type": "string", "description": "gh api contents pinned to a SHA; pulls the exact proven version at build time" },
+    "verified_loc": { "type": ["integer", "null"] },
+    "test_status": { "type": "string", "enum": ["has-tests", "untested"] }
+  }
+}

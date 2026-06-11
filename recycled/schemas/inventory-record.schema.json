@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "recycled/inventory-record",
+  "title": "InventoryRecord",
+  "description": "Stage 1 output: one top-level system within a repo, classified.",
+  "type": "object",
+  "required": ["repo", "tier", "system", "status", "what_it_does"],
+  "additionalProperties": false,
+  "properties": {
+    "repo": { "type": "string", "description": "owner/name" },
+    "tier": { "type": "integer", "enum": [1, 2] },
+    "system": { "type": "string", "description": "top-level module/subsystem name" },
+    "status": { "type": "string", "enum": ["LIVE", "DORMANT", "DEAD-LEGACY", "TRULY-DEAD"] },
+    "loc": { "type": ["integer", "null"], "description": "source LOC; null if remote-only and not cloned" },
+    "file_count": { "type": "integer", "description": "source files (proxy when loc is null)" },
+    "primary_language": { "type": "string" },
+    "entrypoints": { "type": "array", "items": { "type": "string" } },
+    "deps_external": { "type": "array", "items": { "type": "string" } },
+    "deps_internal": { "type": "array", "items": { "type": "string" } },
+    "what_it_does": { "type": "string" },
+    "ai_native_signal": { "type": "string", "description": "why it does/doesn't collapse without the AI" },
+    "last_push": { "type": "string", "description": "ISO8601" },
+    "evidence": { "type": "array", "items": { "type": "string" }, "description": "file:line citations" }
+  }
+}
