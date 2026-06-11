@@ -82,6 +82,15 @@ if(wk.proxy>0 && wk.opusProxy/wk.proxy>0.8)
   advisories.push(`Opus = ${Math.round(wk.opusProxy/wk.proxy*100)}% of weekly plan consumption — route cheap steps (heartbeats, trend scans, tests) to Sonnet/Haiku to stretch the Max allowance.`);
 const verdict = actions.length ? 'ACTION NEEDED' : 'HEALTHY';
 
+// --claude-gate: exit non-zero ONLY when a Claude allowance budget is SET and exceeded. Ignores Higgsfield
+// (media depletion must not block the code build). loop.sh calls this each iteration; no-op unless budgets set.
+if(process.argv.includes('--claude-gate')){
+  const over = (CLAUDE_5H_BUDGET!=null && claude['5h'].proxy > CLAUDE_5H_BUDGET)
+            || (CLAUDE_WEEK_BUDGET!=null && claude['7d'].proxy > CLAUDE_WEEK_BUDGET);
+  if(over) console.error(`CLAUDE allowance over budget — 5h $${claude['5h'].proxy.toFixed(0)}, 7d $${claude['7d'].proxy.toFixed(0)}`);
+  process.exit(over ? 1 : 0);
+}
+
 if(JSON_OUT){ console.log(JSON.stringify({claude,higgs,verdict,actions,advisories,thresholds:{CLAUDE_5H_BUDGET,CLAUDE_WEEK_BUDGET,HIGGS_MIN_CREDITS}},null,2)); process.exit(0); }
 
 const D=n=>'$'+n.toFixed(2); const M=n=>(n/1e6).toFixed(1)+'M'; const pct=(a,b)=>b?Math.round(a/b*100)+'%':'—';

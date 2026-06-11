@@ -23,12 +23,17 @@ PARA-based, decaying, to prevent context bloat.
 | ECC + AgentShield | ✅ installed (scoped: core, global hooks off) | Hooks, agents, secret scanning |
 | `ralphy` | ⛔ NOT installed by design | Untrusted until AgentShield clears it; never handles secrets |
 
-## Model lineup (audited 2026-06-11 — see [MODELS.md](MODELS.md))
-Right model for the right task, not Opus-by-default. **Sonnet 4.6** = build/codegen/copy workhorse ·
-**Haiku 4.5** = cheap/bounded/high-frequency (trend scan, media prompts) · **OpenRouter free** ($0) =
-eval judges + heartbeat narration · **Opus 4.8** = rationed escalation for the hardest reasoning only ·
-copywriter-auditor + tier-1 eval stay **pure code** (no model). Agents authenticate from
-`CLAUDE_CODE_OAUTH_TOKEN` (subscription, $0/token); `loop.sh` unsets `ANTHROPIC_API_KEY` so it always wins.
+## Model ladder + agent roster (audited 2026-06-11 — see [MODELS.md](MODELS.md))
+Four rungs, all $0 on the subscription token (cost = allowance + latency, not dollars): **Haiku 4.5**
+(reads/routing/scaffolding) → **Sonnet 4.6** (default workhorse: build, review, copy) → **Opus 4.8**
+(rationed heavy work) → **Fable 5** (frontier scalpel — novel architecture only, max ~2/run). Lightest
+model that achieves the outcome; escalate only when a better decision changes what ships.
+
+Project-scoped agents (`.claude/agents/`, each pinned to its rung): `factory-planner` (Opus),
+`factory-architect` (**Fable** — the single Fable home), `factory-builder` (Sonnet), `factory-scout`
+(Haiku), `factory-reviewer` (Sonnet), `factory-copy` (Sonnet). copywriter-auditor + tier-1 eval stay
+**pure code**; eval judges + heartbeat narration run on **OpenRouter free**. Agents authenticate from
+`CLAUDE_CODE_OAUTH_TOKEN` (subscription, $0/token); `loop.sh` unsets `ANTHROPIC_API_KEY` so it wins.
 
 ## Permissions
 Apex may use the ✅ tools without per-action confirmation for any REVERSIBLE action. The single

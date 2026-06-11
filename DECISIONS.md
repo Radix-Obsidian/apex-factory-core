@@ -53,3 +53,23 @@ Per founder ("wire AND enable, real outcomes from day one"): the `apex-heartbeat
 The heartbeat does **crash-recovery** — it relaunches a loop that was running and died (detected via the
 `runs/loop.active` marker), but does NOT cold-start the factory on a timer. The first build is a deliberate
 `make launch`. The publish+charge gate remains the one fail-closed hard stop. See [[build-for-production-from-day-one]].
+
+## D10 — 4-rung ladder w/ Fable 5 + orchestration hardening (audited 2026-06-11)
+**Fable 5 correction:** `claude-fable-5` IS callable on the factory subscription token at $0 (live probe) —
+the earlier "API-only / not selectable" claim was a wrong inference, now fixed in MODELS.md. Since all four
+models are $0, the constraint is rate-limit allowance + latency, not dollars. Ladder: Haiku → Sonnet
+(default) → Opus 4.8 (rationed) → Fable 5 (frontier scalpel, ≤~2/run, reachable only via `factory-architect`).
+Six project-scoped agents created in `.claude/agents/` (planner=Opus, architect=Fable, builder/reviewer/copy=Sonnet,
+scout=Haiku); does not touch global ECC agents. Full lineup + ROI in [MODELS.md](MODELS.md). See [[anthropic-model-routing-lineup]].
+
+**Loop hardening (P0, applied to loop.sh/heartbeat.sh):** pre-flight Haiku auth ping (catches token expiry),
+per-iteration `timeout` (degrades if no `timeout`/`gtimeout`), failure backoff + circuit breaker (≥3 consecutive
+fails → stop + Telegram alert), crash-marker-FIRST + EXIT-trap alert (closes the silent-death window), in-loop
+`usage.mjs --claude-gate` allowance enforcement (no-op until `CLAUDE_*_BUDGET` set), anchored `ALL_DONE`
+sentinel (`runs/done.flag`), log rotation (keep 5), `caffeinate` on launch.
+
+**Deferred (conscious, noted — not silently dropped):** (a) demoting GLOBAL `~/.claude/agents/planner.md`
+opus→sonnet — it's cross-project, needs founder OK, mitigated by the factory using its own `factory-planner`;
+(b) a 30-min lightweight crash-check cron — the EXIT-trap immediate alert covers early-stage; (c) a hard
+per-run Fable invocation COUNTER in loop.sh — currently structural (Fable only via `factory-architect`) + documented
+cap; (d) per-rung token instrumentation. Revisit (c)/(d) once the first real run produces log data.

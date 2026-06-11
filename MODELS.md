@@ -1,57 +1,60 @@
 # MODELS.md — Apex factory model lineup (official audit)
 
-Audited live from `platform.claude.com` on **2026-06-11** (8-agent workflow: research → Opus synthesis →
-3 adversarial verifiers; 37/37 facts confirmed against source). Founder mandate: **stop defaulting to
-Opus**; right model for the right task; cost-effective at a **≥10× ROI** bar.
+Audited live from `platform.claude.com` (2026-06-11) and a 6-agent orchestration workflow (research →
+Fable-5 synthesis → adversarial verify). Founder mandate: **right model for the right task, not Opus/Fable
+by default**, cost-effective at a **≥10× ROI** bar.
 
 ## Official models & pricing (verified)
 
-| Model | API id | Context | Max out | Input $/M | Output $/M | Cache-W 5m | Cache-R | Tier |
-|-------|--------|---------|---------|-----------|------------|-----------|---------|------|
-| Fable 5 | `claude-fable-5` | 1M | 128k | 10 | 50 | 12.5 | 1.0 | flagship (most capable GA) |
-| Opus 4.8 | `claude-opus-4-8` | 1M | 128k | **5** | **25** | 6.25 | 0.5 | flagship Opus |
-| Sonnet 4.6 | `claude-sonnet-4-6` | 1M | 64k | 3 | 15 | 3.75 | 0.3 | balanced (workhorse) |
-| Haiku 4.5 | `claude-haiku-4-5-20251001` | 200k | 64k | 1 | 5 | 1.25 | 0.1 | fast (3× cheaper than Sonnet) |
+| Model | API id | Context | Max out | Input $/M | Output $/M | Cache-R | Tier |
+|-------|--------|---------|---------|-----------|------------|---------|------|
+| Fable 5 | `claude-fable-5` | 1M | 128k | 10 | 50 | 1.0 | **flagship — most capable GA (2026-06-09)** |
+| Opus 4.8 | `claude-opus-4-8` | 1M | 128k | 5 | 25 | 0.5 | heavy, fast |
+| Sonnet 4.6 | `claude-sonnet-4-6` | 1M | 64k | 3 | 15 | 0.3 | balanced (workhorse) |
+| Haiku 4.5 | `claude-haiku-4-5-20251001` | 200k | 64k | 1 | 5 | 0.1 | fast (3× cheaper than Sonnet) |
 
-- **Opus 4.8 is $5/$25 — not the legacy $15/$75.** Cache read is always 0.1× input; 1h cache-write is 2× input. Batch API = flat 50% off both directions.
-- `claude-mythos-5` exists but is **invitation-only** (Project Glasswing) — not usable here.
-- **Fable 5 is the capability ceiling but not selectable on this box**: the factory runs on the Max **subscription** OAuth token (no API key), and Fable 5 is standard/API-tier. Treat it as a future option, not an assignment.
+- `claude-mythos-5` is **invitation-only** (Project Glasswing) — not usable here.
+- **Fable 5 IS callable under the factory subscription OAuth token at $0/token** — confirmed by live CLI probe 2026-06-11. (An earlier draft of this file wrongly said it wasn't selectable; that was an unverified inference, now corrected.)
+- **Because all four are $0 on the subscription, dollars are not the constraint — rate-limit allowance and latency are.** Heavier models (Fable, Opus) burn the allowance faster and are slower. So: lightest model that achieves the outcome; escalate only where a better decision changes what ships.
 
-## The lineup — role → model
+## The ladder — 4 rungs
 
-| Factory role | Model | Why | Fallback |
+| Rung | Model | Use for | Climb up when… |
 |---|---|---|---|
-| Loop-operator planning | **Sonnet 4.6** | High-depth but bounded (read PRD, do next checkbox); Opus is overkill | Haiku (mechanical iters) |
-| TDD sub-agents (build/test/green) | **Sonnet 4.6** | Best coding model; highest cumulative volume → biggest cost lever, keep off Opus | Haiku (fixed-design refactor) |
-| Hardest TDD / novel architecture | **Opus 4.8** *(escalation only)* | Reserve premium reasoning for outcome-changing decisions; `usage.mjs` flags if >80% weekly | Sonnet (drop back when bounded) |
-| Copywriter-auditor hook | **none (pure code)** | Deterministic regex gate on the blocking path; an LLM adds cost+latency+nondeterminism | n/a — fix regex, not add a model |
-| Eval tier-1 (regex measurer) | **none (pure code)** | It *is* the live gate logic; must stay code to measure the code | n/a |
-| Eval tier-2 (LLM judge ×2) | **OpenRouter free** ($0) | Founder-gated offline grading, tiny volume; keep entirely off the Max allowance | Haiku if free tier too weak |
-| 6h heartbeat narration | **OpenRouter free** ($0) | ~20-line status to Telegram, ~4×/day — textbook cheap high-freq | Haiku |
-| Phase 1 trend/market discovery | **Haiku 4.5** | PRD literally says "cheap model"; web-scan + synth, 3× savings | Sonnet if synthesis needs sharper judgment |
-| Phase 3 copywriting injection | **Sonnet 4.6** | Revenue-load-bearing persuasion copy; strong first-pass beats cheap retries | Haiku (low-stakes microcopy) |
-| Media prompt enhancement | **Haiku 4.5** | Just crafting short gen prompts; Higgsfield credits are the real constraint | OpenRouter free |
-| Checkout-abandonment rewrite (HEARTBEAT §2) | **Sonnet 4.6** | The one string that moves money; spend on conversion | Haiku trivial / Opus if stays broken |
+| 1 | **Haiku 4.5** | reads, routing, lookups, scaffolding, test stubs, media prompts, low-stakes text | task needs real reasoning / multi-file awareness / a judgement call |
+| 2 | **Sonnet 4.6** *(default)* | feature dev, TDD build/test/green, module review, integration tests, docs, conversion copy | task is open-ended across many files, or Sonnet failed twice on the same task |
+| 3 | **Opus 4.8** *(rationed)* | clear-scope multi-file refactors, heavy TDD with known shape, long-context synthesis, brief decomposition; the retry layer before Fable | task is genuinely novel, or Opus produced a weak result on a 2nd attempt |
+| 4 | **Fable 5** *(frontier scalpel)* | novel architecture (no pattern to follow), hardest long-horizon TDD, unknown-shape problems where being wrong costs major rework | nothing is above it — if Fable fails, **decompose and re-enter at Rung 2** |
 
-**Policy:** Sonnet = default build/codegen/copy workhorse · Haiku = cheap/bounded/high-frequency · OpenRouter-free = eval + heartbeat narration ($0, off the Max pool) · Opus = rationed escalation only · two deterministic gates stay pure code (zero token, zero latency).
+**Fable is the scalpel, not the chainsaw.** It carries ~85–108s time-to-first-token and the heaviest allowance burn, so a few calls can saturate an overnight run. Hard rules: reachable **only** via the `factory-architect` agent (or an explicit founder `LOOP_MODEL=claude-fable-5`); **cap ~2 invocations per overnight run**; never a default.
+
+## The agent roster (project-scoped — `factory-core/.claude/agents/`)
+
+Each agent is pinned to its rung with least-privilege tools. Clean-slate; does not touch global ECC agents.
+
+| Agent | Model | Role | Tools |
+|---|---|---|---|
+| `factory-planner` | Opus 4.8 | decompose briefs, own architecture before code | Read, Grep, Glob, Write |
+| `factory-architect` | **Fable 5** | the single Fable home — novel architecture, hardest reasoning | Read, Grep, Glob, Write |
+| `factory-builder` | Sonnet 4.6 | coding workhorse — implement, integrate, TDD, fix | Read, Write, Edit, Bash, Grep, Glob |
+| `factory-scout` | Haiku 4.5 | read-only research, trend discovery (PRD Phase 1) | Read, Grep, Glob, WebSearch, WebFetch |
+| `factory-reviewer` | Sonnet 4.6 | post-commit review; Opus-flag for auth/payments/gate | Read, Grep, Glob, Bash |
+| `factory-copy` | Sonnet 4.6 | customer/conversion copy (Godin/Hormozi/Enns) | Read, Write, Edit |
+
+The two deterministic gates stay **pure code, no model**: the copywriter-auditor hook and the tier-1 regex eval.
+Eval tier-2 judges + the 6h heartbeat narration run on **OpenRouter free** ($0, off the Max allowance).
+
+## Escalation & guards
+- **Failure-driven climb:** Sonnet fails twice → Opus; Opus fails twice or task genuinely novel → Fable; Fable fails → decompose, re-enter at Sonnet. Never retry Fable on the same undivided task.
+- **Allowance gate:** `usage.mjs --claude-gate` runs each loop iteration; if a `CLAUDE_*_BUDGET` (set in `.env`) is exceeded, the loop cools down instead of burst-firing. `usage.mjs` flags when Opus exceeds 80% of weekly consumption.
+- **Demotion watch:** Opus 4.8 is kept for speed/throughput and as a warm hedge while Fable (released 2026-06-09) proves its failure modes. If per-rung instrumentation later shows Fable unconstrained overnight, collapse Opus out of the ladder.
 
 ## How it's wired
-- `loop.sh` runs `claude -p --model "${LOOP_MODEL:-claude-sonnet-4-6}"`. Default Sonnet; escalate a hard build with `LOOP_MODEL=claude-opus-4-8 make launch`.
-- `usage.mjs` carries the corrected rates and flags when Opus exceeds 80% of weekly consumption.
-- ECC sub-agents inherit their own per-agent model configs; the `--model` flag sets the operator's default.
-
-## ROI logic (the 10× bar)
-The two highest-volume roles (operator + TDD) run on Sonnet, not Opus — that holds the dominant cost
-line at $3/$15 while keeping the best coding quality. Haiku ($1/$5) cuts discovery and media-prompt work
-another 3×. The entire measure-and-monitor layer (evals + heartbeat narration) is OpenRouter-free at $0,
-so it never competes with build work for the allowance. The two gates cost literally nothing. Opus is
-fenced behind explicit escalation — spent only where a better decision changes what ships. The only spend
-biased *up* is conversion-critical copy, because that's the lever that produces the revenue the 10× is
-measured against.
+- `loop.sh` runs `claude -p --model "${LOOP_MODEL:-claude-sonnet-4-6}"` and instructs the operator to delegate to the `factory-*` agents (each runs on its pinned model). Escalate a whole run with `LOOP_MODEL=claude-opus-4-8 make launch` (or `claude-fable-5` for the hardest).
+- Hardening: pre-flight auth ping, per-iteration `timeout`, failure backoff + circuit breaker, crash marker + immediate Telegram alert, log rotation, anchored `ALL_DONE` sentinel.
 
 ## Auth facts (verified, high confidence)
-- Factory agents authenticate via **`CLAUDE_CODE_OAUTH_TOKEN`** (in gitignored `.env`) — a `claude setup-token` one-year OAuth token. Bills against the **subscription** (Pro/Max/Team/Enterprise), **$0 per-token**; from **June 15 2026** `claude -p` draws on a new monthly "Agent SDK credit" separate from interactive limits (still subscription, not API credits).
-- **Precedence:** `ANTHROPIC_API_KEY` (and `ANTHROPIC_AUTH_TOKEN`) **outrank** the OAuth token — if either is set, it silently wins. `loop.sh` `unset`s both before calling `claude` so the factory token always takes effect. Never pass `--bare` (it ignores `CLAUDE_CODE_OAUTH_TOKEN`).
-- The one-year token does not appear to auto-refresh (reasonable inference, not explicitly documented) — re-run `claude setup-token` to rotate before expiry.
+- Factory agents authenticate via **`CLAUDE_CODE_OAUTH_TOKEN`** (gitignored `.env`) — a `claude setup-token` one-year token. Bills the **subscription**, **$0/token**; from **2026-06-15** `claude -p` draws on a monthly "Agent SDK credit" (still subscription, not API credits).
+- **`ANTHROPIC_API_KEY` / `ANTHROPIC_AUTH_TOKEN` OUTRANK** the OAuth token — `loop.sh` `unset`s both before calling `claude`. Never pass `--bare` (it ignores the token). Re-run `claude setup-token` to rotate before the one-year expiry.
 
-Sources: `platform.claude.com/docs/.../models/overview`, `/pricing`, `code.claude.com/docs/en/authentication`.
+Sources: `platform.claude.com/docs/.../models/overview` & `/pricing`; `code.claude.com/docs/en/authentication`; benchmark/positioning from Anthropic + independent outlets (the-decoder, TechCrunch, VentureBeat, Artificial Analysis).
