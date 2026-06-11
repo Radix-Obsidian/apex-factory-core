@@ -77,3 +77,20 @@ invocation per run (`FABLE_MAX_PER_RUN`, default 2), counter reset by loop.sh ea
 **Still deferred (conscious):** (a) demoting GLOBAL `~/.claude/agents/planner.md` opus→sonnet — cross-project,
 needs founder OK, mitigated by the factory using its own `factory-planner`; (d) per-rung token instrumentation —
 revisit once the first real run produces log data.
+
+## D11 — concurrent-agent git hygiene: ownership-zone guard (2026-06-11)
+Problem: a blind `git add -A` in this multi-session repo (factory control plane + the actively-built `recycled/`
+harness + the autonomous loop committing on its own) sweeps a parallel session's in-flight files into unrelated
+commits — a corruption-bug-in-waiting. Resolution (simple-but-safe, AI-native):
+- `.gitzones` declares isolated subproject roots (currently `recycled/`); everything else = the "core" zone.
+- `.githooks/pre-commit` (activate once with `make hooks-install` → sets `core.hooksPath`) HARD-BLOCKS any commit
+  whose staged files span >1 zone, for ALL committers incl. the autonomous loop. The bug class is now structurally
+  impossible, not merely avoided by discipline.
+- `scripts/commit.sh [--zone <name>] [--push] "msg"` is the safe path: clears the index, stages exactly ONE zone
+  (never a standing `add -A`), secret-scans the diff, commits. Use it instead of `git add -A`.
+
+Next (deferred): run the autonomous loop in its OWN git WORKTREE + branch so parallel sessions never share a
+working tree/index (the AI-native isolation primitive — Anthropic/Cursor recommend worktrees for parallel agents);
+split `recycled/` into its own repo ONLY if it becomes a standalone product. The 7-agent research panel for this
+was rate-limited (Max subscription session limit, resets 11:40 MST) — resolution synthesized directly; re-run the
+panel later for citations if wanted. See [[concurrent-agent-git-hygiene]].

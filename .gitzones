@@ -1,0 +1,5 @@
+# Ownership zones. Each line is an ISOLATED subproject root that must be committed on its own —
+# never mixed with the factory/core zone or another zone. The pre-commit hook (.githooks/pre-commit)
+# enforces this; scripts/commit.sh stages within a single zone. Anything NOT under a listed root is
+# the implicit "core" (factory) zone. Add a line here when a new in-repo subproject appears.
+recycled/

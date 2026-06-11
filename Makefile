@@ -61,4 +61,7 @@ crashcron-uninstall: ## remove the 30-min crash-check launchd agent
 	@launchctl unload "$(PLIST)" 2>/dev/null; launchctl bootout gui/$$(id -u)/com.apex.factory.crashcheck 2>/dev/null; \
 	rm -f "$(PLIST)" && echo "✓ crash-check agent removed"
 
-.PHONY: help preflight copytest guard-test gate dryrun heartbeat usage recycled-verify recycled-scan verify launch cron-enable cron-disable crashcron-install crashcron-uninstall
+hooks-install: ## activate the repo's versioned git hooks (ownership-zone guard) — run once per clone/worktree
+	@git config core.hooksPath .githooks && echo "✓ core.hooksPath = .githooks (zone guard active for all committers)"
+
+.PHONY: help preflight copytest guard-test gate dryrun heartbeat usage recycled-verify recycled-scan verify launch cron-enable cron-disable crashcron-install crashcron-uninstall hooks-install

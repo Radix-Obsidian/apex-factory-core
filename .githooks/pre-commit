@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# pre-commit — ownership-zone guard. A commit may touch AT MOST ONE zone (see .gitzones). This kills the
+# "git add -A swept a parallel session's in-flight work into an unrelated commit" bug class at the source:
+# the autonomous loop and every agent are STRUCTURALLY unable to mix the factory/core zone with recycled/
+# (or any future subproject). Enforced for all committers in this repo via `git config core.hooksPath .githooks`.
+set -uo pipefail
+ROOT="$(git rev-parse --show-toplevel)"
+staged="$(git diff --cached --name-only)"
+[ -z "$staged" ] && exit 0
+
+zones=()
+if [ -f "$ROOT/.gitzones" ]; then
+  while IFS= read -r line; do
+    line="${line%%#*}"; line="$(printf '%s' "$line" | xargs)"
+    [ -n "$line" ] && zones+=("${line%/}/")
+  done < "$ROOT/.gitzones"
+fi
+
+zone_of() {
+  local f="$1" z
+  for z in "${zones[@]}"; do case "$f" in "$z"*) printf '%s' "$z"; return;; esac; done
+  printf '(core)'
+}
+
+seen=""
+while IFS= read -r f; do
+  [ -z "$f" ] && continue
+  z="$(zone_of "$f")"
+  case " $seen " in *" $z "*) ;; *) seen="$seen $z";; esac
+done <<< "$staged"
+
+n="$(printf '%s' "$seen" | wc -w | xargs)"
+if [ "$n" -gt 1 ]; then
+  echo "✗ commit BLOCKED: staged files span multiple ownership zones:$seen" >&2
+  echo "  Each zone must be committed separately (factory/core ≠ recycled ≠ …)." >&2
+  echo "  Fix: commit one zone at a time —" >&2
+  echo "    scripts/commit.sh \"msg\"                 # factory/core only" >&2
+  echo "    scripts/commit.sh --zone recycled \"msg\"  # recycled only" >&2
+  exit 1
+fi
+exit 0
