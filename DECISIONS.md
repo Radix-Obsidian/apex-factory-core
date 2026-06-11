@@ -31,3 +31,25 @@ design: the factory physically cannot charge a customer.
 ## D6 — key rotation: declined (founder's call)
 The 10 plaintext keys found in `~/.claude/settings.json` during AgentShield triage are **not** being
 rotated — founder decided. Closed; no longer tracked.
+
+## D7 — model routing lineup (audited 2026-06-11) — supersedes Opus-by-default
+Full official audit in [MODELS.md](MODELS.md). Sonnet 4.6 = build/codegen/copy workhorse; Haiku 4.5 =
+cheap/bounded/high-frequency; OpenRouter free = eval judges + heartbeat narration ($0); Opus 4.8 =
+rationed escalation only; copywriter-auditor + tier-1 eval stay pure code. `loop.sh` defaults
+`--model claude-sonnet-4-6` (`LOOP_MODEL` overrides). **Pricing correction:** Opus 4.8 is **$5/$25** per
+MTok (not the legacy $15/$75) — `usage.mjs` rates fixed, which cut the consumption proxy ~3×.
+This replaces D3's vague "OpenClaw default model" stance for the heartbeat narration target (OpenRouter free).
+
+## D8 — factory auth: subscription OAuth token, precedence-guarded
+Factory agents authenticate from `CLAUDE_CODE_OAUTH_TOKEN` in gitignored `.env` (a `claude setup-token`
+one-year token; bills the subscription, $0/token). Verified: `ANTHROPIC_API_KEY`/`ANTHROPIC_AUTH_TOKEN`
+**outrank** it, so `loop.sh` `unset`s both before calling `claude`; never use `--bare` (it ignores the
+token). Rotate via `claude setup-token` before the one-year expiry. From 2026-06-15 `claude -p` draws on a
+monthly "Agent SDK credit" (still subscription). This is the "agentic staff" identity, separate from AJ's
+interactive Max session.
+
+## D9 — production posture: enabled, crash-recovery (not cold-start)
+Per founder ("wire AND enable, real outcomes from day one"): the `apex-heartbeat` cron is **ENABLED**.
+The heartbeat does **crash-recovery** — it relaunches a loop that was running and died (detected via the
+`runs/loop.active` marker), but does NOT cold-start the factory on a timer. The first build is a deliberate
+`make launch`. The publish+charge gate remains the one fail-closed hard stop. See [[build-for-production-from-day-one]].

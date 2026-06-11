@@ -22,8 +22,10 @@ const CLAUDE_5H_BUDGET   = envNum('CLAUDE_5H_BUDGET');    // null = report only
 const CLAUDE_WEEK_BUDGET = envNum('CLAUDE_WEEK_BUDGET');  // null = report only
 const HIGGS_MIN_CREDITS  = num(process.env.HIGGSFIELD_MIN_CREDITS, 5);
 
-const RATES = { opus:{in:15,out:75}, sonnet:{in:3,out:15}, haiku:{in:1,out:5} };
-const rateFor = m => { m=(m||'').toLowerCase(); return m.includes('opus')?RATES.opus:m.includes('sonnet')?RATES.sonnet:m.includes('haiku')?RATES.haiku:null; };
+// Official rates per MTok (audited live from platform.claude.com 2026-06-11). Opus 4.8 is $5/$25 —
+// NOT the old $15/$75; correcting this dropped the consumption proxy ~3x.
+const RATES = { fable:{in:10,out:50}, opus:{in:5,out:25}, sonnet:{in:3,out:15}, haiku:{in:1,out:5} };
+const rateFor = m => { m=(m||'').toLowerCase(); return m.includes('fable')?RATES.fable:m.includes('opus')?RATES.opus:m.includes('sonnet')?RATES.sonnet:m.includes('haiku')?RATES.haiku:null; };
 
 function walk(dir){ let out=[]; let ents; try{ents=fs.readdirSync(dir,{withFileTypes:true});}catch{return out;}
   for(const e of ents){ const p=path.join(dir,e.name); if(e.isDirectory()) out=out.concat(walk(p)); else if(e.name.endsWith('.jsonl')) out.push(p); } return out; }

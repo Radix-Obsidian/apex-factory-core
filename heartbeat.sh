@@ -12,11 +12,15 @@ echo "🏭 Apex HEARTBEAT — $(date -u +%FT%TZ)"
 # 1. Agent health — restart a dead loop (HEARTBEAT.md §3)
 if tmux -S "$SOCK" has-session -t "$SESSION" 2>/dev/null; then
   echo "• loop: ALIVE ($SESSION)"
-else
-  echo "• loop: DEAD — restarting"
+elif [ -f "$HERE/runs/loop.active" ]; then
+  # marker present + session gone = it was launched and CRASHED → recover (production resilience)
+  echo "• loop: CRASHED — recovering"
   if [ -n "${DRY_RESTART:-}" ]; then
     echo "  ↳ (dry: would relaunch via loop.sh — DRY_RESTART set, no credit burn)"
   elif bash "$HERE/loop.sh" launch >/dev/null 2>&1; then echo "  ↳ relaunched"; else echo "  ↳ relaunch skipped (claude/tmux not ready)"; fi
+else
+  # no marker = never launched → do NOT cold-start the factory on a timer; first launch is deliberate
+  echo "• loop: idle (not launched) — awaiting \`make launch\`; heartbeat recovers crashes, it does not cold-start"
 fi
 
 # 2. Media token (Higgsfield headless) — HEARTBEAT.md §3

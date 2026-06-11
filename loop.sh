@@ -16,7 +16,9 @@ load_env() { if [ -f "$HERE/.env" ]; then set -a; . "$HERE/.env"; set +a; fi; }
 
 run_loop() {
   load_env
+  unset ANTHROPIC_API_KEY ANTHROPIC_AUTH_TOKEN  # CLAUDE_CODE_OAUTH_TOKEN (subscription) must win the auth precedence (it outranks neither — API key wins if present)
   mkdir -p "$HERE/runs"
+  touch "$HERE/runs/loop.active"                # crash marker: heartbeat recovers ONLY if this persists with a dead session
   local log="$HERE/runs/loop.log" i=0 ec=0
   : > "$log"
   while [ "$i" -lt "$MAX_ITERS" ]; do
@@ -29,11 +31,15 @@ run_loop() {
       # Dry-run/plumbing override (e.g. LOOP_CMD='echo ALL_DONE') — no claude, no shared-credit burn.
       bash -c "$LOOP_CMD" >>"$log" 2>&1 || ec=$?
     else
+      # Model lineup (audited 2026-06-11): Sonnet 4.6 is the build workhorse; escalate to
+      # claude-opus-4-8 only for the hardest reasoning via LOOP_MODEL. See MODELS.md.
       claude -p "Act as the ECC loop-operator. Execute the next incomplete step in $PRD_FILE using TDD. Obey .cursorrules, SOUL.md, HEARTBEAT.md. HARD STOP at the publish+charge gate — never flip live Stripe. When every PRD checkbox is complete, print the literal token ALL_DONE and stop." \
+        --model "${LOOP_MODEL:-claude-sonnet-4-6}" \
         --dangerously-skip-permissions >>"$log" 2>&1 || ec=$?
     fi
     if grep -q "ALL_DONE" "$log"; then echo "ALL_DONE — loop complete." | tee -a "$log"; break; fi
   done
+  rm -f "$HERE/runs/loop.active"                # clean finish (ALL_DONE or max iters) — not a crash
   openclaw system event --text "🏭 factory loop finished after $i iters (exit $ec)" --mode now 2>/dev/null || true
   echo "SHIPPED:$ec" | tee -a "$log"
 }
