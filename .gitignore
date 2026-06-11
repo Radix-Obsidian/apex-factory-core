@@ -13,5 +13,8 @@ node_modules/
 .tmp/
 runs/
 
+# Loop's isolated git worktree (D12) — a separate checkout of loop/auto; the main tree must never stage it
+.worktrees/
+
 # ECC / tool caches that may land here
 .agentshield-cache/

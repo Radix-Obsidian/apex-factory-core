@@ -99,11 +99,17 @@ case "${1:-launch}" in
     if tmux -S "$SOCK" has-session -t "$SESSION" 2>/dev/null; then
       echo "session '$SESSION' already running on $SOCK"; exit 0
     fi
+    # AI-native isolation: run the loop in its OWN worktree + branch (loop/auto), never the founder's
+    # main tree. Its $HERE becomes the worktree, so runs/, edits, and commits are all isolated there.
+    # shellcheck source=scripts/worktree.sh
+    . "$HERE/scripts/worktree.sh"
+    ensure_worktree || { echo "✗ could not prepare the loop worktree"; exit 1; }
     CAF=""; command -v caffeinate >/dev/null && CAF="caffeinate -i"   # keep the Mac awake for an overnight run
-    tmux -S "$SOCK" new -d -s "$SESSION" "$CAF bash '$HERE/loop.sh' __run; echo done; sleep 10"
+    tmux -S "$SOCK" new -d -s "$SESSION" "$CAF bash '$LOOP_WORKTREE/loop.sh' __run; echo done; sleep 10"
     echo "Launched tmux '$SESSION' on $SOCK."
+    echo "Isolated in worktree: $LOOP_WORKTREE ($LOOP_BRANCH)"
     echo "Watch:  tmux -S $SOCK attach -t $SESSION"
-    echo "Log:    tail -f $HERE/runs/loop.log"
+    echo "Log:    tail -f $LOOP_WORKTREE/runs/loop.log"
     ;;
   *) echo "usage: loop.sh [launch|__run]"; exit 1 ;;
 esac

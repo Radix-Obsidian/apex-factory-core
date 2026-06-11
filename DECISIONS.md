@@ -89,8 +89,26 @@ commits — a corruption-bug-in-waiting. Resolution (simple-but-safe, AI-native)
 - `scripts/commit.sh [--zone <name>] [--push] "msg"` is the safe path: clears the index, stages exactly ONE zone
   (never a standing `add -A`), secret-scans the diff, commits. Use it instead of `git add -A`.
 
-Next (deferred): run the autonomous loop in its OWN git WORKTREE + branch so parallel sessions never share a
-working tree/index (the AI-native isolation primitive — Anthropic/Cursor recommend worktrees for parallel agents);
-split `recycled/` into its own repo ONLY if it becomes a standalone product. The 7-agent research panel for this
-was rate-limited (Max subscription session limit, resets 11:40 MST) — resolution synthesized directly; re-run the
-panel later for citations if wanted. See [[concurrent-agent-git-hygiene]].
+Next (DONE — see D12): run the autonomous loop in its OWN git worktree + branch. Still deferred: split
+`recycled/` into its own repo ONLY if it becomes a standalone product. See [[concurrent-agent-git-hygiene]].
+
+## D12 — autonomous loop runs in its own git worktree (AI-native session isolation, 2026-06-11)
+Completes D11's deferred "next." The loop no longer shares a working tree or index with interactive founder
+sessions. `make launch` (and heartbeat/crash-check recovery) runs the loop inside a dedicated git **worktree**
+on branch **`loop/auto`** (default `.worktrees/loop`, gitignored; override `LOOP_WORKTREE`/`LOOP_BRANCH` for a
+sibling/external checkout). Layering: ownership **zones** (D11) stop cross-subproject mixing *within* a tree;
+**worktrees** (D12) stop cross-*session* clobbering. Effects, all test-verified ($0):
+1. A blind `git add -A` by the loop can only touch its own worktree — founder edits on `main` are physically
+   unreachable (confirmed: a worktree commit left `main` HEAD + index untouched).
+2. The loop's own factory-core scratch lands on `loop/auto`, reviewable, never on `main`.
+3. `ensure_worktree` fast-forwards `loop/auto` to `main` each launch **when clean & not ahead**, so the loop
+   always starts from the latest harness, but preserves (and flags) divergent loop commits instead of discarding.
+4. The zone guard is **inherited automatically** — worktrees share `.git/config`, so `core.hooksPath=.githooks`
+   applies with no per-worktree `make hooks-install` (verified). The guard fires inside the worktree too.
+5. `.env` (gitignored OAuth token) is symlinked into the worktree for headless auth; `runs/` is per-worktree, so
+   `heartbeat.sh`/`crash-check.sh` resolve the loop worktree's marker (`scripts/worktree.sh`) — crash-recovery
+   still fires (verified: marker present → "CRASHED — recovering"; absent → "idle").
+
+Surfaces: `scripts/worktree.sh [ensure|path|status|remove]`; `make worktree-setup|worktree-status|worktree-remove`.
+The 7-agent expert research panel for D11/D12 was rate-limited (Max session limit) — resolution synthesized
+directly and proven by test rather than citation. See [[concurrent-agent-git-hygiene]].

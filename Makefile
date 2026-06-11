@@ -64,4 +64,13 @@ crashcron-uninstall: ## remove the 30-min crash-check launchd agent
 hooks-install: ## activate the repo's versioned git hooks (ownership-zone guard) — run once per clone/worktree
 	@git config core.hooksPath .githooks && echo "✓ core.hooksPath = .githooks (zone guard active for all committers)"
 
-.PHONY: help preflight copytest guard-test gate dryrun heartbeat usage recycled-verify recycled-scan verify launch cron-enable cron-disable crashcron-install crashcron-uninstall hooks-install
+worktree-setup: ## create/sync the loop's isolated git worktree + branch (AI-native parallel isolation, D12)
+	@bash scripts/worktree.sh ensure
+
+worktree-status: ## show all worktrees + the loop branch
+	@bash scripts/worktree.sh status
+
+worktree-remove: ## tear down the loop worktree (keeps the loop/auto branch + history)
+	@bash scripts/worktree.sh remove
+
+.PHONY: help preflight copytest guard-test gate dryrun heartbeat usage recycled-verify recycled-scan verify launch cron-enable cron-disable crashcron-install crashcron-uninstall hooks-install worktree-setup worktree-status worktree-remove

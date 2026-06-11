@@ -6,13 +6,16 @@ set -uo pipefail   # NOT -e: a heartbeat must never die mid-check
 HERE="$(cd "$(dirname "$0")" && pwd)"
 [ -f "$HERE/.env" ] && { set -a; . "$HERE/.env"; set +a; }
 SOCK="$HOME/.tmux/sock"; SESSION="${SESSION:-factory}"
+# The loop runs in its own worktree (D12) — its liveness marker lives there, not in the main tree.
+. "$HERE/scripts/worktree.sh" 2>/dev/null || true
+LOOP_RUNS="${LOOP_WORKTREE:-$HERE}/runs"
 
 echo "🏭 Apex HEARTBEAT — $(date -u +%FT%TZ)"
 
 # 1. Agent health — restart a dead loop (HEARTBEAT.md §3)
 if tmux -S "$SOCK" has-session -t "$SESSION" 2>/dev/null; then
   echo "• loop: ALIVE ($SESSION)"
-elif [ -f "$HERE/runs/loop.active" ]; then
+elif [ -f "$LOOP_RUNS/loop.active" ]; then
   # marker present + session gone = it was launched and CRASHED → recover (production resilience)
   echo "• loop: CRASHED — recovering"
   if [ -n "${DRY_RESTART:-}" ]; then
