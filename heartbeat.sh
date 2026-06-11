@@ -26,8 +26,10 @@ else
   echo "• higgsfield: token MISSING — media on graceful-skip path"
 fi
 
-# 3. P&L survival (shared-pool aware) — HEARTBEAT.md §1. Honest about what's not wired yet.
+# 3. Resource analysis — READ + ANALYZE both constrained pools (HEARTBEAT.md §1).
+#    Claude = subscription plan usage ($0 billed; proxy $ for consumption); Higgsfield = live credits.
+node "$HERE/usage.mjs" || echo "• usage analyzer unavailable (node?) — skipping resource read"
+
+# 4. Treasury + gate
 if [ -n "${STRIPE_SECRET_KEY:-}" ]; then echo "• stripe: configured (net read at gate-time)"; else echo "• stripe: n/a (test phase — no charging)"; fi
-echo "• openrouter heartbeat burn: ~\$0 (free tier)"
 if [ -n "${PUBLISH_APPROVAL_TOKEN:-}" ]; then echo "• gate: ARMED (token set)"; else echo "• gate: SEALED (no token — cannot charge)"; fi
-echo "  ↳ Anthropic + Higgsfield are SHARED across 3 projects — burn conservatively; halt media first."

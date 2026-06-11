@@ -25,6 +25,9 @@ dryrun: ## AC5 — full $0 end-to-end gated slice (loop → preview → notify)
 heartbeat: ## AC6 — run one heartbeat (DRY_RESTART: never spawns a real loop)
 	@DRY_RESTART=1 bash heartbeat.sh
 
+usage: ## read + analyze BOTH pools (Claude plan usage + Higgsfield live credits)
+	@node usage.mjs
+
 verify: preflight guard-test gate ## run mechanical acceptance checks (fast)
 	@echo "── verify GREEN ──"
 
@@ -39,4 +42,4 @@ cron-enable: ## enable the 6h heartbeat cron (resolves id by name)
 cron-disable: ## disable the 6h heartbeat cron (resolves id by name)
 	@id=$$($(HEARTBEAT_ID)); if [ -n "$$id" ]; then openclaw cron disable "$$id" >/dev/null && echo "✓ apex-heartbeat disabled ($$id)"; else echo "✗ apex-heartbeat not found"; fi
 
-.PHONY: help preflight copytest guard-test gate dryrun heartbeat verify launch cron-enable cron-disable
+.PHONY: help preflight copytest guard-test gate dryrun heartbeat usage verify launch cron-enable cron-disable

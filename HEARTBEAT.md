@@ -4,16 +4,22 @@ Apex runs this evaluation loop every 6 hours via OpenClaw cron (delivery: Telegr
 reasoning here uses an **OpenRouter free model** (`openrouter/free`) — $0, ~4 cycles/day, well under
 the 50 req/day free cap. It does NOT touch the shared Anthropic pool.
 
-## 1. P&L survival check (shared-pool aware)
-1. Stripe: gross revenue + net (via the restricted key, read scope).
-2. Burn — track BOTH shared pools against OUR slice, not the whole pool:
-   - Anthropic compute (Opus planner + Sonnet build).
-   - Higgsfield generation (every image/video spends the shared media pool).
-   - OpenRouter (free tier; should read ~$0).
-3. `Runway Left = (our budget slice) - (current burn) + (Stripe net)`.
-4. If either shared pool is near its limit OR Runway Left < 15%: kill exploratory sub-agents and
-   hyper-focus remaining compute on the primary conversion funnel. Halt non-essential generation
-   FIRST (media is the most expensive shared resource).
+## 1. Resource survival check — read + analyze BOTH pools (`node usage.mjs`)
+Apex runs `usage.mjs` to READ and ANALYZE both constrained resources. They are NOT the same kind of thing:
+
+1. **Claude — subscription plan usage (NOT a dollar pool).** Auth is the Max OAuth login (no API key
+   anywhere on the box), so builds are covered by the plan and bill **$0 per-token**. The real
+   constraint is the plan's **rate limits** (5-hour rolling + weekly). `usage.mjs` reads local Claude
+   Code transcripts and reports consumption as an **API-equivalent $ proxy** for the 5h and 7d windows,
+   with the **Opus share** called out — Opus burns the allowance fastest, so cheap steps (heartbeats,
+   trend scans, tests) should route to Sonnet/Haiku. Hard-flags only against a budget you set in `.env`.
+2. **Higgsfield — generation credits (a real, finite shared pool).** `usage.mjs` reads live credits via
+   `higgsfield account status`. Every image/video spends it; below `HIGGSFIELD_MIN_CREDITS` → halt media.
+3. **Stripe** net is read at gate-time (test phase = no charging yet).
+
+**Verdict rule:** if Higgsfield is below its floor (or unreadable), **halt non-essential media FIRST**
+(most expensive, genuinely depletable resource); then, if a set Claude budget is exceeded, drop
+exploratory sub-agents and focus the conversion funnel. NEVER let this stall the loop — degrade, don't hang.
 
 ## 2. Market telemetry
 1. Re-index the deployed MEP for search.
