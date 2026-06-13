@@ -12,10 +12,19 @@ does not charge real customers — that waits for the publish+charge gate.
 
 ## TDD acceptance checklist
 
-### [ ] Phase 1 — Autonomous trend discovery
-- [ ] Spin up an isolated search agent (cheap model) to scan macro-trends in high-ticket digital
-      assets, elite productivity frameworks, or specialized developer tools.
-- [ ] Filter out all "horizontal" ideas. Select ONE ultra-niche vertical wedge.
+### [ ] Phase 1 — SKU thesis (Recycled salvage queue FIRST, then trend discovery)
+- [ ] **Recycled pre-step — check the salvage queue before discovering anything.** Run
+      `node recycled/recycled-scan.mjs candidates next`. If it prints a candidate (non-empty JSON), the
+      salvage harness already found a build-ready, kill-pass-survived opportunity — ADOPT it as the SKU
+      thesis: write its `product` / `icp` / `wedge` / `extract_list` to `~/life/projects/sku_001/summary.md`,
+      then run `node recycled/recycled-scan.mjs candidates consume <spec_id>` to mark it spent, and **SKIP
+      the trend-discovery steps below.** Phase 2 then composes the build from the candidate's `extract_list`
+      (lift the proven code per each entry's `status`/`refactor` — don't rebuild from scratch).
+      If it prints nothing (empty stdout = queue dry; test with `[ -z "$(node recycled/recycled-scan.mjs candidates next)" ]`),
+      fall through to trend discovery.
+- [ ] _(only if the queue was dry)_ Spin up an isolated search agent (cheap model) to scan macro-trends in
+      high-ticket digital assets, elite productivity frameworks, or specialized developer tools.
+- [ ] _(only if the queue was dry)_ Filter out all "horizontal" ideas. Select ONE ultra-niche vertical wedge.
 - [ ] Document the SKU thesis to `~/life/projects/sku_001/summary.md`.
 
 ### [ ] Phase 2 — Core engineering & media synthesis
