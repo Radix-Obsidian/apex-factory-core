@@ -11,12 +11,12 @@
     "skeptic": { "description": "1..N, or 'rollup'", "oneOf": [{ "type": "integer" }, { "type": "string" }] },
     "bars": {
       "type": "object",
-      "required": ["not_frankenstein", "not_horizontal_sprawl", "ai_native_not_feature", "is_zero_to_one", "salvage_cheaper_than_rebuild"],
+      "required": ["not_frankenstein", "not_horizontal_sprawl", "real_demand", "is_zero_to_one", "salvage_cheaper_than_rebuild"],
       "additionalProperties": false,
       "properties": {
         "not_frankenstein": { "type": "string", "enum": ["PASS", "FAIL"] },
         "not_horizontal_sprawl": { "type": "string", "enum": ["PASS", "FAIL"] },
-        "ai_native_not_feature": { "type": "string", "enum": ["PASS", "FAIL"] },
+        "real_demand": { "type": "string", "enum": ["PASS", "FAIL"] },
         "is_zero_to_one": { "type": "string", "enum": ["PASS", "FAIL"] },
         "salvage_cheaper_than_rebuild": { "type": "string", "enum": ["PASS", "FAIL"] }
       }
