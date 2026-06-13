@@ -33,3 +33,4 @@ We're using it to teach people the proper way to design, test, build, and ship A
 | [0007](0007-we-killed-the-model-mid-answer-and-the-answer-survived.md) | 2026-06-13 | We killed the model mid-answer, and the answer survived |
 | [0008](0008-we-swapped-location-theater-for-a-real-geo-fence.md) | 2026-06-13 | We swapped location theater for a real, fail-closed geo-fence |
 | [0009](0009-we-let-nine-agents-pick-our-next-move.md) | 2026-06-13 | We let nine AI agents pick our next move (and the skeptics were right) |
+| [0010](0010-we-built-the-proof-and-admitted-its-limits.md) | 2026-06-13 | We built the proof our headline feature works (and published what we can't prove yet) |
