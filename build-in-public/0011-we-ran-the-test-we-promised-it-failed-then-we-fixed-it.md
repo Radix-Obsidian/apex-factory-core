@@ -2,6 +2,8 @@
 
 **Date:** 2026-06-14
 
+> **Correction (2026-06-14, same day):** Two fixes after deeper checking. (1) Modern Claude does **not** "continue cleanly" — we *verified* it refuses a prefilled half-answer outright (HTTP 400, "model does not support assistant message prefill"). The clean, no-instruction continuation only comes from providers with explicit continuation support (DeepSeek, Mistral). (2) Our 3-vendor judge panel (Claude + GPT + Gemini) wasn't fully *neutral* for this seam — **two of the three are the seam's own vendors** (Claude graded its own first half, GPT its own continuation), so the 4.3 is a strong **directional** pass, not the final neutral number; a re-run with three *independent* judges is queued. The core story below — bare failover fails, our continue-instruction fixes it — holds regardless of judge.
+
 ## What happened
 Last entry we built the test for our headline feature and promised to run it for real and fix whatever it showed — so we did: the hard case scored **3.6 out of 5 (a fail, exactly as we predicted)**, we found why, and a small, safe fix took it to a passing **4.3**.
 
@@ -15,7 +17,7 @@ This entry is us keeping that promise.
 
 **The prediction was right. It failed: 3.6 out of 5**, below our 4.0 bar. And the failures were ugly: out of 30 cases, one had OpenAI **echo the question back** instead of continuing; another turned a half-written Python function into **unrelated nonsense about filenames**; several **started the whole answer over**.
 
-**Then we found *why*** — and it's specific. OpenAI's API, when you hand it a half-finished answer and say "keep going," often **ignores it and restarts** — but mostly when the cut-off point lands on something structural like a heading or an open code block. Models from Anthropic and Google continue cleanly; OpenAI's doesn't. Our earlier rosy number had come from testing against Google's model, which **hid the problem**. The real, most-popular pairing exposed it.
+**Then we found *why*** — and it's specific. OpenAI's API, when you hand it a half-finished answer and say "keep going," often **ignores it and restarts** — but mostly when the cut-off point lands on something structural like a heading or an open code block. Providers differ: Google's Gemini continued our half-answers cleanly in early tests while OpenAI didn't — and we later **verified that modern Claude refuses a prefilled half-answer outright** (it returns an error). A truly clean, no-instruction continuation only comes from providers with explicit "continue this" support, like DeepSeek and Mistral. Our earlier rosy number had come from testing against Google's model, which **hid the problem**. The real, most-popular pairing exposed it.
 
 **The fix was small — and it respected a rule we'd locked.** We have a hard rule: *never change the half-answer the user already saw* (if we trimmed or edited it, the second model would repeat text and the user would see it twice). We worried the only fix would force us to break that rule. So we tested both:
 - **Option A (safe):** leave the user's text exactly as-is, and add a short *separate* instruction to the continuing model — "you were cut off; continue, don't restart."
@@ -27,7 +29,7 @@ We also caught a separate bug while we were in there: the failover re-used the *
 
 ## The numbers
 
-- **The hard case, bare failover (Claude→OpenAI): 3.60 / 5 — FAIL.** 30 real prompts, judged by a 3-vendor panel (Claude + GPT + Google Gemini), scored as the median of the three. 4 of 30 cases scored 2 or below (one a literal 0).
+- **The hard case, bare failover (Claude→OpenAI): 3.60 / 5 — FAIL.** 30 real prompts, judged by a 3-vendor panel (Claude + GPT + Google Gemini), scored as the median of the three. 4 of 30 cases scored 2 or below (one a literal 0). *(Caveat per the correction above: two of those three judges are the seam's own vendors, so this is directional; a fully-independent re-run is queued.)*
 - **With the fix: 4.32 / 5 — PASS.** (4.90 on the first 10-prompt test; 4.32 on the 30-prompt set weighted toward the cases that break it — the lower, harder number is the one we trust.)
 - **The rule-breaking alternative: 4.55 — worse than the safe fix (4.90).** Rejected. Our locked rule survives untouched.
 - **A real cost bug fixed:** failover could emit ~2× the requested length/spend; now capped.
