@@ -35,3 +35,4 @@ We're using it to teach people the proper way to design, test, build, and ship A
 | [0009](0009-we-let-nine-agents-pick-our-next-move.md) | 2026-06-13 | We let nine AI agents pick our next move (and the skeptics were right) |
 | [0010](0010-we-built-the-proof-and-admitted-its-limits.md) | 2026-06-13 | We built the proof our headline feature works (and published what we can't prove yet) |
 | [0011](0011-we-ran-the-test-we-promised-it-failed-then-we-fixed-it.md) | 2026-06-14 | We ran the quality test we promised — it failed, then we fixed it |
+| [0012](0012-our-judges-were-grading-their-own-homework.md) | 2026-06-15 | Our "neutral" judges were grading their own homework |
