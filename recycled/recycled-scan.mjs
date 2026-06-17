@@ -65,6 +65,65 @@ export function rollupVerdict(verdicts, minSkeptics = 3) {
   return { verdict: 'SURVIVE', reason: `unanimous: ${list.length} skeptics, all bars PASS` };
 }
 
+// ── Ground-truth gate (R16): the kill-skeptic's market-facing bars (is_zero_to_one, real_demand) MUST be
+// judged against LIVE competitive ground-truth, never the candidate's own self-claims. A verdict reached
+// without a fresh, sourced ground-truth packet is INADMISSIBLE. Fail-closed: missing / uncited / empty-
+// without-attestation / stale / future-dated → not admissible. This permanently cures the competitive-
+// blindness defect (2026-06-16: the stock scout false-SURVIVEd commodity — it re-derived a thesis we had
+// already KILLED that week — because the skeptic had ZERO market awareness). Pure; clock is injected. ──
+export const GROUND_TRUTH_MAX_AGE_DAYS = 30;
+export const MARKET_BARS = ['is_zero_to_one', 'real_demand']; // the bars ground-truth informs
+export function groundTruthAdmissible(packet, { now = Date.now(), maxAgeDays = GROUND_TRUTH_MAX_AGE_DAYS } = {}) {
+  if (!packet || typeof packet !== 'object') return { ok: false, reason: 'no ground-truth packet — skeptic would be competitively blind' };
+  const competitors = Array.isArray(packet.competitors) ? packet.competitors.filter(Boolean) : [];
+  const sources = Array.isArray(packet.sources) ? packet.sources.filter(Boolean) : [];
+  // No sources = uncited = indistinguishable from a guess → inadmissible.
+  if (!sources.length) return { ok: false, reason: 'ground-truth has no sources (uncited is inadmissible)' };
+  // An empty competitor set is allowed ONLY when the sweep explicitly attests it searched and the field is
+  // genuinely empty — otherwise "no competitors" is indistinguishable from "never looked".
+  if (!competitors.length && packet.searched_landscape !== true)
+    return { ok: false, reason: 'empty ground-truth: no competitors and no attested landscape search' };
+  const ts = packet.checked_at ? Date.parse(packet.checked_at) : NaN;
+  if (!Number.isFinite(ts)) return { ok: false, reason: 'ground-truth missing a valid checked_at timestamp' };
+  const ageDays = (now - ts) / 86_400_000;
+  if (ageDays < -1) return { ok: false, reason: 'ground-truth checked_at is in the future (clock skew / forgery)' };
+  if (ageDays > maxAgeDays) return { ok: false, reason: `ground-truth stale: ${Math.round(ageDays)}d > ${maxAgeDays}d` };
+  return { ok: true, reason: `fresh ground-truth: ${competitors.length} competitor(s), ${sources.length} source(s), ${Math.round(ageDays)}d old` };
+}
+
+// ── Grounded kill-pass (R17): the kill-pass with the ground-truth precondition enforced — this is what the
+// pipelines MUST call instead of bare rollupVerdict. Inadmissible ground-truth short-circuits to KILL
+// *before* the skeptics are weighed, so a competitively-blind run can never surface a SURVIVE. ──
+export function rollupVerdictGrounded(verdicts, packet, { minSkeptics = 3, now = Date.now() } = {}) {
+  const gt = groundTruthAdmissible(packet, { now });
+  if (!gt.ok) return { verdict: 'KILL', reason: `ground-truth gate: ${gt.reason}`, ground_truth_ok: false };
+  return { ...rollupVerdict(verdicts, minSkeptics), ground_truth_ok: true };
+}
+
+// ── Durability gate (R18) — Thiel's 7 questions (Zero to One, Ch.13): "is the BUSINESS durable?". Layers
+// ABOVE the 5 kill-pass bars (which ask "is the code good?"). A build greenlight requires >=6 of 7. Each
+// answer is { pass, why }; a missing/malformed answer defaults to FAIL (kill-first). Pure. ──
+export const SEVEN_QUESTIONS = ['engineering', 'timing', 'monopoly', 'people', 'distribution', 'durability', 'secret'];
+export const DURABILITY_MIN_PASS = 6;
+export function scoreSevenQuestions(answers) {
+  const by_question = {}; let passed = 0;
+  for (const q of SEVEN_QUESTIONS) { const ok = answers?.[q]?.pass === true; by_question[q] = ok; if (ok) passed++; }
+  return { passed, total: SEVEN_QUESTIONS.length, by_question, durability_pass: passed >= DURABILITY_MIN_PASS };
+}
+
+// ── First-principles gate (R19) — Elon's reasoning test: is the thesis reduced to FUNDAMENTAL TRUTHS, or
+// reasoned by analogy / "how everyone does it" (cargo-cult, me-too)? The core check `reasoned_from_fundamentals`
+// is NON-NEGOTIABLE (an analogy-only thesis fails outright); `requirements_questioned` + `irreducible`
+// (deleted/simplified to the minimum, not bloat) are quality. Pass = core true AND >=2 of 3. Pure. ──
+export const FIRST_PRINCIPLES_CHECKS = ['reasoned_from_fundamentals', 'requirements_questioned', 'irreducible'];
+export const FIRST_PRINCIPLES_MIN_PASS = 2; // core (reasoned_from_fundamentals) + this many total
+export function scoreFirstPrinciples(fp) {
+  const by_check = {}; let passed = 0;
+  for (const c of FIRST_PRINCIPLES_CHECKS) { const ok = fp?.[c]?.pass === true; by_check[c] = ok; if (ok) passed++; }
+  const first_principles_pass = by_check.reasoned_from_fundamentals === true && passed >= FIRST_PRINCIPLES_MIN_PASS;
+  return { passed, total: FIRST_PRINCIPLES_CHECKS.length, by_check, first_principles_pass };
+}
+
 // ── Frozen-archive note (R7): advisory ONLY. Never deletes, never archives. ──
 export function frozenArchiveNote(repo, reason, { runId = 'manual', label = 'archived:recycled-frozen' } = {}) {
   return {
@@ -181,6 +240,8 @@ export const MIN_HOURS_SAVED = 3;
 export function evaluateGreenlight(result) {
   const candById = new Map((result.candidates || []).map(c => [c.candidate_id, c]));
   const survived = new Set((result.judged || []).filter(j => j.rollup?.verdict === 'SURVIVE').map(j => j.candidate_id));
+  // Durability + first-principles scorecards, keyed by candidate (R18/R19). A build greenlight requires BOTH.
+  const durabilityById = new Map((result.durability || []).map(d => [d.candidate_id, d]));
   const greenlights = [], rejected = [];
   for (const s of result.buildspecs || []) {
     const c = candById.get(s.candidate_id); const why = [];
@@ -192,6 +253,9 @@ export function evaluateGreenlight(result) {
       if (c.zero_to_one_rank !== 'true-zero-to-one') why.push('not true-zero-to-one');
     }
     if (s.extracts_verified !== true) why.push('extract paths unverified');
+    const dur = durabilityById.get(s.candidate_id);
+    if (dur?.durability_pass !== true) why.push('failed Thiel 7-questions durability gate (<6/7)');
+    if (dur?.first_principles_pass !== true) why.push('failed first-principles gate (analogy/me-too or not reduced to fundamentals)');
     (why.length ? rejected : greenlights).push({ spec_id: s.spec_id, product: s.product, why });
   }
   return { count: greenlights.length, greenlights, rejected };
@@ -204,9 +268,19 @@ export function persistRun(runId, result, { pathExists } = {}) {
   const verdicts = [];
   for (const j of result.judged || []) {
     for (const v of j.verdicts || []) verdicts.push(v);
-    verdicts.push({ candidate_id: j.candidate_id, skeptic: 'rollup', verdict: j.rollup?.verdict, kill_reason: j.rollup?.reason });
+    verdicts.push({ candidate_id: j.candidate_id, skeptic: 'rollup', verdict: j.rollup?.verdict, kill_reason: j.rollup?.reason, ground_truth_ok: j.rollup?.ground_truth_ok });
   }
   writeJsonl(f('04-verdicts.jsonl'), verdicts);
+  // Seed of the dated-verdict corpus (S1 Market-Intelligence organ): one row per candidate that was swept,
+  // pairing the competitive ground-truth with the verdict it produced. Compounds across runs into the moat.
+  // Include gate-kill rows (ground_truth === null) too: spreading null is a no-op, so the row records the
+  // candidate + verdict + ground_truth_ok:false — an honest "the sweep failed for this one" audit trail.
+  const groundTruth = (result.judged || [])
+    .filter(j => j.ground_truth !== undefined)
+    .map(j => ({ candidate_id: j.candidate_id, ...j.ground_truth, verdict: j.rollup?.verdict, ground_truth_ok: j.rollup?.ground_truth_ok }));
+  writeJsonl(f('07-ground-truth.jsonl'), groundTruth);
+  // Durability + first-principles scorecards (R18/R19) — the build-eligibility gate above the 5 bars.
+  writeJsonl(f('08-durability.jsonl'), result.durability || []);
   let specs = dedupeBuildSpecs(result.buildspecs || []);
   if (pathExists) specs = verifyExtractPaths(specs, pathExists);
   writeJsonl(f('05-buildspecs.jsonl'), specs);
@@ -270,6 +344,54 @@ export function eligibleTopCandidate(candidates) {
 }
 export function markConsumed(candidates, specId) {
   return (candidates || []).map(c => (c.spec_id === specId ? { ...c, consumed: true } : { ...c }));
+}
+
+// ── Outcome-capture (D15): the learning-loop moat SEED. A verdict is an in-the-moment judgment; an
+// OUTCOME is what actually happened, observed later. Kept as a SEPARATE append-only artifact — NOT bolted
+// onto the skeptic's kill-pass verdict, which cannot know the future — keyed by candidate_id so it joins
+// back to ANY candidate we judged, crucially the KILLS (did someone else ship it and win? = a false kill).
+// This is the only non-re-scrapable layer: our private judgment→outcome pairs. It only SEEDS capture; the
+// accuracy bake-off needs labeled volume that does not exist yet, so this claims NO moat — it earns one.
+export const OUTCOMES_FILE = path.join(HERE, '..', 'recycled-outcomes.jsonl');
+export const OUTCOME_LABELS = ['made_money', 'failed', 'unknown'];
+// Pure, fail-fast at the boundary: build one validated outcome event. Throws on bad input (never logs garbage).
+export function makeOutcome(candidate_id, outcome_label, { revenue = null, checked_at = new Date().toISOString(), note = null } = {}) {
+  const id = typeof candidate_id === 'string' ? candidate_id.trim() : '';
+  if (!id) throw new Error('outcome: candidate_id is required');
+  if (!OUTCOME_LABELS.includes(outcome_label)) throw new Error(`outcome: label must be one of ${OUTCOME_LABELS.join('|')} (got ${JSON.stringify(outcome_label)})`);
+  let rev = null;
+  if (revenue != null && revenue !== '') {
+    // reject boolean/array/object BEFORE coercion — Number(true)===1 would otherwise slip past as valid revenue
+    if (typeof revenue === 'boolean' || typeof revenue === 'object') throw new Error(`outcome: revenue must be a number >= 0 (got ${JSON.stringify(revenue)})`);
+    rev = typeof revenue === 'number' ? revenue : Number(revenue);
+    if (!Number.isFinite(rev) || rev < 0) throw new Error(`outcome: revenue must be a number >= 0 (got ${JSON.stringify(revenue)})`);
+  }
+  if (typeof checked_at !== 'string' || Number.isNaN(Date.parse(checked_at))) throw new Error(`outcome: checked_at must be an ISO timestamp (got ${JSON.stringify(checked_at)})`);
+  return { candidate_id: id, outcome_label, revenue: rev, checked_at, ...(note ? { note: String(note) } : {}) };
+}
+// Pure reducer: the append-only log → current state, one record per candidate_id (latest checked_at wins;
+// a tie keeps the later-appended = observation order). New array; input never mutated.
+export function latestByCandidate(records) {
+  const byId = new Map();
+  for (const r of records || []) {
+    if (!r || typeof r.candidate_id !== 'string') continue;
+    if (typeof r.checked_at !== 'string' || Number.isNaN(Date.parse(r.checked_at))) continue; // skip corrupt/hand-edited rows (no valid timestamp)
+    const prev = byId.get(r.candidate_id);
+    if (!prev || Date.parse(r.checked_at) >= Date.parse(prev.checked_at)) byId.set(r.candidate_id, { ...r });
+  }
+  return [...byId.values()];
+}
+// Pure: honest DESCRIPTIVE counts of the captured corpus — explicitly NOT a calibration/accuracy claim
+// (the kill-accuracy bake-off needs a verdict↔outcome join at volume we do not have yet).
+export function summarizeOutcomes(records) {
+  const latest = latestByCandidate(records);
+  const by_label = Object.fromEntries(OUTCOME_LABELS.map(l => [l, 0]));
+  let revenue_total = 0;
+  for (const r of latest) {
+    if (r.outcome_label in by_label) by_label[r.outcome_label]++;
+    if (Number.isFinite(r.revenue)) revenue_total += r.revenue;
+  }
+  return { candidates: latest.length, observations: (records || []).length, by_label, revenue_total };
 }
 
 // ── gh-backed I/O for the source read (agents call these via `node recycled/recycled-scan.mjs ...`). ──
@@ -374,6 +496,32 @@ function main() {
       return;
     }
     console.error('usage: candidates <project <run-id> | next | consume <spec_id> | confirm-license <spec_id> | list>'); process.exit(1);
+  }
+  if (cmd === 'outcome') {                          // the learning-loop moat seed: log what actually happened (D15)
+    const sub = rest[0];
+    if (sub === 'list' || sub === 'stats') {
+      const recs = readJsonl(OUTCOMES_FILE);
+      if (sub === 'stats') {
+        const s = summarizeOutcomes(recs);
+        console.log(`Recycled outcomes — ${s.candidates} candidate(s) tracked over ${s.observations} observation(s)`);
+        for (const l of OUTCOME_LABELS) console.log(`  ${l.padEnd(11)} ${s.by_label[l]}`);
+        console.log(`  revenue_total $${s.revenue_total}`);
+        console.log('  (descriptive counts only — NOT a calibration/accuracy claim; the kill-accuracy bake-off needs labeled volume we do not have yet)');
+        return;
+      }
+      const latest = latestByCandidate(recs).sort((a, b) => Date.parse(b.checked_at) - Date.parse(a.checked_at));
+      if (!latest.length) { console.log('(no outcomes captured yet — log one: outcome <candidate_id> <made_money|failed|unknown> [revenue])'); return; }
+      for (const r of latest) console.log(`  ${r.checked_at.slice(0, 10)}  ${r.outcome_label.padEnd(11)} ${(r.revenue != null ? '$' + r.revenue : '').padStart(8)}  ${r.candidate_id}`);
+      return;
+    }
+    const [candidateId, label, revenue] = rest; // accepts ANY judged candidate_id (esp. KILLS), not just queued greenlights
+    if (!candidateId || !label) { console.error(`usage: outcome <candidate_id> <${OUTCOME_LABELS.join('|')}> [revenue]  |  outcome list  |  outcome stats`); process.exit(1); }
+    let rec;
+    try { rec = makeOutcome(candidateId, label, { revenue }); }
+    catch (e) { console.error(`✗ ${e.message}`); process.exit(1); }
+    appendJsonl(OUTCOMES_FILE, rec);
+    console.log(`✓ outcome logged: ${rec.candidate_id} → ${rec.outcome_label}${rec.revenue != null ? ` ($${rec.revenue})` : ''} @ ${rec.checked_at.slice(0, 10)} → ${OUTCOMES_FILE}`);
+    return;
   }
   if (cmd === 'persist') {
     const runId = rest[0] || 'run-latest';

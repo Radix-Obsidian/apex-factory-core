@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "recycled/outcome-record",
+  "title": "OutcomeRecord",
+  "description": "A real-world outcome observed AFTER a verdict — the learning-loop moat seed (D15). Append-only, keyed by candidate_id, joinable to ANY judged candidate (especially KILLS, to detect false kills). Deliberately NOT part of the in-the-moment kill-pass verdict, which cannot know the future.",
+  "type": "object",
+  "required": ["candidate_id", "outcome_label", "checked_at"],
+  "additionalProperties": false,
+  "properties": {
+    "candidate_id": { "type": "string", "minLength": 1 },
+    "outcome_label": { "type": "string", "enum": ["made_money", "failed", "unknown"] },
+    "revenue": { "description": "USD (monthly or total, per observer convention); null when failed/unknown", "type": ["number", "null"], "minimum": 0 },
+    "checked_at": { "description": "ISO-8601 timestamp of when the outcome was observed", "type": "string", "format": "date-time" },
+    "note": { "description": "optional free-text context (source, caveat)", "type": "string" }
+  }
+}

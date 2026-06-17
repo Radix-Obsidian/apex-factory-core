@@ -19,7 +19,8 @@ export const meta = {
   phases: [
     { title: 'Scan', detail: 'manifest + read a few files → builtness + the ONE best capability' },
     { title: 'Map', detail: 'map that capability → the ONE best product candidate', model: 'sonnet' },
-    { title: 'Judge', detail: 'one ruthless skeptic vs the broadened bar (default-to-kill)', model: 'sonnet' },
+    { title: 'Ground-truth', detail: 'live competitive sweep — who already ships this (cures blindness)', model: 'sonnet' },
+    { title: 'Judge', detail: 'one ruthless skeptic vs the broadened bar (default-to-kill), ground-truth-fed', model: 'sonnet' },
   ],
 };
 
@@ -70,6 +71,30 @@ const VERDICT = { type: 'object', required: ['bars', 'verdict', 'confidence'], p
     salvage_cheaper_than_rebuild: { type: 'string', enum: ['PASS', 'FAIL'] } } },
   verdict: { type: 'string', enum: ['SURVIVE', 'KILL'] }, kill_reason: { type: 'string' }, confidence: { type: 'number' } } };
 
+// Ground-truth packet (S1 Market-Intelligence): the live competitive landscape the skeptic judges against.
+const GROUNDTRUTH = { type: 'object', required: ['searched_landscape', 'competitors', 'sources', 'checked_at', 'novelty_read', 'demand_read'], properties: {
+  searched_landscape: { type: 'boolean' },
+  competitors: { type: 'array', items: { type: 'object', required: ['name', 'what_they_ship', 'overlap'], properties: {
+    name: { type: 'string' }, what_they_ship: { type: 'string' }, overlap: { type: 'string', enum: ['direct', 'adjacent', 'weak'] } } } },
+  demand_evidence: { type: 'array', items: { type: 'string' } },
+  sources: { type: 'array', items: { type: 'string' } },
+  checked_at: { type: 'string' }, // ISO date the sweep ran
+  novelty_read: { type: 'string', enum: ['genuinely-novel', 'differentiated', 'crowded-me-too'] },
+  demand_read: { type: 'string', enum: ['evidenced-demand', 'plausible', 'no-evidence'] } } };
+
+// Inline STRUCTURAL mirror of recycled-scan.mjs groundTruthAdmissible (the tested source of truth, R16).
+// The sweep just ran so freshness is given; this enforces packet-present + sourced + competitors-or-
+// attested-empty. Fail-closed: a blind/uncited packet can NEVER reach a SURVIVE. Staleness AND future-date
+// checks are intentionally omitted (no Date in the DSL); the sweep just ran, and the structural checks hold.
+function groundTruthOk(p) {
+  if (!p || typeof p !== 'object') return { ok: false, reason: 'no ground-truth packet — skeptic would be blind' };
+  const competitors = Array.isArray(p.competitors) ? p.competitors.filter(Boolean) : [];
+  const sources = Array.isArray(p.sources) ? p.sources.filter(Boolean) : [];
+  if (!sources.length) return { ok: false, reason: 'uncited ground-truth (no sources)' };
+  if (!competitors.length && p.searched_landscape !== true) return { ok: false, reason: 'empty ground-truth with no attested search' };
+  return { ok: true, reason: `${competitors.length} competitor(s), ${sources.length} source(s)` };
+}
+
 const CONFIDENCE_FLOOR = 0.6;
 // A scout SURVIVE requires the single skeptic to SURVIVE on ALL bars at confidence >= floor. Default-to-kill.
 function scoutVerdict(v) {
@@ -110,28 +135,45 @@ const results = (await pipeline(
       { agentType: 'code-architect', model: 'sonnet', phase: 'Map', label: `map:${repo}`, schema: CAND })
       .then(c => ({ repo, ...scan, candidate: c, score_total: Object.values(c.scores || {}).reduce((a, b) => a + (Number(b) || 0), 0) }));
   },
-  // ── Stage Judge (Sonnet): ONE ruthless skeptic vs the broadened bar — skipped for already-killed repos ──
+  // ── Stage Ground-truth (Sonnet + web): live competitive sweep — skipped for already-killed repos ──
   (mapped, repo) => {
     if (!mapped) return killed(repo, {}, 'map failed');
     if (mapped.scout) return mapped; // already killed at scan/map
+    return agent(
+      `GROUND-TRUTH sweep for a salvage candidate from ${repo}. Establish the LIVE 2026 competitive landscape so the next skeptic judges novelty + demand against REALITY, not the candidate's self-claims. (This line once false-SURVIVEd commodity for lack of exactly this step.)\n` +
+      `Candidate: ${JSON.stringify(mapped.candidate)}\n` +
+      `FIRST load web tools: ToolSearch with query "select:WebSearch,WebFetch". Then search hard for who ALREADY ships this product/capability in this vertical (named companies + OSS projects, with their CURRENT behavior), and for real evidence of demand.\n` +
+      `Return: competitors[] (name, what_they_ship, overlap=direct|adjacent|weak), demand_evidence[], sources[] (REAL urls you actually consulted), searched_landscape=true, checked_at=today's date in ISO, novelty_read, demand_read.\n` +
+      `If after a genuine search the field is truly empty, return competitors:[] with searched_landscape:true and explain in demand_read — but NEVER fabricate a competitor and NEVER return an unsourced packet.`,
+      { model: 'sonnet', phase: 'Ground-truth', label: `ground:${repo}`, schema: GROUNDTRUTH })
+      .then(gt => ({ repo, ...mapped, ground_truth: gt }))
+      .catch(() => ({ repo, ...mapped, ground_truth: null })); // sweep threw → null packet → gate KILLs (fail-closed)
+  },
+  // ── Stage Judge (Sonnet): ground-truth gate, then ONE ruthless skeptic — skipped for already-killed repos ──
+  (graded, repo) => {
+    if (!graded) return killed(repo, {}, 'ground-truth failed');
+    if (graded.scout) return graded; // already killed at scan/map
+    const gt = groundTruthOk(graded.ground_truth);
+    if (!gt.ok) return { repo, ...graded, candidate: null, skeptic: null, scout: { verdict: 'KILL', reason: `ground-truth gate: ${gt.reason}` }, score_total: 0 };
     const licenseNote = TIER === '2'
       ? `${repo} is a Tier-2 EXTERNAL repo: apply the license gate. If its license is not permissive (MIT/Apache-2.0/BSD/ISC/Unlicense/CC0/0BSD), salvage_cheaper_than_rebuild is an automatic FAIL — we cannot legally lift it. Confirm via: cd ${FC} && node recycled/recycled-scan.mjs cat ${repo} LICENSE`
       : `${repo} is an OWN (Tier-1) repo — we own the code, so LICENSE is NEVER a kill reason here.`;
     return agent(
       `You are a RUTHLESS scout skeptic. Try to REFUTE this single salvage candidate. Default to FAIL on doubt — a scout SURVIVE escalates this repo to a ~2M-token deep-dive, so be stingy.\n` +
-      `Candidate: ${JSON.stringify(mapped.candidate)}\nCapability: ${JSON.stringify(mapped.capability)}\nSource repo: ${repo}.\n` +
+      `Candidate: ${JSON.stringify(graded.candidate)}\nCapability: ${JSON.stringify(graded.capability)}\nSource repo: ${repo}.\n` +
+      `LIVE GROUND-TRUTH (judge is_zero_to_one and real_demand against THIS, never the candidate's self-claims — if a competitor already ships it, is_zero_to_one FAILs): ${JSON.stringify(graded.ground_truth)}\n` +
       `Verify against REAL code: cd ${FC} && node recycled/recycled-scan.mjs cat ${repo} <path>. If the candidate rests on files/features that don't actually exist, that is an automatic not_frankenstein FAIL.\n` +
       `${licenseNote}\n` +
       `BAR (broadened): defensible + vertical + real demand + legally liftable. An AI-native angle is a STRONG PLUS, NOT a gate — do NOT kill merely for being non-AI.\n` +
       `Judge all 5 bars (PASS only if it clearly clears):\n` +
       `- not_frankenstein: a clean capability lift, NOT a forced re-stitch of the dead product?\n` +
       `- not_horizontal_sprawl: a focused vertical, NOT a generic horizontal tool?\n` +
-      `- real_demand: real, evidenced market pull with a specific ICP who'd pay, NOT a solution in search of a problem?\n` +
-      `- is_zero_to_one: genuinely new / defensibly differentiated, NOT a crowded me-too?\n` +
+      `- real_demand: real, evidenced market pull (use the ground-truth demand_evidence) with a specific ICP who'd pay, NOT a solution in search of a problem?\n` +
+      `- is_zero_to_one: genuinely new / defensibly differentiated vs the ground-truth competitors, NOT a crowded me-too?\n` +
       `- salvage_cheaper_than_rebuild: would salvaging actually beat rebuilding clean? (the most common silent kill)\n` +
       `verdict = SURVIVE only if ALL bars PASS. Give kill_reason if KILL, and confidence 0-1.`,
       { agentType: 'code-reviewer', model: 'sonnet', phase: 'Judge', label: `judge:${repo}`, schema: VERDICT })
-      .then(v => ({ repo, ...mapped, skeptic: v, scout: scoutVerdict(v) }));
+      .then(v => ({ repo, ...graded, skeptic: v, scout: scoutVerdict(v) }));
   },
 )).filter(Boolean);
 

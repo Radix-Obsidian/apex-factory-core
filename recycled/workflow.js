@@ -14,8 +14,10 @@ export const meta = {
     { title: 'Inventory', detail: 'classify each system; salvage the well-built ones' },
     { title: 'Extract', detail: 'name the reusable capability per system' },
     { title: 'Map', detail: 'map capability → candidate products' },
-    { title: 'Kill', detail: '3 adversarial skeptics per candidate, default-to-kill' },
-    { title: 'Synth', detail: 'survivors → build-spec' },
+    { title: 'Ground-truth', detail: 'live competitive sweep per candidate (cures blindness)' },
+    { title: 'Kill', detail: '3 adversarial skeptics per candidate, default-to-kill, ground-truth-fed' },
+    { title: 'Durability', detail: 'Thiel 7-questions (≥6/7) + Elon first-principles per survivor' },
+    { title: 'Synth', detail: 'build-eligible survivors → build-spec' },
   ],
 };
 
@@ -26,7 +28,7 @@ let _A = args;
 if (typeof _A === 'string') { try { _A = JSON.parse(_A); } catch { _A = null; } }
 const REPOS = (_A && Array.isArray(_A.repos) && _A.repos.length) ? _A.repos
   : (_A && _A.repo) ? [_A.repo]
-  : ['GoldenSheepAI/NoLeakAi', 'GoldenSheepAI/toknxr', 'Radix-Obsidian/ShepLight'];
+  : ['Radix-Obsidian/ShepGate']; // re-validate MCPShield's source through the strengthened line (Phase 1)
 const MAX_SYSTEMS = (_A && _A.maxSystems) || 5;
 const MAX_CANDS_PER_CAP = (_A && _A.maxCandidates) || 2;
 
@@ -59,12 +61,30 @@ const VERDICT = { type: 'object', required: ['bars', 'verdict', 'confidence'], p
     real_demand: { type: 'string', enum: ['PASS', 'FAIL'] }, is_zero_to_one: { type: 'string', enum: ['PASS', 'FAIL'] },
     salvage_cheaper_than_rebuild: { type: 'string', enum: ['PASS', 'FAIL'] } } },
   verdict: { type: 'string', enum: ['SURVIVE', 'KILL'] }, kill_reason: { type: 'string' }, confidence: { type: 'number' } } };
+// Ground-truth packet (S1 Market-Intelligence): the live competitive landscape the skeptics judge against.
+const GROUNDTRUTH = { type: 'object', required: ['searched_landscape', 'competitors', 'sources', 'checked_at', 'novelty_read', 'demand_read'], properties: {
+  searched_landscape: { type: 'boolean' },
+  competitors: { type: 'array', items: { type: 'object', required: ['name', 'what_they_ship', 'overlap'], properties: {
+    name: { type: 'string' }, what_they_ship: { type: 'string' }, overlap: { type: 'string', enum: ['direct', 'adjacent', 'weak'] } } } },
+  demand_evidence: { type: 'array', items: { type: 'string' } },
+  sources: { type: 'array', items: { type: 'string' } },
+  checked_at: { type: 'string' }, // ISO date the sweep ran
+  novelty_read: { type: 'string', enum: ['genuinely-novel', 'differentiated', 'crowded-me-too'] },
+  demand_read: { type: 'string', enum: ['evidenced-demand', 'plausible', 'no-evidence'] } } };
 const BUILDSPEC = { type: 'object', required: ['product', 'extract_list', 'wrap_plan', 'ai_native_test'], properties: {
   product: { type: 'string' }, icp: { type: 'string' }, wedge: { type: 'string' },
   extract_list: { type: 'array', items: { type: 'object', required: ['from', 'symbols', 'status'], properties: {
     from: { type: 'string' }, symbols: { type: 'array', items: { type: 'string' } },
     status: { type: 'string', enum: ['lift-as-is', 'lift-with-refactor'] }, refactor: { type: 'string' } } } },
   wrap_plan: { type: 'string' }, rough_dev_effort: { type: 'string' }, ai_native_test: { type: 'string', enum: ['PASS', 'FAIL'] } } };
+
+// Durability gate inputs (R18/R19): Thiel's 7 questions + Elon's first-principles, each a {pass, why} answer.
+const SEVEN_Q = ['engineering', 'timing', 'monopoly', 'people', 'distribution', 'durability', 'secret'];
+const FP_CHECKS = ['reasoned_from_fundamentals', 'requirements_questioned', 'irreducible'];
+const _qa = keys => { const p = {}; for (const k of keys) p[k] = { type: 'object', required: ['pass', 'why'], properties: { pass: { type: 'boolean' }, why: { type: 'string' } } }; return p; };
+const DURABILITY_SCHEMA = { type: 'object', required: ['seven_questions', 'first_principles'], properties: {
+  seven_questions: { type: 'object', required: SEVEN_Q, properties: _qa(SEVEN_Q) },
+  first_principles: { type: 'object', required: FP_CHECKS, properties: _qa(FP_CHECKS) } } };
 
 // ── inline kill-pass rollup, mirroring recycled-scan.mjs rollupVerdict (default-to-kill) ──
 const BARS = ['not_frankenstein', 'not_horizontal_sprawl', 'real_demand', 'is_zero_to_one', 'salvage_cheaper_than_rebuild'];
@@ -77,6 +97,35 @@ function rollup(list, min = 3) {
     for (const b of BARS) if (v?.bars?.[b] !== 'PASS') return { verdict: 'KILL', reason: `skeptic ${v.skeptic} failed ${b}` };
   }
   return { verdict: 'SURVIVE', reason: `unanimous ${l.length} skeptics` };
+}
+
+// Inline STRUCTURAL mirror of recycled-scan.mjs groundTruthAdmissible (the tested source of truth, R16).
+// The sweep just ran so freshness is given; this enforces packet-present + sourced + competitors-or-
+// attested-empty. Fail-closed: a blind/uncited packet can NEVER reach a SURVIVE. Staleness AND future-date
+// checks are intentionally omitted (no Date in the DSL); the sweep just ran, and the structural checks hold.
+function groundTruthOk(p) {
+  if (!p || typeof p !== 'object') return { ok: false, reason: 'no ground-truth packet — skeptics would be blind' };
+  const competitors = Array.isArray(p.competitors) ? p.competitors.filter(Boolean) : [];
+  const sources = Array.isArray(p.sources) ? p.sources.filter(Boolean) : [];
+  if (!sources.length) return { ok: false, reason: 'uncited ground-truth (no sources)' };
+  if (!competitors.length && p.searched_landscape !== true) return { ok: false, reason: 'empty ground-truth with no attested search' };
+  return { ok: true, reason: `${competitors.length} competitor(s), ${sources.length} source(s)` };
+}
+
+// Inline mirrors of recycled-scan.mjs scoreSevenQuestions/scoreFirstPrinciples (the tested source of truth, R18/R19).
+// Missing/malformed answers default-to-FAIL (kill-first). The first-principles CORE (reasoned_from_fundamentals) is
+// non-negotiable: an analogy-only / me-too thesis fails even at 2/3.
+const DURABILITY_MIN_PASS = 6; // MUST match recycled-scan.mjs DURABILITY_MIN_PASS
+const FP_MIN_PASS = 2;         // MUST match recycled-scan.mjs FIRST_PRINCIPLES_MIN_PASS
+function scoreSevenQuestions(answers) {
+  const by_question = {}; let passed = 0;
+  for (const q of SEVEN_Q) { const ok = answers?.[q]?.pass === true; by_question[q] = ok; if (ok) passed++; }
+  return { passed, total: SEVEN_Q.length, by_question, durability_pass: passed >= DURABILITY_MIN_PASS };
+}
+function scoreFirstPrinciples(fp) {
+  const by_check = {}; let passed = 0;
+  for (const c of FP_CHECKS) { const ok = fp?.[c]?.pass === true; by_check[c] = ok; if (ok) passed++; }
+  return { passed, total: FP_CHECKS.length, by_check, first_principles_pass: by_check.reasoned_from_fundamentals === true && passed >= FP_MIN_PASS };
 }
 
 function readInstr(REPO) {
@@ -107,7 +156,7 @@ async function salvage(REPO) {
     .slice(0, MAX_SYSTEMS);
   if (!targets.length) {
     return { repo: REPO, inventory: inv.records || [], capabilities: [], candidates: [], judged: [], buildspecs: [],
-      frozen: [{ repo: REPO, reason: 'no systems with real salvageable capability surfaced in inventory' }] };
+      durability: [], frozen: [{ repo: REPO, reason: 'no systems with real salvageable capability surfaced in inventory' }] };
   }
 
   // Stage 2: capability extraction
@@ -123,7 +172,7 @@ async function salvage(REPO) {
   ))).filter(Boolean).map((c, i) => ({ ...c, source_repo: REPO, source_system: targets[i]?.system, capability_id: `${RN}-${c.capability_id || 'cap-' + (i + 1)}` }));
   if (!capabilities.length) {
     return { repo: REPO, inventory: inv.records, capabilities: [], candidates: [], judged: [], buildspecs: [],
-      frozen: [{ repo: REPO, reason: 'no capability cleanly extractable' }] };
+      durability: [], frozen: [{ repo: REPO, reason: 'no capability cleanly extractable' }] };
   }
 
   // Stage 3: opportunity mapping
@@ -146,37 +195,81 @@ async function salvage(REPO) {
   })));
   if (!candidates.length) {
     return { repo: REPO, inventory: inv.records, capabilities, candidates: [], judged: [], buildspecs: [],
-      frozen: [{ repo: REPO, reason: 'capabilities extracted but no viable product mapping' }] };
+      durability: [], frozen: [{ repo: REPO, reason: 'capabilities extracted but no viable product mapping' }] };
   }
 
-  // Stage 4: adversarial kill-pass (3 skeptics per candidate, default-to-kill)
-  const judged = (await parallel(candidates.map(cand => () =>
-    parallel([1, 2, 3].map(n => () => agent(
+  // Stage 4: ground-truth sweep → gate → adversarial kill-pass (3 skeptics per candidate, default-to-kill).
+  // The sweep cures the competitive-blindness defect (2026-06-16): an inadmissible packet KILLs the
+  // candidate BEFORE any skeptic is weighed, so a blind run can never surface a SURVIVE.
+  const judged = (await parallel(candidates.map(cand => async () => {
+    const packet = await agent(
+      `GROUND-TRUTH sweep for this salvage candidate from ${REPO}. Establish the LIVE 2026 competitive landscape so the skeptics judge novelty + demand against REALITY, not the candidate's self-claims (this line once false-SURVIVEd commodity for lack of exactly this step).\n` +
+      `Candidate: ${JSON.stringify(cand)}\n` +
+      `FIRST load web tools: ToolSearch with query "select:WebSearch,WebFetch". Then search hard for who ALREADY ships this product/capability in this vertical (named companies + OSS projects, with their CURRENT behavior) and for real evidence of demand.\n` +
+      `Return: competitors[] (name, what_they_ship, overlap=direct|adjacent|weak), demand_evidence[], sources[] (REAL urls you actually consulted), searched_landscape=true, checked_at=today's date in ISO, novelty_read, demand_read.\n` +
+      `If after a genuine search the field is truly empty, return competitors:[] with searched_landscape:true and explain in demand_read — but NEVER fabricate a competitor and NEVER return an unsourced packet.`,
+      { model: 'sonnet', phase: 'Ground-truth', label: `ground:${RN}:${cand.candidate_id}`, schema: GROUNDTRUTH })
+      .catch(() => null); // sweep threw → null packet → gate KILLs (fail-closed)
+    const gt = groundTruthOk(packet);
+    if (!gt.ok) return { candidate_id: cand.candidate_id, ground_truth: packet || null, verdicts: [], rollup: { verdict: 'KILL', reason: `ground-truth gate: ${gt.reason}`, ground_truth_ok: false } };
+    const verdicts = (await parallel([1, 2, 3].map(n => () => agent(
       `You are a RUTHLESS skeptic. Try to REFUTE this salvage candidate. Default to FAIL on doubt.\n` +
       `Candidate: ${JSON.stringify(cand)}\nSource repo: ${REPO}. You may verify code via:\n  cd ${FC} && node recycled/recycled-scan.mjs cat ${REPO} <path>\n` +
+      `LIVE GROUND-TRUTH (judge is_zero_to_one and real_demand against THIS, never the candidate's self-claims — if a competitor already ships it, is_zero_to_one FAILs): ${JSON.stringify(packet)}\n` +
       `NOTE: ${REPO} is an OWN (Tier-1) repo — we own the code, so LICENSE is NEVER a kill reason here; do not apply any license gate.\n` +
       `THE BAR (broadened): a winner is defensible + vertical + has real demand + legally liftable. An AI-native angle is a STRONG PLUS, NOT a gate — do NOT kill a candidate merely for being non-AI. A great non-AI vertical tool can SURVIVE.\n` +
       `Verify claims against REAL code: if the candidate rests on features/files that don't actually exist in the repo, that is an automatic not_frankenstein FAIL.\n` +
       `Judge all 5 bars (PASS only if it clearly clears):\n` +
       `- not_frankenstein: a clean capability lift, NOT a forced re-stitch of the dead product?\n` +
       `- not_horizontal_sprawl: a focused vertical, NOT a generic horizontal tool?\n` +
-      `- real_demand: is there real, evidenced market pull for this — a specific ICP who'd pay — NOT a solution in search of a problem?\n` +
-      `- is_zero_to_one: genuinely new / defensibly differentiated, NOT a crowded me-too?\n` +
+      `- real_demand: real, evidenced market pull (use the ground-truth demand_evidence) with a specific ICP who'd pay, NOT a solution in search of a problem?\n` +
+      `- is_zero_to_one: genuinely new / defensibly differentiated vs the ground-truth competitors, NOT a crowded me-too?\n` +
       `- salvage_cheaper_than_rebuild: would salvaging actually beat rebuilding clean? (the most common silent kill)\n` +
       `verdict = SURVIVE only if ALL bars PASS. Give kill_reason if KILL, and a confidence 0-1.`,
       { agentType: 'code-reviewer', model: 'sonnet', phase: 'Kill', label: `skeptic${n}:${RN}:${cand.candidate_id}`, schema: VERDICT })
         .then(v => ({ ...v, skeptic: n, candidate_id: cand.candidate_id }))
-    )).then(vs => { const verdicts = vs.filter(Boolean); return { candidate_id: cand.candidate_id, verdicts, rollup: rollup(verdicts) }; })
-  ))).filter(Boolean);
+    ))).filter(Boolean);
+    return { candidate_id: cand.candidate_id, ground_truth: packet, verdicts, rollup: { ...rollup(verdicts), ground_truth_ok: true } };
+  }))).filter(Boolean);
 
   const survivors = candidates
     .filter(c => judged.find(j => j.candidate_id === c.candidate_id)?.rollup.verdict === 'SURVIVE')
     .sort((a, b) => (b.score_total || 0) - (a.score_total || 0));
 
-  // Stage 5: survivors → build-spec
+  // Stage 4.5: Durability + first-principles per survivor (R18/R19). Thiel's 7 questions ("is the business
+  // durable?", >=6/7) AND Elon's first-principles ("reduced to fundamentals, not analogy/me-too?"), judged
+  // against the ground-truth packet already gathered. BOTH must pass to be build-eligible — fail-closed.
+  const durability = (await parallel(survivors.map(cand => () => {
+    const packet = judged.find(j => j.candidate_id === cand.candidate_id)?.ground_truth || null;
+    return agent(
+      `Apply the factory's BUILD-DURABILITY gate to this kill-pass survivor — the bar a SKU must clear before we build it. Be a kill-first skeptic: default every question to FAIL unless clearly cleared. Judge monopoly/durability/timing against the LIVE ground-truth, never the candidate's self-claims.\n` +
+      `Candidate: ${JSON.stringify(cand)}\nLive ground-truth: ${JSON.stringify(packet)}\n` +
+      `THIEL'S 7 QUESTIONS (return as seven_questions; pass=true only if clearly cleared):\n` +
+      `- engineering: >=10x proprietary tech on a dimension customers care about (NOT marginal/commodity)?\n` +
+      `- timing: is now the right moment for THIS business?\n` +
+      `- monopoly: starts with a big share of a SMALL market (not "1% of a huge market", not a crowded me-too)?\n` +
+      `- people: a credible operator/team to execute?\n` +
+      `- distribution: a concrete way to DELIVER/reach customers (not just build)?\n` +
+      `- durability: defensible 10-20 years (a moat that compounds, not copyable in a quarter)?\n` +
+      `- secret: a true contrarian insight the market misses (ideally about people)?\n` +
+      `ELON FIRST-PRINCIPLES (return as first_principles; the reasoning test):\n` +
+      `- reasoned_from_fundamentals: derived from fundamental truths, NOT by analogy / "how everyone does it" (CORE — fail this and the whole gate fails)?\n` +
+      `- requirements_questioned: are the assumed requirements challenged, not taken as given?\n` +
+      `- irreducible: scoped to the deleted/simplified minimum, not bloated?\n`,
+      { agentType: 'code-reviewer', model: 'sonnet', phase: 'Durability', label: `durability:${RN}:${cand.candidate_id}`, schema: DURABILITY_SCHEMA })
+      .then(d => {
+        const sq = scoreSevenQuestions(d.seven_questions), fp = scoreFirstPrinciples(d.first_principles);
+        return { candidate_id: cand.candidate_id, seven_questions: sq, first_principles: fp, durability_pass: sq.durability_pass, first_principles_pass: fp.first_principles_pass };
+      })
+      .catch(() => ({ candidate_id: cand.candidate_id, seven_questions: scoreSevenQuestions(null), first_principles: scoreFirstPrinciples(null), durability_pass: false, first_principles_pass: false }));
+  }))).filter(Boolean);
+  const buildEligible = new Set(durability.filter(d => d.durability_pass && d.first_principles_pass).map(d => d.candidate_id));
+  const durableSurvivors = survivors.filter(c => buildEligible.has(c.candidate_id));
+
+  // Stage 5: build-eligible survivors → build-spec
   let buildspecs = [];
-  if (survivors.length) {
-    const synthed = await parallel(survivors.map((cand, i) => () => {
+  if (durableSurvivors.length) {
+    const synthed = await parallel(durableSurvivors.map((cand, i) => () => {
       const cap = capabilities.find(c => c.capability_id === cand.capability_id);
       return agent(
         `Produce a build-ready BuildSpec for this greenlit salvage candidate (rank ${i + 1}).\n` +
@@ -189,8 +282,10 @@ async function salvage(REPO) {
     buildspecs = synthed.filter(Boolean);
   }
 
-  const frozen = survivors.length ? [] : [{ repo: REPO, reason: 'all candidates killed in the adversarial pass; no build-ready zero-to-one this run' }];
-  return { repo: REPO, inventory: inv.records, capabilities, candidates, judged, buildspecs, frozen };
+  const frozen = durableSurvivors.length ? [] : [{ repo: REPO, reason: survivors.length
+    ? 'survivor(s) failed the durability/first-principles gate (Thiel <6/7 or analogy/me-too) — not build-durable this run'
+    : 'all candidates killed in the adversarial pass; no build-ready zero-to-one this run' }];
+  return { repo: REPO, inventory: inv.records, capabilities, candidates, judged, durability, buildspecs, frozen };
 }
 
 // ── run each repo sequentially (bounds concurrency + keeps the log readable) ──

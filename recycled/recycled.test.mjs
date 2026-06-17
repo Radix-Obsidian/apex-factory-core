@@ -4,7 +4,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { licenseGate, isSourcePath, rollupVerdict, frozenArchiveNote, classifyRepoAge,
   buildManifest, dedupeBuildSpecs, verifyExtractPaths, evaluateGreenlight,
-  projectCandidates, mergeCandidates, eligibleTopCandidate, markConsumed } from './recycled-scan.mjs';
+  projectCandidates, mergeCandidates, eligibleTopCandidate, markConsumed,
+  groundTruthAdmissible, rollupVerdictGrounded, GROUND_TRUTH_MAX_AGE_DAYS,
+  scoreSevenQuestions, scoreFirstPrinciples,
+  makeOutcome, latestByCandidate, summarizeOutcomes } from './recycled-scan.mjs';
 
 // ── R1: license gate, fail-closed ──
 test('R1 licenseGate — permissive licenses are LIFT-OK (tier 2)', () => {
@@ -74,6 +77,65 @@ test('R7 frozenArchiveNote — label-only, reversible, TRULY-DEAD', () => {
   assert.equal(n.verdict, 'TRULY-DEAD');
 });
 
+// ── R16: ground-truth gate — the kill-skeptic must judge market bars against LIVE landscape, fail-closed ──
+const NOW = Date.parse('2026-06-16T00:00:00Z');
+const freshPacket = (over = {}) => ({
+  searched_landscape: true,
+  competitors: [{ name: 'LiteLLM', what_they_ship: 'mid-stream prefill failover', overlap: 'direct' }],
+  sources: ['https://github.com/BerriAI/litellm/blob/main/litellm/router.py'],
+  checked_at: '2026-06-15T00:00:00Z',
+  ...over,
+});
+test('R16 groundTruthAdmissible — fresh, sourced, competitor-bearing packet is admissible', () => {
+  assert.equal(groundTruthAdmissible(freshPacket(), { now: NOW }).ok, true);
+});
+test('R16 groundTruthAdmissible — missing/empty packet is INADMISSIBLE (competitively blind)', () => {
+  assert.equal(groundTruthAdmissible(null, { now: NOW }).ok, false);
+  assert.equal(groundTruthAdmissible(undefined, { now: NOW }).ok, false);
+  assert.equal(groundTruthAdmissible({}, { now: NOW }).ok, false);
+});
+test('R16 groundTruthAdmissible — competitors but NO sources → inadmissible (uncited is a guess)', () => {
+  assert.equal(groundTruthAdmissible(freshPacket({ sources: [] }), { now: NOW }).ok, false);
+});
+test('R16 groundTruthAdmissible — empty competitors WITHOUT attested search → inadmissible', () => {
+  assert.equal(groundTruthAdmissible(freshPacket({ competitors: [], searched_landscape: false }), { now: NOW }).ok, false);
+});
+test('R16 groundTruthAdmissible — empty competitors WITH attested search + sources → admissible (honest empty field)', () => {
+  assert.equal(groundTruthAdmissible(freshPacket({ competitors: [], searched_landscape: true }), { now: NOW }).ok, true);
+});
+test('R16 groundTruthAdmissible — missing/invalid checked_at → inadmissible', () => {
+  assert.equal(groundTruthAdmissible(freshPacket({ checked_at: undefined }), { now: NOW }).ok, false);
+  assert.equal(groundTruthAdmissible(freshPacket({ checked_at: 'whenever' }), { now: NOW }).ok, false);
+});
+test('R16 groundTruthAdmissible — stale beyond the max age → inadmissible', () => {
+  const stale = freshPacket({ checked_at: '2026-04-01T00:00:00Z' }); // ~76d before NOW
+  assert.equal(groundTruthAdmissible(stale, { now: NOW }).ok, false);
+  assert.ok((NOW - Date.parse(stale.checked_at)) / 86_400_000 > GROUND_TRUTH_MAX_AGE_DAYS);
+});
+test('R16 groundTruthAdmissible — future checked_at → inadmissible (clock skew / forgery)', () => {
+  assert.equal(groundTruthAdmissible(freshPacket({ checked_at: '2026-07-01T00:00:00Z' }), { now: NOW }).ok, false);
+});
+
+// ── R17: grounded kill-pass — inadmissible ground-truth short-circuits to KILL before skeptics are weighed ──
+test('R17 rollupVerdictGrounded — admissible ground-truth + 3 unanimous SURVIVE → SURVIVE', () => {
+  const r = rollupVerdictGrounded([survive(1), survive(2), survive(3)], freshPacket(), { now: NOW });
+  assert.equal(r.verdict, 'SURVIVE');
+  assert.equal(r.ground_truth_ok, true);
+});
+test('R17 rollupVerdictGrounded — INADMISSIBLE ground-truth + 3 unanimous SURVIVE → KILL (the blindness cure)', () => {
+  // This is the exact 2026-06-16 false-positive: skeptics all say SURVIVE, but with no market awareness it must KILL.
+  const r = rollupVerdictGrounded([survive(1), survive(2), survive(3)], null, { now: NOW });
+  assert.equal(r.verdict, 'KILL');
+  assert.equal(r.ground_truth_ok, false);
+  assert.match(r.reason, /ground-truth gate/);
+});
+test('R17 rollupVerdictGrounded — admissible ground-truth still respects default-to-kill (a KILL skeptic → KILL)', () => {
+  const kill = { skeptic: 3, verdict: 'KILL', confidence: 0.8, kill_reason: 'crowded me-too', bars: { not_frankenstein: 'PASS', not_horizontal_sprawl: 'PASS', real_demand: 'PASS', is_zero_to_one: 'FAIL', salvage_cheaper_than_rebuild: 'PASS' } };
+  const r = rollupVerdictGrounded([survive(1), survive(2), kill], freshPacket(), { now: NOW });
+  assert.equal(r.verdict, 'KILL');
+  assert.equal(r.ground_truth_ok, true); // gate passed; the skeptic killed it
+});
+
 // ── repo-age classifier (Stage 0 bucket) ──
 test('classifyRepoAge — LIVE / DORMANT / DEAD by months', () => {
   const now = Date.parse('2026-06-11T00:00:00Z');
@@ -126,12 +188,14 @@ test('R6 verifyExtractPaths — unresolved path → extracts_verified false', ()
   assert.equal(ok[0].extracts_verified, true);
 });
 
-// ── honest-greenlight gate: survived + hours>=3 + zero-to-one + paths verified (AI is a plus, NOT a gate) ──
-test('evaluateGreenlight — passes when survived + hours>=3 + zero-to-one + paths verified', () => {
+// ── honest-greenlight gate: survived + hours>=3 + zero-to-one + paths verified + durability + first-principles ──
+const durOK = [{ candidate_id: 'c1', durability_pass: true, first_principles_pass: true }];
+test('evaluateGreenlight — passes when survived + hours>=3 + zero-to-one + paths verified + durability/first-principles', () => {
   const base = {
     candidates: [{ candidate_id: 'c1', ai_native_test: 'PASS', zero_to_one_rank: 'true-zero-to-one', scores: { hours_saved_vs_rebuild: 4 } }],
     judged: [{ candidate_id: 'c1', rollup: { verdict: 'SURVIVE' } }],
     buildspecs: [{ spec_id: 's1', candidate_id: 'c1', product: 'P', extracts_verified: true }],
+    durability: durOK,
   };
   assert.equal(evaluateGreenlight(base).count, 1);
   const lowHours = structuredClone(base); lowHours.candidates[0].scores.hours_saved_vs_rebuild = 2;
@@ -146,8 +210,53 @@ test('evaluateGreenlight — a NON-AI candidate still greenlights (broadened bar
     candidates: [{ candidate_id: 'c1', ai_native_test: 'FAIL', zero_to_one_rank: 'true-zero-to-one', scores: { hours_saved_vs_rebuild: 5 } }],
     judged: [{ candidate_id: 'c1', rollup: { verdict: 'SURVIVE' } }],
     buildspecs: [{ spec_id: 's1', candidate_id: 'c1', product: 'NoLeakAi-type non-AI tool', extracts_verified: true }],
+    durability: durOK,
   };
   assert.equal(evaluateGreenlight(nonAi).count, 1);
+});
+
+// ── R18: Thiel 7-questions durability score (>=6 of 7), missing answers default-to-fail ──
+const sevenAll = (over = {}) => ({
+  engineering: { pass: true }, timing: { pass: true }, monopoly: { pass: true }, people: { pass: true },
+  distribution: { pass: true }, durability: { pass: true }, secret: { pass: true }, ...over,
+});
+test('R18 scoreSevenQuestions — 7/7 and 6/7 pass; 5/7 fails; missing answers default-to-fail', () => {
+  assert.equal(scoreSevenQuestions(sevenAll()).durability_pass, true);            // 7/7
+  assert.equal(scoreSevenQuestions(sevenAll({ secret: { pass: false } })).durability_pass, true);  // 6/7
+  const five = scoreSevenQuestions(sevenAll({ secret: { pass: false }, engineering: { pass: false } }));
+  assert.equal(five.passed, 5);
+  assert.equal(five.durability_pass, false);                                       // 5/7
+  const missing = scoreSevenQuestions({ engineering: { pass: true } });            // 6 missing → fail
+  assert.equal(missing.passed, 1);
+  assert.equal(missing.durability_pass, false);
+  assert.equal(scoreSevenQuestions(null).durability_pass, false);                  // null → fail-closed
+});
+
+// ── R19: Elon first-principles gate — core (reasoned_from_fundamentals) non-negotiable, then >=2 of 3 ──
+test('R19 scoreFirstPrinciples — core required; analogy-only fails even at 2/3; null fail-closed', () => {
+  const all = { reasoned_from_fundamentals: { pass: true }, requirements_questioned: { pass: true }, irreducible: { pass: true } };
+  assert.equal(scoreFirstPrinciples(all).first_principles_pass, true);             // 3/3
+  assert.equal(scoreFirstPrinciples({ ...all, irreducible: { pass: false } }).first_principles_pass, true); // core + 2/3
+  // 2 of 3 but the CORE (reasoned_from_fundamentals) failed → must FAIL (analogy/me-too)
+  const analogy = { reasoned_from_fundamentals: { pass: false }, requirements_questioned: { pass: true }, irreducible: { pass: true } };
+  assert.equal(scoreFirstPrinciples(analogy).passed, 2);
+  assert.equal(scoreFirstPrinciples(analogy).first_principles_pass, false);
+  // core only (1/3) → fails the >=2 quality bar
+  assert.equal(scoreFirstPrinciples({ reasoned_from_fundamentals: { pass: true } }).first_principles_pass, false);
+  assert.equal(scoreFirstPrinciples(null).first_principles_pass, false);           // null → fail-closed
+});
+
+// ── R20: evaluateGreenlight requires BOTH durability_pass AND first_principles_pass ──
+test('R20 evaluateGreenlight — a kill-pass-clean, paths-verified spec is REJECTED without durability + first-principles', () => {
+  const base = {
+    candidates: [{ candidate_id: 'c1', ai_native_test: 'PASS', zero_to_one_rank: 'true-zero-to-one', scores: { hours_saved_vs_rebuild: 4 } }],
+    judged: [{ candidate_id: 'c1', rollup: { verdict: 'SURVIVE' } }],
+    buildspecs: [{ spec_id: 's1', candidate_id: 'c1', product: 'P', extracts_verified: true }],
+  };
+  assert.equal(evaluateGreenlight(base).count, 0);                                                    // no durability data → rejected
+  assert.equal(evaluateGreenlight({ ...base, durability: [{ candidate_id: 'c1', durability_pass: false, first_principles_pass: true }] }).count, 0); // <6/7
+  assert.equal(evaluateGreenlight({ ...base, durability: [{ candidate_id: 'c1', durability_pass: true, first_principles_pass: false }] }).count, 0); // analogy/me-too
+  assert.equal(evaluateGreenlight({ ...base, durability: [{ candidate_id: 'c1', durability_pass: true, first_principles_pass: true }] }).count, 1);  // both → greenlit
 });
 
 // ── Phase B: factory consumption queue (projection → eligible pick → consume) ──
@@ -211,4 +320,47 @@ test('R15 eligibleTopCandidate — a NaN/missing rank does not corrupt the sort'
     { spec_id: 's2', rank: 3, consumed: false, license_human_confirmed: true },
   ];
   assert.equal(eligibleTopCandidate(q).spec_id, 's2');  // finite rank beats NaN (treated as +inf)
+});
+
+// ── R21: outcome-capture (D15) — validates + normalizes at the boundary, fails fast on garbage ──
+test('R21 makeOutcome — builds a validated event; coerces revenue; rejects bad label/revenue/empty id/bad ts', () => {
+  const ts = '2026-06-17T00:00:00.000Z';
+  assert.deepEqual(
+    makeOutcome('cand-1', 'made_money', { revenue: '500', checked_at: ts }),
+    { candidate_id: 'cand-1', outcome_label: 'made_money', revenue: 500, checked_at: ts });
+  assert.equal(makeOutcome('c', 'failed', { checked_at: ts }).revenue, null);   // no revenue → null
+  assert.equal(makeOutcome('  c  ', 'unknown', { checked_at: ts }).candidate_id, 'c'); // trimmed
+  assert.throws(() => makeOutcome('', 'made_money', { checked_at: ts }), /candidate_id is required/);
+  assert.throws(() => makeOutcome('c', 'rich', { checked_at: ts }), /label must be one of/);
+  assert.throws(() => makeOutcome('c', 'made_money', { revenue: -5, checked_at: ts }), /revenue must be/);
+  assert.throws(() => makeOutcome('c', 'made_money', { revenue: 'lots', checked_at: ts }), /revenue must be/);
+  assert.throws(() => makeOutcome('c', 'made_money', { revenue: true, checked_at: ts }), /revenue must be/);  // boolean must not coerce to 1
+  assert.throws(() => makeOutcome('c', 'made_money', { revenue: [5], checked_at: ts }), /revenue must be/);   // array must not coerce
+  assert.throws(() => makeOutcome('c', 'made_money', { checked_at: 'not-a-date' }), /checked_at must be/);
+});
+
+// ── R22: append-only log → current state; latest checked_at wins per candidate; honest counts; immutable ──
+test('R22 latestByCandidate + summarizeOutcomes — latest observation supersedes; counts; inputs not mutated', () => {
+  const log = [
+    { candidate_id: 'a', outcome_label: 'unknown', revenue: null, checked_at: '2026-01-01T00:00:00.000Z' },
+    { candidate_id: 'a', outcome_label: 'made_money', revenue: 500, checked_at: '2026-06-01T00:00:00.000Z' },
+    { candidate_id: 'b', outcome_label: 'failed', revenue: null, checked_at: '2026-03-01T00:00:00.000Z' },
+  ];
+  const snapshot = JSON.stringify(log);
+  const latest = latestByCandidate(log);
+  assert.equal(latest.length, 2);
+  const a = latest.find(r => r.candidate_id === 'a');
+  assert.equal(a.outcome_label, 'made_money');   // the June observation supersedes January
+  assert.equal(a.revenue, 500);
+  const s = summarizeOutcomes(log);
+  assert.deepEqual(s.by_label, { made_money: 1, failed: 1, unknown: 0 }); // counts CURRENT state, not raw log
+  assert.equal(s.revenue_total, 500);
+  assert.equal(s.candidates, 2);
+  assert.equal(s.observations, 3);
+  assert.equal(JSON.stringify(log), snapshot);    // inputs not mutated
+  // corrupt rows (missing/junk checked_at, non-string candidate_id) are skipped, never crash the reducer
+  const dirty = [...log, { candidate_id: 'c', outcome_label: 'failed', checked_at: undefined }, { candidate_id: 42 }, null];
+  const fromDirty = latestByCandidate(dirty);
+  assert.equal(fromDirty.length, 2);              // still just a + b; the 3 corrupt rows dropped
+  assert.ok(fromDirty.every(r => typeof r.checked_at === 'string')); // no undefined-timestamp row leaks through
 });
