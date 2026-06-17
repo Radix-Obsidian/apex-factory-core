@@ -112,3 +112,54 @@ sibling/external checkout). Layering: ownership **zones** (D11) stop cross-subpr
 Surfaces: `scripts/worktree.sh [ensure|path|status|remove]`; `make worktree-setup|worktree-status|worktree-remove`.
 The 7-agent expert research panel for D11/D12 was rate-limited (Max session limit) — resolution synthesized
 directly and proven by test rather than citation. See [[concurrent-agent-git-hygiene]].
+
+## D13 — durability gate: Thiel's 7 questions (2026-06-17)
+The 5 kill-pass bars ask *"is the code good?"*; they do **not** ask *"is the BUSINESS durable?"* — the gap that let a
+ground-truth-injected brutal bar (Thiel's *Zero to One* definition) KILL our own consumer thesis at ~3/7 and confirm
+H\RNESS owns 0 of Thiel's 4 durability sources. So every Tier-2 build candidate now also clears **Thiel's 7 questions**
+(*Engineering* — ≥10x tech not marginal · *Timing* · *Monopoly* — big share of a small market · *People* · *Distribution*
+· *Durability* — defensible 10–20 yrs · *Secret*), **≥6 of 7** to be build-eligible. Mechanized exactly like the kill-pass
+bars: tested pure fn `scoreSevenQuestions` (R18) in `recycled-scan.mjs` (source of truth) + inline mirror in `workflow.js`
+(Durability phase, judged against the live ground-truth packet, default-to-fail) + a required condition in
+`evaluateGreenlight` (R20). Scorecards persist to `runs/recycled/<id>/08-durability.jsonl` (also the seed of the
+learning corpus — see [[factory-product-thesis]]). The bar is meant to LOWER greenlight yield; that's kill-first working.
+
+## D14 — first-principles gate + the 5-step build algorithm: Elon (2026-06-17)
+Thiel says *what's worth building*; Musk's first-principles says *is it reduced to fundamental truths, or just reasoned
+by analogy / "how everyone does it"* — the deeper cargo-cult/me-too test. Twin to D13, scored in the same Durability
+phase: `scoreFirstPrinciples` (R19) checks `reasoned_from_fundamentals` (the **non-negotiable CORE** — an analogy-only
+thesis fails outright), `requirements_questioned`, `irreducible` (deleted/simplified minimum, not bloat); pass = core +
+≥2 of 3; also required in `evaluateGreenlight`. **Build-phase discipline (the Musk algorithm, applied by the build
+agents):** (1) make the requirements less dumb (question every requirement, attach a name not a department) → (2) delete
+the part/process (if you're not adding ≥10% back, you didn't delete enough) → (3) simplify/optimize (never optimize a
+thing that shouldn't exist) → (4) accelerate cycle time → (5) **automate last**. Order matters: deleting before
+optimizing, automating last. Pairs with the Toyota/jidoka ethos already in the line.
+
+**Honest limitation (D13/D14, recorded not hidden):** the Durability phase is judged by a SINGLE agent that self-reports
+each pass/why, deterministically scored — unlike Stage 4's three independent skeptics with unanimous-SURVIVE. So the gate
+verifies *"the agent claims ≥6/7 / fundamentals"*, not *"N independent verifiers agree"* — the same shape-not-truth caveat
+as the ground-truth gate (it can be rubber-stamped). Mitigations in place: kill-first prompt (default-to-fail), the live
+ground-truth packet fed in, and a `code-reviewer` agentType. Future hardening: a 2nd independent durability agent rolled
+up unanimous, mirroring the kill-pass. Not a blocker; the gate still strictly raises the bar above the 5 kill-pass bars.
+
+## D15 — outcome-capture: the learning-loop moat SEED (2026-06-17)
+The ground-truth-injected brutal bar's hardest, truest finding: our corpus is **data-access, not data-advantage** — it
+stores judgments (verdicts, ground-truth sweeps, durability scorecards) but **zero records of what actually happened**.
+Every rival scrapes the same public Crunchbase/Reddit; nobody has *our users' private idea → judgment → outcome pairs*.
+That join, at volume, is the only **earnable** Thiel network-effect source (the product-thesis learning loop). So we wire
+capture now, before there's anything to capture, so it starts compounding from observation #1.
+
+**Shape:** a SEPARATE append-only artifact `recycled-outcomes.jsonl` at the control-plane root (tracked in this private
+repo, like `recycled-candidates.jsonl` — the corpus *is* the asset), keyed by `candidate_id`. Deliberately **NOT** bolted
+onto the kill-pass verdict schema (a skeptic judging in-the-moment cannot know the future; cramming outcome fields there
+would be a lie about when the data exists). Pure fns `makeOutcome` (validate/normalize, fail-fast at the boundary),
+`latestByCandidate` (log → current state, latest `checked_at` wins), `summarizeOutcomes` (descriptive counts) — R21/R22.
+CLI: `recycled-scan.mjs outcome <candidate_id> <made_money|failed|unknown> [revenue] | list | stats`. It accepts **any**
+judged `candidate_id`, not just queued greenlights — because the highest-value signal is a **KILL that someone else
+shipped and monetized** (a *false kill*), which only the kills can teach us.
+
+**Honest limitation (recorded not hidden):** this only SEEDS capture. The payoff — a kill-accuracy bake-off vs
+WorthBuild/Preuve, or "of the things we killed, what fraction would have made money" — needs a verdict↔outcome join at a
+volume of labeled data that **does not exist yet**. `summarizeOutcomes` therefore prints descriptive counts with an
+explicit "NOT a calibration claim" disclaimer. We do not claim the corpus is a moat; we claim we started earning one.
+The founder is observer #1 today (logging our own theses' fates, incl. MCPShield); users compound it once the platform ships.
