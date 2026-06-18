@@ -163,3 +163,57 @@ WorthBuild/Preuve, or "of the things we killed, what fraction would have made mo
 volume of labeled data that **does not exist yet**. `summarizeOutcomes` therefore prints descriptive counts with an
 explicit "NOT a calibration claim" disclaimer. We do not claim the corpus is a moat; we claim we started earning one.
 The founder is observer #1 today (logging our own theses' fates, incl. MCPShield); users compound it once the platform ships.
+
+## D16 — manufacturing-paradigm standard (TPS / Tesla / SpaceX), mapped to mechanism, measured honestly (2026-06-17)
+We name the manufacturing standard the factory already runs by — Toyota Production System, Tesla vertical-integration,
+SpaceX first-principles+reusability — so every agent reasons inside it, and we make it **bulletproof by measuring it**,
+not by asserting it. The process is the asset (the thing whose POWER we sell); this is its written constitution.
+Companion doc: [METHOD.md](METHOD.md) (citable, principles-only). The measurement instrument: `make recycled-metrics`.
+
+**Principle → real mechanism → NEW vs ARTICULATION.** Almost all of this already exists — D16 *names* it, it does not
+build it (the one new mechanism is the metrics instrument below):
+- **Pull / just-in-time (TPS)** → `candidates next` over `recycled-candidates.jsonl`; PRD Phase-1 pulls before trend-discovery. *Articulation.*
+- **Jidoka / stop-the-line + andon cord (TPS)** → fail-closed `rollupVerdict`/`rollupVerdictGrounded` (R4/R17), ground-truth gate (R16), durability gate (R18–R20), publish+charge HARD STOP (D5), zone guard (D11). *Articulation* (D14:136 already named the jidoka ethos).
+- **Genchi genbutsu / "go and see" (TPS)** → ground-truth gate judges market bars against the live landscape, never self-claims (R16/R17). *Articulation* — the strongest real instance.
+- **Kaizen / continuous improvement (TPS)** → outcome-capture (D15) + 6h heartbeat + build-in-public; **+ the new cross-run metrics instrument** (the missing kaizen *gauge*). *Articulation + the one NEW mechanism.*
+- **Waste elimination / muda (TPS+Tesla)** → Musk 5-step (D14), default-to-kill, `dedupeBuildSpecs` (R5, ≤1 build/repo), never-delete reversible archive (R7), `salvage_cheaper_than_rebuild` bar. *Articulation.*
+- **Reusability (SpaceX)** → the whole Recycled harness + the salvage-cheaper bar (Falcon-9-booster analog). *Articulation.*
+- **First-principles (SpaceX/Musk)** → `scoreFirstPrinciples` (R19) + the Musk 5-step build algorithm (D14). *Articulation* (the algorithm is agent discipline, not mechanically enforced — honest gap).
+- **Vertical integration (Tesla)** → one control plane → many SKU repos (D4) + in-house model ladder (D7/D10) + own gates/hooks/eval. *Articulation, partly aspirational* — the **structure** exists; "~95% control" is unmeasured and **NOT claimed.**
+
+**Fidelity, blunt, once (the real run data via `recycled-metrics`, 2026-06-17, 9 runs):** **60 decisions — 59 KILL /
+1 SURVIVE; 1 greenlight ever (the old durability-blind line's MCPShield, since RE-KILLED by the strengthened line in
+rev2 → 0 standing); 0 SKUs shipped; $0 revenue; 0 outcomes captured.** Fidelity today = **"the gates fire honestly,"
+NOT "the output is excellent."** We have the discipline designed in; we have not yet produced a profitable SKU.
+
+**Grok-inflation rejection (explicit):** a Grok briefing claimed "Toyota-level operational excellence," "~95%
+control," "80–85% in-house," "10× SpaceX speed." Those are unmeasured or contradicted by the run data above. We do NOT
+carry one of them forward. A manufacturing standard you can't measure is a slogan; ours prints its own numbers.
+
+**Dual-purpose frameworks (the learning loop):** the Thiel-7 (D13) + Elon-first-principles (D14) gates are also the
+**seed of the user-facing Socratic question set** — the questions the factory will ask users (like Claude's clarifying
+questions) once it's a product; their answers compound into the outcome corpus (D15) = the data-network-effect moat.
+The YC idea-evaluation frameworks (Friedman's 4-mistakes/10-questions/3-makers; Xu's "could you run your customer's
+business for a day?") extend that question set. **Honest correction baked in (YC: Xu, Alströmer):** the AI kill-pass is
+a cheap PRE-FILTER, not validation — surviving it means "not an obvious commodity loser," not "a real business." Real
+validation = real customers + charging early. The gate kills cheap losers; customers + dollars validate survivors. The
+gate must never become the "waiting for the perfect idea / overthinking" failure mode.
+
+**The new mechanism — cross-run metrics (R23–R27):** pure fns `killRate` / `failureReasonDistribution` (bar keys read
+DYNAMICALLY — bar sets drift across runs, e.g. `ai_native_not_feature`→`real_demand`) / `greenlightYield` (null on 0
+candidates, no fake denominator) / `durabilityPassRate` (n:0 on empty) / `aggregateRuns` / `buildMetricsReport`, surfaced
+by `make recycled-metrics` (human + `--json`). It aggregates the siloed `runs/recycled/*/` artifacts; reports zeros and
+`n/a` honestly; this is also the **seed of the factory digital twin** (it *measures* the line; the twin will *simulate*
+it forward). See [recycled/RECYCLED-SPEC.md](recycled/RECYCLED-SPEC.md).
+
+**Honest limitation (recorded not hidden):** cycle/takt time, time-to-preview, per-SKU build cost, parts-bin reuse,
+Day-45 profitable yield are **not yet measurable** (no run timestamps / no shipped SKU / parts-bin backlogged) — the
+metrics tool labels each `n/a` with the reason rather than faking it. Adding a `run.meta.json`
+(`{run_id, started_at, finished_at}`) at persist would unlock cycle-time on *future* runs (a separate decision; no
+historical backfill). The B (fundable digital twin) / C (FaaS "dollar" trial) / robotics-digital-first arc is
+**direction, not built** — gated on the demand probe earning C's promise first; see METHOD.md "Direction."
+
+**Physical→digital principle (founder's reframe):** we re-engineer any future *physical* layer as a *digital* precursor
+first (digital twin → prove → fund → build physical), using first-principles to find each layer's buildable digital
+form. No speculative physical-abstraction code enters the line now (YAGNI / .cursorrules); the design is a dedicated
+future pass.
