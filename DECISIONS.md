@@ -217,3 +217,46 @@ historical backfill). The B (fundable digital twin) / C (FaaS "dollar" trial) / 
 first (digital twin → prove → fund → build physical), using first-principles to find each layer's buildable digital
 form. No speculative physical-abstraction code enters the line now (YAGNI / .cursorrules); the design is a dedicated
 future pass.
+
+## D17 — net-new IDEATION engine + ship/preview wiring: dogfood the promise (ideate→preview) on ourselves (2026-06-17)
+The challenge-GTM reward ("we build it free") and the C "dollar" promise both assume a build-and-ship we have **never
+done once** (0 SKUs / $0). So before offering the promise to anyone we **deliver it to ourselves**: generate one idea,
+run it through the *real* gate, build it, ship it to a live preview. This pass proves **ideate→preview**; Stripe /
+first-dollar is the NEXT pass (bar = a real external customer pays). The publish+charge gate (D5) is **untouched**.
+
+**The gap this closes.** The kill-pass was **salvage-only** — it judges dead repos; there was no net-new ideation
+(the PRD "trend discovery" fallback was documented, never built), and 0 ideas stand. The factory could KILL but not
+GENERATE. D17 builds the missing **generator** and reuses the existing **judge** wholesale (reuse-first).
+
+**What's new vs reused.**
+- **Reused (the judge):** ground-truth gate (R16/R17), kill-pass rollup, durability + first-principles (R18–R20),
+  `persistRun`/`evaluateGreenlight`, the candidates queue, D16 metrics. Untouched.
+- **New (the generator):** `recycled/ideate.workflow.js` — I1 demand-mine (Sales-Safari + JTBD, cited real demand,
+  boring-B2B by default) → I2 synthesize specific zero-to-one candidates → I3 ground-truth → I4 kill-pass → I4.5
+  durability → I5 net-new BuildSpec. Methodology, not infra: GPT-Researcher/Reddit-MCP are named as the **scale-up**
+  path, NOT adopted now (Python, off the Anthropic ladder, duplicates our ground-truth stage).
+- **New (the net-new bar):** `IDEATION_BARS` swaps `salvage_cheaper_than_rebuild` → `reuse_over_rebuild`. A net-new
+  idea has no repo to salvage, so the salvage bar would **auto-fail** it — feeding net-new through the salvage set
+  unchanged would be a **rigged kill, not honesty**. `reuse_over_rebuild` keeps the same cost discipline (orchestrate
+  proven components, don't heavy-lift from scratch) at the same brutality (R28–R29). `rollupVerdict`/`rollupVerdictGrounded`
+  are parameterized with a `bars` set (default = salvage `BARS`; backward-compatible, the 48 prior tests stay green).
+
+**The gate is NOT weakened (the dogfood-integrity rule).** Net-new is judged exactly as hard. `evaluateGreenlight`
+(R31) skips ONLY the two salvage-SPECIFIC gates (`hours_saved_vs_rebuild`, extract-path verification — N/A with no
+repo); kill-pass survival, true-zero-to-one, Thiel durability, and first-principles all apply unchanged. If our own
+idea dies, it dies — **0 survivors is a valid, honest result** (the gap stays open; refine, don't force a build).
+
+**The seam.** Workflow result → `node recycled/recycled-scan.mjs ideate ingest <run-id>` (deterministic, $0): persists
+artifacts (auditable + feeds D16; `reuse_over_rebuild` counts via R24's dynamic bar keys) AND projects greenlights into
+`recycled-candidates.jsonl` — the SAME queue `loop.sh` Phase-1 already consumes (net-new carries `net_new` + `wrap_plan`;
+the loop builds from `wrap_plan`, not an extract_list). Tests R28–R32; surfaced by `make recycled-ideate`.
+
+**Ship/preview wiring.** `deploy-guard.sh preview` runs `DEPLOY_CMD` (now documented in `.env.example`) and still
+refuses any `sk_live_` key. **Vercel** is the default preview host for a Next.js SKU (zero-config, free tier); Railway
+is the alternative. The SKU is its own repo (D4). This pass takes a survivor to a **live preview URL** and HALTS at the
+sealed publish+charge gate — no Stripe, no charge.
+
+**Honest limitation.** A 98%-kill gate may yield 0 survivors even with good ideation — expected, not a bug; it becomes
+a documented gap (refine domain/sources or the net-new bar), not a forced build. Distribution (how a shipped preview
+reaches people) is a later pass: make-people-aware via pull + cold-awareness + organic, gated by honest/value-first/
+opt-out/hands-off/legal — NOT permission-first, NOT the Higgsfield dark-pattern. See METHOD.md "Direction."

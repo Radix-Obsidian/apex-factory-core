@@ -22,9 +22,13 @@ does not charge real customers — that waits for the publish+charge gate.
       (lift the proven code per each entry's `status`/`refactor` — don't rebuild from scratch).
       If it prints nothing (empty stdout = queue dry; test with `[ -z "$(node recycled/recycled-scan.mjs candidates next)" ]`),
       fall through to trend discovery.
-- [ ] _(only if the queue was dry)_ Spin up an isolated search agent (cheap model) to scan macro-trends in
-      high-ticket digital assets, elite productivity frameworks, or specialized developer tools.
-- [ ] _(only if the queue was dry)_ Filter out all "horizontal" ideas. Select ONE ultra-niche vertical wedge.
+- [ ] _(only if the queue was dry)_ **Net-new ideation (D17)** — run the ideation GENERATOR instead of ad-hoc
+      trend-scanning: invoke the Workflow tool on `recycled/ideate.workflow.js` (boring-B2B domain by default), then
+      `node recycled/recycled-scan.mjs ideate ingest <run-id>`. It mines REAL demand (Sales-Safari + JTBD), runs the
+      SAME honest gate (ground-truth → kill-pass on IDEATION_BARS → durability), and queues any survivor — re-run
+      `candidates next` to adopt it. The gate is NOT weakened for our own ideas; **0 survivors is a valid result —
+      stop and refine the domain/sources, never force a build.**
+- [ ] _(only if ideation also yielded nothing)_ Filter out all "horizontal" ideas. Select ONE ultra-niche vertical wedge.
 - [ ] Document the SKU thesis to `~/life/projects/sku_001/summary.md`.
 
 ### [ ] Phase 2 — Core engineering & media synthesis

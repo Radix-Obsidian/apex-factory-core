@@ -37,6 +37,15 @@ recycled-scan: ## Recycled — Stage 0: enumerate own dormant/dead repos (metada
 recycled-metrics: ## Recycled — cross-run KPIs (D16): kaizen instrument; seed of the digital twin ($0, reads runs/)
 	@node recycled/recycled-scan.mjs metrics
 
+recycled-ideate: ## Recycled — net-new ideation (D17): run recipe (the run is a Workflow invocation = LLM spend; ingest is $0)
+	@echo "Recycled net-new ideation (D17) — the generator the salvage line lacked. Run recipe:"
+	@echo "  1. Invoke the Workflow tool on recycled/ideate.workflow.js (spends Anthropic; bounded by usage.mjs)."
+	@echo "     optional args: {domain, maxPains, maxIdeas} — default domain = boring high-intent low-competition B2B."
+	@echo "  2. Pipe the result JSON into the deterministic ingest (zero-cost, persists artifacts + queues greenlights):"
+	@echo "       node recycled/recycled-scan.mjs ideate ingest <run-id>"
+	@echo "  3. The build loop Phase-1 then picks it up: node recycled/recycled-scan.mjs candidates next"
+	@echo "  NOTE: the kill-pass is NOT weakened for net-new (D17 IDEATION_BARS); 0 survivors is a valid honest result."
+
 verify: preflight guard-test gate ## run mechanical acceptance checks (fast)
 	@echo "── verify GREEN ──"
 
@@ -76,4 +85,4 @@ worktree-status: ## show all worktrees + the loop branch
 worktree-remove: ## tear down the loop worktree (keeps the loop/auto branch + history)
 	@bash scripts/worktree.sh remove
 
-.PHONY: help preflight copytest guard-test gate dryrun heartbeat usage recycled-verify recycled-scan recycled-metrics verify launch cron-enable cron-disable crashcron-install crashcron-uninstall hooks-install worktree-setup worktree-status worktree-remove
+.PHONY: help preflight copytest guard-test gate dryrun heartbeat usage recycled-verify recycled-scan recycled-metrics recycled-ideate verify launch cron-enable cron-disable crashcron-install crashcron-uninstall hooks-install worktree-setup worktree-status worktree-remove
