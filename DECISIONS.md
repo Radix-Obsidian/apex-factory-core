@@ -260,3 +260,38 @@ sealed publish+charge gate — no Stripe, no charge.
 a documented gap (refine domain/sources or the net-new bar), not a forced build. Distribution (how a shipped preview
 reaches people) is a later pass: make-people-aware via pull + cold-awareness + organic, gated by honest/value-first/
 opt-out/hands-off/legal — NOT permission-first, NOT the Higgsfield dark-pattern. See METHOD.md "Direction."
+
+## D18 — design-system baking: every SKU ships an intentional brand kit (Claude Design / DesignSync) as a standard step (2026-06-18)
+The first shipped preview (DOT Navigator, D17) graded a **"B"** — a clean dossier, but template-flat. Routing it through
+**Anthropic's Claude Design** (via the `/design-sync` skill) lifted it to a pass ("Carrier's Almanac": layered ink-on-paper,
+brass/steel semantics, a signature compliance-spine hero, designed states). The founder's call: **bake that workflow as a
+standard** so every SKU ships an *intentional, opinionated* brand kit — never a template — the design analog of the copy gate.
+
+**The gap this closes.** The factory had **no design step**. Phase 2 generated *visual assets* (Higgsfield logo/loops) but
+never a *design system* (tokens, foundations, components, a brand voice). The copy gate (Phase 3, copywriter-auditor) had no
+design counterpart, so visual quality was ad-hoc — exactly why preview #1 came out "B". `web/design-quality.md` already
+forbids template UI; nothing in the line *enforced* that a brand kit even exists.
+
+**What's new vs reused (reuse-first).**
+- **Reused:** the `design-system/` + first-line `<!-- @dsCard group="..." -->` convention and the `/design-sync` skill
+  (sync local cards ↔ claude.ai/design); the `web/design-quality.md` anti-template rules; DOT Navigator's own kit (4 cards,
+  synced to the "DOT Navigator Design System" project); per-SKU repo ownership (D4).
+- **New (thin glue only):** `scripts/design-check.mjs` — a deterministic, **$0, no-model** structural validator; PRD
+  **Phase 2.5** (author/refresh kit via Claude Design → export tokens into the app → validate); `make design-check SKU=…`;
+  a one-line `.env.example` pointer. **No new agent.**
+
+**Not a blocker, by design.** Unlike the copywriter-auditor (which can fail the build), `design-check` is **non-blocking and
+structural**: it verifies a brand kit *exists, is well-formed (valid @dsCard cards, ≥1 foundation + ≥1 component), and is
+wired (`--color-*` tokens in app CSS)* — it does **not** auto-judge aesthetics. Judging beauty stays **Claude-the-model's**
+job via Claude Design; mechanizing a taste score risks a flaky gate (same shape-not-truth caveat as the durability gate,
+D13/D14). An aesthetic-scoring `factory-design` agent is **named as a future option**, not built.
+
+**The seam.** Design runs **after Phase 2 (core-eng + media), before Phase 3 (copy)** so copy is written *inside* the brand
+voice, not bolted on after. Deterministic + $0, so it's free to run every build. **Dogfooded:** `make design-check
+SKU=../dot-navigator` passes against the SKU that motivated it.
+
+**Honest limitation (recorded not hidden).** Claude Design has **no generation API yet** — authorship is a human/Claude
+handoff via `/design-sync` (the API is "coming weeks" per Anthropic; when it ships, Phase 2.5 becomes a fully automated
+stage). The validator proves *structure, not quality*: a SKU can pass `design-check` and still look mediocre — beauty is
+**trusted to Claude Design**, not gated. Proven on **one** SKU (DOT Navigator); the standard generalizes the workflow we
+just ran, it has not yet run unattended inside `loop.sh`.

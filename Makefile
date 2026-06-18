@@ -46,6 +46,9 @@ recycled-ideate: ## Recycled — net-new ideation (D17): run recipe (the run is 
 	@echo "  3. The build loop Phase-1 then picks it up: node recycled/recycled-scan.mjs candidates next"
 	@echo "  NOTE: the kill-pass is NOT weakened for net-new (D17 IDEATION_BARS); 0 survivors is a valid honest result."
 
+design-check: ## D18 — validate a SKU ships a well-formed Claude-Design brand kit (deterministic, $0). Usage: make design-check SKU=../<sku-repo>
+	@node scripts/design-check.mjs "$(SKU)"
+
 verify: preflight guard-test gate ## run mechanical acceptance checks (fast)
 	@echo "── verify GREEN ──"
 
@@ -85,4 +88,4 @@ worktree-status: ## show all worktrees + the loop branch
 worktree-remove: ## tear down the loop worktree (keeps the loop/auto branch + history)
 	@bash scripts/worktree.sh remove
 
-.PHONY: help preflight copytest guard-test gate dryrun heartbeat usage recycled-verify recycled-scan recycled-metrics recycled-ideate verify launch cron-enable cron-disable crashcron-install crashcron-uninstall hooks-install worktree-setup worktree-status worktree-remove
+.PHONY: help preflight copytest guard-test gate dryrun heartbeat usage recycled-verify recycled-scan recycled-metrics recycled-ideate design-check verify launch cron-enable cron-disable crashcron-install crashcron-uninstall hooks-install worktree-setup worktree-status worktree-remove

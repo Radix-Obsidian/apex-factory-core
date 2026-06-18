@@ -40,6 +40,16 @@ does not charge real customers — that waits for the publish+charge gate.
 - [ ] Write core backend + frontend (Next.js / Tailwind).
 - [ ] TDD the checkout flow: failing integration test first → implement Stripe (TEST mode) → green.
 
+### [ ] Phase 2.5 — Design system (brand kit via Claude Design, D18)
+- [ ] **Author/refresh the per-SKU brand kit via Claude Design + the `/design-sync` skill** — a unique,
+      intentional visual direction (NOT a template; see `web/design-quality.md`), synced as a `design-system/`
+      folder of `@dsCard`-tagged HTML cards (≥1 `foundations/`, ≥1 `components/`). Design authorship is
+      Claude-the-model's; the factory does not auto-judge aesthetics.
+- [ ] **Export the kit's tokens into the app** (`--color-*` etc. in `app/globals.css`) so the build actually
+      wears the brand. Runs BEFORE Phase 3 so copy is written inside the brand voice, not bolted on after.
+- [ ] **Validate structure (deterministic, $0):** `make design-check SKU=../<sku-repo>` passes. Non-blocking
+      by policy (a quality checklist item, not a hard deploy gate).
+
 ### [ ] Phase 3 — Copywriting injection (must pass the copywriter-auditor hook)
 - [ ] Seth Godin tribal-status filter on all customer-facing copy.
 - [ ] Alex Hormozi value stack + risk-reversal / guarantee in the checkout UI.
