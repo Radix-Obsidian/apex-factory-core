@@ -60,6 +60,11 @@ The scout's single-skeptic SURVIVE is a far better deep-dive predictor than tria
 | R25 | `greenlightYield()` (D16): fraction when candidates>0; `yield:null` on 0 candidates (no divide-by-zero, no fake denominator) | R25 |
 | R26 | `durabilityPassRate()` (D16): pass counts; `n:0` cleanly on empty (no rate over nothing) | R26 |
 | R27 | `aggregateRuns()` + `buildMetricsReport()` (D16): injectable reader; assembles KPIs with honest `null`/`n/a` gaps (ideas/greenlight undefined at 0; durability note on empty) | R27 |
+| R28 | `IDEATION_BARS` + `rollupVerdict(…, bars)` (D17): net-new swaps `salvage_cheaper_than_rebuild`→`reuse_over_rebuild`; same count/brutality; salvage default unchanged; a net-new verdict judged by the salvage default → KILL (rigged-kill guard) | `make recycled-verify` (R28) |
+| R29 | `rollupVerdictGrounded(…, {bars})` (D17): threads the bar set; ground-truth gate still fires FIRST; admissible + unanimous ideation bars → SURVIVE; inadmissible → KILL | R29 |
+| R30 | `makeNetNewBuildSpec()` (D17): fail-fast on missing candidate_id/product/wrap_plan; emits net-new shape (null `source_repo`, empty `extract_list`, vacuously verified, license-confirmed) | R30 |
+| R31 | `evaluateGreenlight()` net-new (D17): skips salvage-only gates (`hours_saved`, extract-verify) yet STILL requires kill-pass survival + true-zero-to-one + Thiel durability + first-principles | R31 |
+| R32 | net-new `dedupeBuildSpecs` (distinct ideas don't collapse under shared null repo) + `verifyExtractPaths` (passes net-new through verified without touching a repo) | R32 |
 | R9 | `projectCandidates()`: thin shape; OWN→`license_human_confirmed:true`, Tier-2→`false`; `consumed:false` | R9 |
 | R10 | `eligibleTopCandidate()`: lowest rank among unconsumed + license-confirmed; `null` when dry | R10 |
 | R11 | `mergeCandidates()`: dedupe by `spec_id`; re-projection never un-consumes; inputs not mutated | R11 |
@@ -166,6 +171,28 @@ Each run's artifacts are siloed in `runs/recycled/<run-id>/`; this aggregates th
   measurable (flagged, not faked): cycle/takt time + time-to-preview + per-SKU build cost (need timestamps / a shipped
   SKU), parts-bin reuse (backlogged), Day-45 profitable yield (no SKU past Day 1). The footer rejects the inflated
   claims (no Toyota-level / ~95% / 10×) and notes every number is recomputable from `runs/recycled/*.jsonl`.
+
+## Net-new ideation — the generator the salvage line lacked (D17, R28–R32)
+
+`recycled/ideate.workflow.js` GENERATES fresh product ideas from real demand and runs them through the SAME honest
+judge as salvage (ground-truth gate → kill-pass → durability → first-principles). **Reuse-first:** the judge is reused
+wholesale; only the **generator** (demand-mine + synthesis) and the net-new cost bar are new — methodology, not infra
+(Amy Hoy "Sales Safari" pain-mining + JTBD + PG "live in the future" + YC "build for existing demand").
+
+- **Pipeline.** I1 demand-mine (cited, repeated, demand-backed pain in a boring-B2B-by-default domain) → I2 synthesize
+  specific zero-to-one candidates → I3 ground-truth sweep → I4 three adversarial skeptics on **IDEATION_BARS** → I4.5
+  Thiel 7-Q (≥6/7) + first-principles → I5 net-new BuildSpec (build-from-scratch; empty `extract_list`; `net_new:true`).
+- **The net-new bar (R28).** `salvage_cheaper_than_rebuild` → `reuse_over_rebuild` ("buildable mostly by orchestrating
+  proven components within budget, not a from-scratch heavy lift"). Same count, same brutality. Feeding net-new through
+  the salvage default would be a **rigged auto-kill** (no repo to salvage) — the swap keeps it HONEST, not weaker. The
+  kill-pass is NOT relaxed for our own ideas (the dogfood integrity rule).
+- **Seam.** Workflow result → `node recycled/recycled-scan.mjs ideate ingest <run-id>` (deterministic, $0): persists run
+  artifacts (auditable + feeds D16 metrics — `reuse_over_rebuild` counts via R24's dynamic bar keys) AND projects
+  greenlights into `recycled-candidates.jsonl`, which the build loop's Phase-1 `candidates next` already consumes
+  (net-new carries `net_new` + `wrap_plan`; the loop builds from `wrap_plan`, not an extract_list).
+- **Greenlight (R31).** Net-new skips only the two salvage-SPECIFIC gates (`hours_saved_vs_rebuild`, extract-path
+  verify — N/A with no repo); EVERY other gate applies unchanged. `make recycled-ideate` prints the run recipe;
+  **0 survivors is a valid honest result** (stop and refine the domain/sources — the gap stays open, never force a build).
 
 ## Out of scope (still backlogged)
 

@@ -9,7 +9,8 @@ import { licenseGate, isSourcePath, rollupVerdict, frozenArchiveNote, classifyRe
   scoreSevenQuestions, scoreFirstPrinciples,
   makeOutcome, latestByCandidate, summarizeOutcomes,
   killRate, failureReasonDistribution, greenlightYield, durabilityPassRate,
-  aggregateRuns, buildMetricsReport } from './recycled-scan.mjs';
+  aggregateRuns, buildMetricsReport,
+  BARS, IDEATION_BARS, makeNetNewBuildSpec } from './recycled-scan.mjs';
 
 // ── R1: license gate, fail-closed ──
 test('R1 licenseGate — permissive licenses are LIFT-OK (tier 2)', () => {
@@ -428,4 +429,92 @@ test('R27 aggregateRuns + buildMetricsReport — injectable reader; assembles KP
   assert.equal(report.computable.ideas_killed_per_greenlight, null); // 0 greenlights → undefined, not div-by-zero
   assert.ok(report.computable.durability_gate.note);                 // empty durability → honest note, not a fake rate
   assert.ok(report.not_yet_measurable.cycle_time);                   // honest gap surfaced
+});
+
+// ── R28: net-new ideation bars (D17) — IDEATION_BARS swaps salvage_cheaper_than_rebuild → reuse_over_rebuild;
+// the gate stays just as brutal (all 5 must PASS), and the SALVAGE default is unchanged (backward-compat). ──
+const surviveIdeation = (skeptic, confidence = 0.9) => ({
+  candidate_id: 'idea-1', skeptic, confidence, verdict: 'SURVIVE',
+  bars: { not_frankenstein: 'PASS', not_horizontal_sprawl: 'PASS', real_demand: 'PASS', is_zero_to_one: 'PASS', reuse_over_rebuild: 'PASS' },
+});
+test('R28 IDEATION_BARS — net-new bar set differs only in the cost bar; salvage default untouched', () => {
+  assert.deepEqual(IDEATION_BARS, ['not_frankenstein', 'not_horizontal_sprawl', 'real_demand', 'is_zero_to_one', 'reuse_over_rebuild']);
+  assert.equal(BARS.includes('salvage_cheaper_than_rebuild'), true);   // salvage default unchanged
+  assert.equal(IDEATION_BARS.includes('salvage_cheaper_than_rebuild'), false);
+  assert.equal(BARS.length, IDEATION_BARS.length);                     // same brutality (same count)
+});
+test('R28 rollupVerdict(bars=IDEATION_BARS) — 3 unanimous on ideation bars → SURVIVE', () => {
+  assert.equal(rollupVerdict([surviveIdeation(1), surviveIdeation(2), surviveIdeation(3)], 3, IDEATION_BARS).verdict, 'SURVIVE');
+});
+test('R28 rollupVerdict(bars=IDEATION_BARS) — reuse_over_rebuild FAIL on any skeptic → KILL', () => {
+  const bad = surviveIdeation(3); bad.bars.reuse_over_rebuild = 'FAIL';
+  assert.equal(rollupVerdict([surviveIdeation(1), surviveIdeation(2), bad], 3, IDEATION_BARS).verdict, 'KILL');
+});
+test('R28 rollupVerdict — a net-new verdict (no salvage bar) judged by the SALVAGE default → KILL (rigged-kill guard)', () => {
+  // proves WHY the swap exists: net-new verdicts lack salvage_cheaper_than_rebuild, so the salvage default
+  // would auto-kill them — feeding net-new through the default set would be dishonest, not strict.
+  assert.equal(rollupVerdict([surviveIdeation(1), surviveIdeation(2), surviveIdeation(3)]).verdict, 'KILL');
+});
+
+// ── R29: grounded rollup threads the bar set — ground-truth gate still fires first, then ideation bars apply ──
+test('R29 rollupVerdictGrounded(bars=IDEATION_BARS) — admissible packet + unanimous ideation bars → SURVIVE', () => {
+  const packet = freshPacket();
+  const r = rollupVerdictGrounded([surviveIdeation(1), surviveIdeation(2), surviveIdeation(3)], packet, { bars: IDEATION_BARS, now: NOW });
+  assert.equal(r.verdict, 'SURVIVE');
+  assert.equal(r.ground_truth_ok, true);
+});
+test('R29 rollupVerdictGrounded — inadmissible ground-truth KILLs net-new BEFORE bars (gate unchanged)', () => {
+  const r = rollupVerdictGrounded([surviveIdeation(1), surviveIdeation(2), surviveIdeation(3)], null, { bars: IDEATION_BARS, now: NOW });
+  assert.equal(r.verdict, 'KILL');
+  assert.equal(r.ground_truth_ok, false);
+});
+
+// ── R30: makeNetNewBuildSpec (D17) — fail-fast scaffold; correct net-new shape ──
+test('R30 makeNetNewBuildSpec — requires candidate_id/product/wrap_plan; emits net_new shape', () => {
+  assert.throws(() => makeNetNewBuildSpec({ product: 'x', wrap_plan: 'y' }), /candidate_id/);
+  assert.throws(() => makeNetNewBuildSpec({ candidate_id: 'a', wrap_plan: 'y' }), /product/);
+  assert.throws(() => makeNetNewBuildSpec({ candidate_id: 'a', product: 'x' }), /wrap_plan/);
+  const s = makeNetNewBuildSpec({ candidate_id: 'idea-1', product: 'Boring B2B tool', wrap_plan: 'build from scratch', icp: 'ops leads' });
+  assert.equal(s.net_new, true);
+  assert.equal(s.source_repo, null);
+  assert.deepEqual(s.extract_list, []);
+  assert.equal(s.extracts_verified, true);          // nothing to lift → vacuously verified
+  assert.equal(s.license_human_confirmed, true);    // net-new = we own it
+  assert.equal(s.spec_id, 'ideate-idea-1');
+});
+
+// ── R31: evaluateGreenlight net-new (D17) — skips salvage-only gates, keeps EVERY other gate at full strength ──
+const netNewResult = (over = {}) => {
+  const cand = { candidate_id: 'idea-1', net_new: true, zero_to_one_rank: 'true-zero-to-one', scores: {}, ...(over.cand || {}) };
+  const spec = makeNetNewBuildSpec({ candidate_id: 'idea-1', product: 'Boring B2B tool', wrap_plan: 'plan' });
+  return {
+    candidates: [cand],
+    judged: [{ candidate_id: 'idea-1', rollup: { verdict: over.survived === false ? 'KILL' : 'SURVIVE' } }],
+    durability: [{ candidate_id: 'idea-1', durability_pass: over.durability !== false, first_principles_pass: over.fp !== false }],
+    buildspecs: [{ ...spec, ...(over.spec || {}) }],
+  };
+};
+test('R31 evaluateGreenlight — net-new greenlights WITHOUT hours_saved / extract verification', () => {
+  const g = evaluateGreenlight(netNewResult());
+  assert.equal(g.count, 1, JSON.stringify(g.rejected));    // no salvage scores, empty extract_list — still greenlit
+});
+test('R31 evaluateGreenlight — net-new STILL requires kill-pass survival + true-zero-to-one + durability + first-principles', () => {
+  assert.equal(evaluateGreenlight(netNewResult({ survived: false })).count, 0);
+  assert.equal(evaluateGreenlight(netNewResult({ cand: { zero_to_one_rank: 'me-too' } })).count, 0);
+  assert.equal(evaluateGreenlight(netNewResult({ durability: false })).count, 0);
+  assert.equal(evaluateGreenlight(netNewResult({ fp: false })).count, 0);
+});
+
+// ── R32: dedupe + extract-verify treat net-new correctly (no collapse under shared null repo; verify is N/A) ──
+test('R32 dedupeBuildSpecs — distinct net-new specs do NOT collapse under shared null source_repo', () => {
+  const a = makeNetNewBuildSpec({ candidate_id: 'idea-a', product: 'A', wrap_plan: 'p', rank: 1 });
+  const b = makeNetNewBuildSpec({ candidate_id: 'idea-b', product: 'B', wrap_plan: 'p', rank: 2 });
+  assert.equal(dedupeBuildSpecs([a, b]).length, 2);        // both kept (would be 1 if keyed by null repo)
+});
+test('R32 verifyExtractPaths — net-new passes through as verified without touching any repo', () => {
+  const a = makeNetNewBuildSpec({ candidate_id: 'idea-a', product: 'A', wrap_plan: 'p' });
+  const never = () => { throw new Error('pathExists must NOT be called for net-new'); };
+  const [out] = verifyExtractPaths([a], never);
+  assert.equal(out.extracts_verified, true);
+  assert.deepEqual(out.path_checks, []);
 });

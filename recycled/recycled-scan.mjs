@@ -53,14 +53,20 @@ export function licenseGate(spdx, tier) {
 // ── Kill-pass rollup (R4): SURVIVE iff EVERY skeptic SURVIVEs on ALL bars with confidence >= floor.
 // Any KILL, any failed bar, any abstain (missing skeptic), or any low-confidence SURVIVE → KILL. ──
 export const CONFIDENCE_FLOOR = 0.6;
-const BARS = ['not_frankenstein', 'not_horizontal_sprawl', 'real_demand', 'is_zero_to_one', 'salvage_cheaper_than_rebuild'];
-export function rollupVerdict(verdicts, minSkeptics = 3) {
+// Salvage kill bars (the default). Net-new ideation (D17) swaps the last bar: salvage_cheaper_than_rebuild →
+// reuse_over_rebuild. A net-new idea has NO repo to salvage, so it would auto-FAIL salvage_cheaper_than_rebuild —
+// feeding it through the salvage set unchanged would be a rigged auto-kill, not honesty. reuse_over_rebuild keeps
+// the SAME cost discipline (buildable mostly by orchestrating proven components within budget, not a from-scratch
+// heavy lift — the Higgsfield "orchestrate, don't build" rule). Same count, same brutality; only the cost bar is reframed.
+export const BARS = ['not_frankenstein', 'not_horizontal_sprawl', 'real_demand', 'is_zero_to_one', 'salvage_cheaper_than_rebuild'];
+export const IDEATION_BARS = ['not_frankenstein', 'not_horizontal_sprawl', 'real_demand', 'is_zero_to_one', 'reuse_over_rebuild'];
+export function rollupVerdict(verdicts, minSkeptics = 3, bars = BARS) {
   const list = Array.isArray(verdicts) ? verdicts.filter(Boolean) : [];
   if (list.length < minSkeptics) return { verdict: 'KILL', reason: `abstain: ${list.length}/${minSkeptics} skeptics returned` };
   for (const v of list) {
     if (v.verdict !== 'SURVIVE') return { verdict: 'KILL', reason: v.kill_reason || `skeptic ${v.skeptic} returned ${v.verdict}` };
     if (typeof v.confidence === 'number' && v.confidence < CONFIDENCE_FLOOR) return { verdict: 'KILL', reason: `skeptic ${v.skeptic} confidence ${v.confidence} < ${CONFIDENCE_FLOOR}` };
-    for (const bar of BARS) if (v?.bars?.[bar] !== 'PASS') return { verdict: 'KILL', reason: `skeptic ${v.skeptic} failed bar ${bar}` };
+    for (const bar of bars) if (v?.bars?.[bar] !== 'PASS') return { verdict: 'KILL', reason: `skeptic ${v.skeptic} failed bar ${bar}` };
   }
   return { verdict: 'SURVIVE', reason: `unanimous: ${list.length} skeptics, all bars PASS` };
 }
@@ -94,10 +100,10 @@ export function groundTruthAdmissible(packet, { now = Date.now(), maxAgeDays = G
 // ── Grounded kill-pass (R17): the kill-pass with the ground-truth precondition enforced — this is what the
 // pipelines MUST call instead of bare rollupVerdict. Inadmissible ground-truth short-circuits to KILL
 // *before* the skeptics are weighed, so a competitively-blind run can never surface a SURVIVE. ──
-export function rollupVerdictGrounded(verdicts, packet, { minSkeptics = 3, now = Date.now() } = {}) {
+export function rollupVerdictGrounded(verdicts, packet, { minSkeptics = 3, bars = BARS, now = Date.now() } = {}) {
   const gt = groundTruthAdmissible(packet, { now });
   if (!gt.ok) return { verdict: 'KILL', reason: `ground-truth gate: ${gt.reason}`, ground_truth_ok: false };
-  return { ...rollupVerdict(verdicts, minSkeptics), ground_truth_ok: true };
+  return { ...rollupVerdict(verdicts, minSkeptics, bars), ground_truth_ok: true };
 }
 
 // ── Durability gate (R18) — Thiel's 7 questions (Zero to One, Ch.13): "is the BUSINESS durable?". Layers
@@ -212,10 +218,12 @@ export function buildManifest(rootSha, fetchRecursive, fetchShallow) {
 
 // ── Stage 5 (deterministic): dedupe (R5), extract-path verify (R6), honest greenlight, persist. ──
 export function dedupeBuildSpecs(specs) {
-  const best = new Map(); // ≤1 per source_repo, keep lowest rank number (best)
+  const best = new Map(); // ≤1 per source_repo, keep lowest rank number (best). Net-new (D17) has no repo →
+  // key by spec_id/candidate_id so distinct net-new ideas don't collapse under a shared null source_repo.
   for (const s of specs || []) {
-    const cur = best.get(s.source_repo);
-    if (!cur || (s.rank ?? 1e9) < (cur.rank ?? 1e9)) best.set(s.source_repo, s);
+    const key = s.net_new === true ? `net-new:${s.spec_id || s.candidate_id}` : s.source_repo;
+    const cur = best.get(key);
+    if (!cur || (s.rank ?? 1e9) < (cur.rank ?? 1e9)) best.set(key, s);
   }
   return [...best.values()];
 }
@@ -231,6 +239,7 @@ export function normalizeRepoPath(repo, p) {
 }
 export function verifyExtractPaths(specs, pathExists) {
   return (specs || []).map(s => {
+    if (s.net_new === true) return { ...s, extracts_verified: true, path_checks: [] }; // net-new (D17): nothing to lift, not applicable
     const extract_list = (s.extract_list || []).map(e => ({ ...e, from: normalizeRepoPath(s.source_repo, e.from) }));
     const checks = extract_list.map(e => ({ from: e.from, exists: !!pathExists(s.source_repo, e.from) }));
     return { ...s, extract_list, extracts_verified: checks.length > 0 && checks.every(c => c.exists), path_checks: checks };
@@ -245,14 +254,19 @@ export function evaluateGreenlight(result) {
   const greenlights = [], rejected = [];
   for (const s of result.buildspecs || []) {
     const c = candById.get(s.candidate_id); const why = [];
+    // Net-new ideation (D17): no source repo to salvage, so the two salvage-SPECIFIC gates — hours_saved_vs_rebuild
+    // (a salvage metric) and extract-path verification (nothing to lift) — are N/A. The cost discipline is enforced
+    // instead by the reuse_over_rebuild kill bar. EVERY other gate applies UNCHANGED (kill-pass survival,
+    // true-zero-to-one, Thiel 7-Q durability, first-principles) — net-new is judged exactly as hard.
+    const netNew = s.net_new === true || c?.net_new === true;
     if (!survived.has(s.candidate_id)) why.push('did not survive kill-pass');
     if (!c) why.push('no candidate record');
     else {
-      if ((c.scores?.hours_saved_vs_rebuild ?? 0) < MIN_HOURS_SAVED) why.push(`hours_saved ${c.scores?.hours_saved_vs_rebuild} < ${MIN_HOURS_SAVED}`);
+      if (!netNew && (c.scores?.hours_saved_vs_rebuild ?? 0) < MIN_HOURS_SAVED) why.push(`hours_saved ${c.scores?.hours_saved_vs_rebuild} < ${MIN_HOURS_SAVED}`);
       // AI-native is a scored plus, NOT a gate — broadened bar: defensible + vertical + real demand + legally liftable.
       if (c.zero_to_one_rank !== 'true-zero-to-one') why.push('not true-zero-to-one');
     }
-    if (s.extracts_verified !== true) why.push('extract paths unverified');
+    if (!netNew && s.extracts_verified !== true) why.push('extract paths unverified');
     const dur = durabilityById.get(s.candidate_id);
     if (dur?.durability_pass !== true) why.push('failed Thiel 7-questions durability gate (<6/7)');
     if (dur?.first_principles_pass !== true) why.push('failed first-principles gate (analogy/me-too or not reduced to fundamentals)');
@@ -295,7 +309,28 @@ export function persistRun(runId, result, { pathExists } = {}) {
 // back it becomes the SKU thesis (skipping blind trend-discovery), then `candidates consume <spec_id>`
 // marks it spent. Pure functions; never un-consumes; never builds; never charges. ──
 export const CANDIDATES_FILE = path.join(HERE, '..', 'recycled-candidates.jsonl');
-const CANDIDATE_THIN_FIELDS = ['vertical', 'icp', 'wedge', 'rough_dev_effort', 'ai_native_test', 'parts_bin_refs'];
+// net_new + wrap_plan ride into the thin queue record: a net-new candidate has no extract_list to build from,
+// so the build loop builds from wrap_plan (the from-scratch plan) and net_new tells it there's no repo to lift.
+const CANDIDATE_THIN_FIELDS = ['vertical', 'icp', 'wedge', 'rough_dev_effort', 'ai_native_test', 'parts_bin_refs', 'net_new', 'wrap_plan'];
+
+// ── Net-new buildspec scaffold (D17): an ideation survivor has no repo to lift from, so its spec is
+// build-from-scratch. net_new:true tells evaluateGreenlight to skip the salvage-only gates (hours_saved,
+// extract-path verify); every other gate still applies. extract_list is empty (nothing to lift); the build
+// loop works from wrap_plan instead. license_human_confirmed:true — net-new = we own it, no third-party gate.
+// Pure + fail-fast: the ideation workflow fills product/wrap_plan/etc. from its agents. ──
+export function makeNetNewBuildSpec({ candidate_id, product, wrap_plan, icp = null, wedge = null,
+  rough_dev_effort = null, ai_native_test = 'PASS', spec_id = null, rank = 1 } = {}) {
+  const id = typeof candidate_id === 'string' ? candidate_id.trim() : '';
+  if (!id) throw new Error('net-new buildspec: candidate_id is required');
+  if (!product || typeof product !== 'string') throw new Error('net-new buildspec: product is required');
+  if (!wrap_plan || typeof wrap_plan !== 'string') throw new Error('net-new buildspec: wrap_plan is required (the from-scratch build plan)');
+  return {
+    spec_id: spec_id || `ideate-${id}`, candidate_id: id, product, icp, wedge,
+    source_repo: null, net_new: true,
+    extract_list: [], extracts_verified: true, // nothing to lift → vacuously verified (greenlight skips this for net_new anyway)
+    wrap_plan, rough_dev_effort, ai_native_test, rank, license_human_confirmed: true,
+  };
+}
 // BuildSpec[] → thin ranked candidate records. Tier-1 OWN repos are license-confirmed (we own the code);
 // Tier-2 external specs default to license_human_confirmed:false until a human clears the gate.
 export function projectCandidates(buildspecs, { runId = null } = {}) {
@@ -619,6 +654,33 @@ function main() {
     appendJsonl(OUTCOMES_FILE, rec);
     console.log(`✓ outcome logged: ${rec.candidate_id} → ${rec.outcome_label}${rec.revenue != null ? ` ($${rec.revenue})` : ''} @ ${rec.checked_at.slice(0, 10)} → ${OUTCOMES_FILE}`);
     return;
+  }
+  if (cmd === 'ideate') {                           // net-new ideation (D17): the deterministic post-workflow step
+    const sub = rest[0];
+    if (sub === 'ingest') {                          // read the ideation Workflow result on stdin → persist + project greenlights → queue (one $0 step)
+      const runId = rest[1] || 'ideate-latest';
+      const result = JSON.parse(fs.readFileSync(0, 'utf8'));
+      const { dir, greenlight, buildspecs } = persistRun(runId, result, { pathExists: ghPathExists });
+      console.log(`Recycled ideation persisted → ${dir}`);
+      console.log(`honest greenlights: ${greenlight.count}`);
+      for (const g of greenlight.greenlights) console.log(`  ✅ ${g.product} (${g.spec_id})`);
+      for (const r of greenlight.rejected) console.log(`  ✗ ${r.product || r.spec_id}: ${r.why.join('; ')}`);
+      if (greenlight.count === 0) { console.log('  → ideation yielded no build-ready idea this pass (honest result — the gap stays open).'); return; }
+      const greenIds = new Set(greenlight.greenlights.map(g => g.spec_id));
+      const incoming = projectCandidates(buildspecs.filter(s => greenIds.has(s.spec_id)), { runId });
+      const merged = mergeCandidates(readJsonl(CANDIDATES_FILE), incoming);
+      writeJsonl(CANDIDATES_FILE, merged);
+      console.log(`→ queued ${incoming.length} net-new candidate(s) (${merged.length} total) → ${CANDIDATES_FILE}`);
+      for (const c of incoming) console.log(`  +rank${c.rank} ${c.product} (${c.spec_id})`);
+      return;
+    }
+    if (sub === 'scaffold') {                         // build a well-formed net-new buildspec from a minimal idea JSON on stdin
+      let idea; try { idea = JSON.parse(fs.readFileSync(0, 'utf8')); } catch (e) { console.error(`✗ stdin must be a minimal idea JSON ({candidate_id, product, wrap_plan, ...}): ${e.message}`); process.exit(1); }
+      try { console.log(JSON.stringify(makeNetNewBuildSpec(idea), null, 2)); }
+      catch (e) { console.error(`✗ ${e.message}`); process.exit(1); }
+      return;
+    }
+    console.error('usage: ideate <ingest <run-id> | scaffold>  (ingest: pipe a Workflow result on stdin; scaffold: pipe a minimal idea on stdin)'); process.exit(1);
   }
   if (cmd === 'metrics') {                          // cross-run KPIs (D16): the kaizen instrument; seed of the digital twin (B)
     const report = buildMetricsReport(aggregateRuns());
