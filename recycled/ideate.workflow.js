@@ -34,18 +34,23 @@ const MAX_IDEAS = (_A && _A.maxIdeas) || 6;       // candidate ideas to ground-t
 
 // ── inline output contracts (the sandbox can't read schemas/*.json) ──
 const PAIN_CLUSTERS = { type: 'object', required: ['clusters'], properties: { clusters: { type: 'array', items: {
-  type: 'object', required: ['pain', 'segment', 'frequency', 'evidence', 'sources'], properties: {
+  type: 'object', required: ['pain', 'segment', 'frequency', 'served_read', 'underserved_signal', 'evidence', 'sources'], properties: {
     pain: { type: 'string' },                       // the specific, repeated frustration (not a vague theme)
     segment: { type: 'string' },                    // the precise role/vertical who has it
     workaround: { type: 'string' },                 // what they do today (manual / spreadsheet / duct-taped tools)
     pays_today: { type: 'string' },                 // evidence they already spend money/time on this
     frequency: { type: 'string', enum: ['rare', 'recurring', 'constant'] },
+    // how well-served the pain ALREADY is (the whitespace signal — the last run died because every pain was well-served)
+    served_read: { type: 'string', enum: ['manual-workaround-dominant', 'tools-exist-but-inadequate', 'well-served'] },
+    underserved_signal: { type: 'string' },         // concrete evidence it is NOT well-served (quote it) — or why it IS
     evidence: { type: 'array', items: { type: 'string' } },  // quoted real complaints
     sources: { type: 'array', items: { type: 'string' } } } } } } }; // REAL urls actually consulted
 const OPPORTUNITIES = { type: 'object', required: ['candidates'], properties: { candidates: { type: 'array', items: {
-  type: 'object', required: ['candidate_id', 'lane', 'product', 'ai_native_test', 'zero_to_one_rank', 'scores'], properties: {
+  type: 'object', required: ['candidate_id', 'lane', 'product', 'ai_native_test', 'zero_to_one_rank', 'whitespace', 'scores'], properties: {
     candidate_id: { type: 'string' }, lane: { type: 'string', enum: ['consumer', 'SMB', 'AI-native-service'] }, product: { type: 'string' },
     vertical: { type: 'string' }, icp: { type: 'string' }, wedge: { type: 'string' },
+    // named incumbents who serve the broad pain + the SPECIFIC underserved wedge this targets + why incumbents can't follow
+    whitespace: { type: 'string' },
     ai_native_test: { type: 'string', enum: ['PASS', 'FAIL'] }, zero_to_one_rank: { type: 'string', enum: ['true-zero-to-one', 'incremental', 'me-too'] },
     scores: { type: 'object', required: ['reuse_leverage', 'dependency_cost_inverted', 'capability_novelty', 'buildable_in_budget', 'market_pull'], properties: {
       reuse_leverage: { type: 'integer' }, dependency_cost_inverted: { type: 'integer' }, capability_novelty: { type: 'integer' },
@@ -106,12 +111,18 @@ const WEB = 'FIRST load web tools: ToolSearch with query "select:WebSearch,WebFe
 // ── I1: demand-mine — find real, specific, repeated pain people already pay/workaround to solve ──
 log(`Recycled ideation → domain: ${DOMAIN}`);
 const mined = await agent(
-  `You are a DEMAND MINER using Amy Hoy's "Sales Safari" + Jobs-to-be-Done. Find REAL, SPECIFIC, REPEATED pain in this domain:\n${DOMAIN}\n${WEB}\n` +
+  `You are a DEMAND MINER using Amy Hoy's "Sales Safari" + Jobs-to-be-Done. Find REAL, SPECIFIC, REPEATED, and crucially UNDER-SERVED pain in this domain:\n${DOMAIN}\n${WEB}\n` +
   `Go where the pain is aired: niche subreddits, industry forums, G2/Capterra/TrustRadius ONE-STAR reviews, Stack Exchange, job postings (a role in shortage = unmet work), "I wish there was a tool that..." posts.\n` +
-  `For each pain cluster require: a SPECIFIC frustration (not a vague theme), the precise role/segment who has it, what they do TODAY (manual/spreadsheet/duct-taped tools), evidence they ALREADY pay or spend real time (existing demand, per YC), frequency, quoted evidence, and REAL source urls you actually consulted.\n` +
-  `Be ruthless: skip generic horizontal ideas and anything that's just a "trending topic". Return {clusters:[...]} — the ${MAX_PAINS} strongest, demand-backed clusters. NEVER fabricate a source.`,
+  `PRIORITIZE under-served pain — where the dominant workaround is still MANUAL/spreadsheet (a true tool gap), OR where people explicitly say the existing tools FAIL them on a specific dimension. DEPRIORITIZE pain already well-served by a popular named tool — that is exactly where the last run died: every idea turned out to be a me-too of an existing product.\n` +
+  `For each cluster require: a SPECIFIC frustration (not a vague theme), the precise role/segment, the workaround TODAY, evidence they ALREADY pay or spend real time (existing demand, per YC), frequency, a served_read (manual-workaround-dominant | tools-exist-but-inadequate | well-served), an underserved_signal (the concrete evidence it is NOT well-served — quote it), quoted evidence, and REAL source urls you actually consulted.\n` +
+  `Be ruthless: skip generic horizontal ideas and "trending topics". FAVOR manual-workaround-dominant + tools-exist-but-inadequate over well-served. Return {clusters:[...]} — the ${MAX_PAINS} strongest UNDER-SERVED clusters. NEVER fabricate a source.`,
   { model: 'sonnet', phase: 'Demand-mine', label: 'demand-mine', schema: PAIN_CLUSTERS });
-const pains = (mined.clusters || []).slice(0, MAX_PAINS);
+// Whitespace-first: feed the LEAST-served pains into synthesis (manual-workaround > inadequate-tools > well-served).
+const SERVED_RANK = { 'manual-workaround-dominant': 2, 'tools-exist-but-inadequate': 1, 'well-served': 0 };
+const pains = (mined.clusters || [])
+  .sort((a, b) => (SERVED_RANK[b.served_read] ?? 0) - (SERVED_RANK[a.served_read] ?? 0))
+  .slice(0, MAX_PAINS);
+log(`Demand-mined ${(mined.clusters || []).length} pains; served_read: ${(mined.clusters || []).map(c => c.served_read).join(', ') || 'none'}`);
 if (!pains.length) {
   return { inventory: [], capabilities: [], candidates: [], judged: [], durability: [], buildspecs: [],
     frozen: [{ repo: 'net-new/ideation', reason: 'demand-mine surfaced no specific, cited, demand-backed pain in this domain' }] };
@@ -119,13 +130,15 @@ if (!pains.length) {
 
 // ── I2: synthesize — turn the top pains into specific, zero-to-one product candidates ──
 const mapped = (await parallel(pains.map(p => () => agent(
-  `Turn this real pain into candidate PRODUCTS (net-new — we build from scratch, no salvage repo). Use PG "live in the future / well-ordered idea" + YC "build for existing demand".\n` +
+  `Turn this real pain into NET-NEW product candidates — but ONLY ones that target genuine WHITE SPACE. ${WEB}\n` +
   `PAIN: ${JSON.stringify(p)}\n` +
-  `THE BAR: specific + vertical (NOT horizontal), defensible, real evidenced demand, and BUILDABLE MOSTLY BY ORCHESTRATING PROVEN COMPONENTS within a small budget (the "orchestrate, don't build" discipline) — NOT a from-scratch heavy lift.\n` +
-  `For each candidate score the 0-5 rubric: reuse_leverage (how much is wiring proven libs/APIs vs novel build — higher=more reuse), dependency_cost_inverted, capability_novelty, buildable_in_budget (can a tiny team ship a real v1 cheaply?), market_pull (real, evidenced demand — be honest). ` +
-  `Give lane, vertical, icp, wedge, ai_native_test (remove AI — does it collapse? collapse=PASS; informational plus, not a gate), zero_to_one_rank. Return {candidates:[...]} — up to 2 best, vertical not horizontal.`,
+  `STEP 1 — LANDSCAPE SWEEP FIRST (do this before proposing anything): search who ALREADY serves this pain for this segment — named incumbents + OSS, their current behavior and pricing. The last ideation run died because every idea was a me-too of an existing product; do this check NOW so that can't happen again.\n` +
+  `STEP 2 — find the GAP the incumbents miss: a narrower niche, an underserved sub-segment, the specific workflow incumbents skip or do badly, or a wedge their business model can't follow. If the pain is fully and well served with NO defensible gap, return ZERO candidates for it — honest, do NOT force a me-too.\n` +
+  `THE BAR: specific + vertical (NOT horizontal), DEFENSIBLY DIFFERENTIATED vs the named incumbents (zero_to_one_rank MUST be "true-zero-to-one"; do not propose "incremental"/"me-too"), real evidenced demand, buildable mostly by orchestrating proven components in a small budget.\n` +
+  `REQUIRED per candidate — whitespace: name the incumbents who serve the broad pain + the SPECIFIC underserved wedge this targets + WHY the incumbents don't/can't cover it (business-model conflict, too-small-for-them, wrong-segment).\n` +
+  `Score 0-5: reuse_leverage, dependency_cost_inverted, capability_novelty, buildable_in_budget, market_pull (honest). Give lane, vertical, icp, wedge, ai_native_test (remove AI — collapse=PASS; informational, not a gate). Return {candidates:[...]} — 0 to 2 (FEWER is better than forced; quality over quota).`,
   { model: 'sonnet', phase: 'Synthesize', label: `synth:${(p.segment || 'pain').slice(0, 24)}`, schema: OPPORTUNITIES })
-    .then(r => ({ pain: p, candidates: (r.candidates || []).slice(0, 2) })))
+    .then(r => ({ pain: p, candidates: (r.candidates || []).filter(c => c.zero_to_one_rank === 'true-zero-to-one').slice(0, 2) })))
 )).filter(Boolean);
 
 let candidates = mapped.flatMap((m, mi) => m.candidates.map((c, i) => ({
