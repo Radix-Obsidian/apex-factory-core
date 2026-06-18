@@ -394,6 +394,103 @@ export function summarizeOutcomes(records) {
   return { candidates: latest.length, observations: (records || []).length, by_label, revenue_total };
 }
 
+// ── Cross-run metrics (D16): the kaizen instrument + the SEED of the factory digital twin (B). Aggregates the
+// SILOED runs/recycled/*/ artifacts into honest cross-run KPIs. Math is pure (tests inject fixtures); the file
+// shell (aggregateRuns) is thin. Zeros / "not measurable" are reported honestly — never a faked number.
+
+// rollup rows only = the line's decisions, one per candidate per run. rate=null when there are no decisions yet.
+export function killRate(verdictRows) {
+  const rollups = (verdictRows || []).filter(v => v && v.skeptic === 'rollup');
+  const killed = rollups.filter(v => v.verdict === 'KILL').length;
+  const survived = rollups.filter(v => v.verdict === 'SURVIVE').length;
+  return { rollups: rollups.length, killed, survived, rate: rollups.length ? killed / rollups.length : null };
+}
+
+// which BAR fails most (per-skeptic rows) + which GATE kills (rollup rows with no bars). Bar keys are read
+// DYNAMICALLY per row — bar sets drift across runs (`ai_native_not_feature` → `real_demand`); a hardcoded list
+// would silently under-count old runs. A normal skeptic-driven rollup KILL is NOT a gate kill (its cause is
+// already counted via that candidate's skeptic rows); only gate kills (inadmissible ground-truth / abstain) bucket here.
+export function failureReasonDistribution(verdictRows) {
+  const by_bar = {}, by_gate = {};
+  for (const v of verdictRows || []) {
+    if (!v) continue;
+    if (v.bars && typeof v.bars === 'object') {
+      for (const k of Object.keys(v.bars)) if (v.bars[k] === 'FAIL') by_bar[k] = (by_bar[k] || 0) + 1;
+      continue;
+    }
+    if (v.skeptic === 'rollup' && v.verdict === 'KILL') {
+      const why = String(v.kill_reason || '').toLowerCase();
+      if (v.ground_truth_ok === false || why.includes('ground-truth') || why.includes('ground truth')) by_gate.ground_truth_gate = (by_gate.ground_truth_gate || 0) + 1;
+      else if (why.includes('abstain')) by_gate.abstain = (by_gate.abstain || 0) + 1;
+    }
+  }
+  return { by_bar, by_gate };
+}
+
+// % of opportunities that became honest greenlights. yield=null on 0 candidates (no divide-by-zero, no fake denom).
+export function greenlightYield(greenlights, totalCandidates) {
+  const g = Number.isFinite(greenlights) ? greenlights : 0;
+  const c = Number.isFinite(totalCandidates) ? totalCandidates : 0;
+  return { greenlights: g, candidates: c, yield: c > 0 ? g / c : null };
+}
+
+// durability/first-principles gate pass counts; n:0 cleanly on empty (don't compute a rate over nothing).
+export function durabilityPassRate(durabilityRows) {
+  const rows = (durabilityRows || []).filter(Boolean);
+  return {
+    n: rows.length,
+    durability_pass: rows.filter(r => r.durability_pass === true).length,
+    first_principles_pass: rows.filter(r => r.first_principles_pass === true).length,
+  };
+}
+
+// Thin impure shell: read every runs/recycled/<run>/ + the outcomes log, combine the rows the pure KPIs need.
+// readJsonl is injectable so tests can drive it without the filesystem.
+export function aggregateRuns(runsRoot, { readJsonl: rj = readJsonl } = {}) {
+  const root = runsRoot || path.join(HERE, '..', 'runs', 'recycled');
+  let names = [];
+  try { names = fs.readdirSync(root, { withFileTypes: true }).filter(d => d.isDirectory()).map(d => d.name); } catch { names = []; }
+  const verdicts = [], durability = [], perRun = [];
+  let candidates = 0, greenlights = 0;
+  for (const run of names) {
+    const dir = path.join(root, run);
+    const v = rj(path.join(dir, '04-verdicts.jsonl'));
+    const d = rj(path.join(dir, '08-durability.jsonl'));
+    const opps = rj(path.join(dir, '03-opportunities.jsonl'));
+    let gl = 0;
+    try { gl = Number(JSON.parse(fs.readFileSync(path.join(dir, 'greenlight.json'), 'utf8')).count) || 0; } catch { gl = 0; }
+    verdicts.push(...v); durability.push(...d); candidates += opps.length; greenlights += gl;
+    perRun.push({ run, candidates: opps.length, greenlights: gl, rollups: v.filter(x => x && x.skeptic === 'rollup').length });
+  }
+  return { runs: names.length, verdicts, durability, candidates, greenlights, perRun, outcomes: rj(OUTCOMES_FILE) };
+}
+
+// Pure: assemble all KPIs from an aggregate. computable = real now (zeros included); not_yet_measurable = honest gaps.
+export function buildMetricsReport(agg) {
+  const a = agg || { runs: 0, verdicts: [], durability: [], candidates: 0, greenlights: 0, perRun: [], outcomes: [] };
+  const kr = killRate(a.verdicts);
+  const gy = greenlightYield(a.greenlights, a.candidates);
+  const dpr = durabilityPassRate(a.durability);
+  return {
+    runs: a.runs,
+    computable: {
+      kill_rate: kr,
+      greenlight_yield: gy,
+      ideas_killed_per_greenlight: gy.greenlights > 0 ? kr.killed / gy.greenlights : null, // null = undefined until first greenlight
+      failure_reason_distribution: failureReasonDistribution(a.verdicts),
+      durability_gate: dpr.n > 0 ? dpr : { ...dpr, note: 'gate wired (R18-R20), never exercised with a surviving candidate' },
+      outcomes: summarizeOutcomes(a.outcomes || []),
+    },
+    not_yet_measurable: {
+      cycle_time: 'no run timestamps yet — add run.meta.json at persist to unlock on future runs',
+      time_to_preview: 'no SKU has reached preview',
+      parts_bin_reuse_rate: 'parts-bin catalog backlogged (recycled/BACKLOG.md)',
+      build_cost_per_sku: 'usage.mjs is a rolling-window proxy, not per-SKU attributed',
+      day45_profitable_yield: '0 — no SKU has reached Day 45; $0 revenue',
+    },
+  };
+}
+
 // ── gh-backed I/O for the source read (agents call these via `node recycled/recycled-scan.mjs ...`). ──
 function sh(cmd) { return execSync(cmd, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }).trim(); }
 // Input guards (defense-in-depth): repo/path/ref are interpolated into shell `gh` calls and originate from
@@ -521,6 +618,27 @@ function main() {
     catch (e) { console.error(`✗ ${e.message}`); process.exit(1); }
     appendJsonl(OUTCOMES_FILE, rec);
     console.log(`✓ outcome logged: ${rec.candidate_id} → ${rec.outcome_label}${rec.revenue != null ? ` ($${rec.revenue})` : ''} @ ${rec.checked_at.slice(0, 10)} → ${OUTCOMES_FILE}`);
+    return;
+  }
+  if (cmd === 'metrics') {                          // cross-run KPIs (D16): the kaizen instrument; seed of the digital twin (B)
+    const report = buildMetricsReport(aggregateRuns());
+    if (json) { console.log(JSON.stringify(report, null, 2)); return; }
+    const pct = x => (x == null ? 'n/a' : `${(x * 100).toFixed(0)}%`);
+    const c = report.computable;
+    console.log(`Recycled cross-run metrics — ${report.runs} run(s)`);
+    console.log(`  kill-rate ............. ${pct(c.kill_rate.rate)} (${c.kill_rate.killed} KILL / ${c.kill_rate.survived} SURVIVE of ${c.kill_rate.rollups} decisions)`);
+    console.log(`  greenlight-yield ...... ${c.greenlight_yield.greenlights} of ${c.greenlight_yield.candidates} candidates (${pct(c.greenlight_yield.yield)})`);
+    console.log(`  ideas/greenlight ...... ${c.ideas_killed_per_greenlight == null ? 'undefined (0 greenlights)' : c.ideas_killed_per_greenlight.toFixed(1)}`);
+    const bars = Object.entries(c.failure_reason_distribution.by_bar).sort((a, b) => b[1] - a[1]);
+    console.log(`  top kill bars ......... ${bars.length ? bars.map(([k, n]) => `${k}:${n}`).join('  ') : '(none)'}`);
+    const gates = Object.entries(c.failure_reason_distribution.by_gate);
+    if (gates.length) console.log(`  gate kills ............ ${gates.map(([k, n]) => `${k}:${n}`).join('  ')}`);
+    console.log(`  durability-gate ....... ${c.durability_gate.n > 0 ? `${c.durability_gate.durability_pass}/${c.durability_gate.n} durable, ${c.durability_gate.first_principles_pass}/${c.durability_gate.n} first-principles` : `n/a — ${c.durability_gate.note}`}`);
+    console.log(`  outcomes .............. ${c.outcomes.candidates} tracked / ${c.outcomes.observations} obs (made_money:${c.outcomes.by_label.made_money} failed:${c.outcomes.by_label.failed} unknown:${c.outcomes.by_label.unknown}; NOT a calibration claim)`);
+    console.log('  not yet measurable:');
+    for (const [k, why] of Object.entries(report.not_yet_measurable)) console.log(`    ${k}: ${why}`);
+    console.log('  — designed-in gates fire honestly ≠ output excellent; we do NOT claim Toyota-level excellence / ~95% / 10× (D16).');
+    console.log('  — every number above is recomputable from runs/recycled/*.jsonl.');
     return;
   }
   if (cmd === 'persist') {

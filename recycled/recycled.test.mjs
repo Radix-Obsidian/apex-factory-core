@@ -7,7 +7,9 @@ import { licenseGate, isSourcePath, rollupVerdict, frozenArchiveNote, classifyRe
   projectCandidates, mergeCandidates, eligibleTopCandidate, markConsumed,
   groundTruthAdmissible, rollupVerdictGrounded, GROUND_TRUTH_MAX_AGE_DAYS,
   scoreSevenQuestions, scoreFirstPrinciples,
-  makeOutcome, latestByCandidate, summarizeOutcomes } from './recycled-scan.mjs';
+  makeOutcome, latestByCandidate, summarizeOutcomes,
+  killRate, failureReasonDistribution, greenlightYield, durabilityPassRate,
+  aggregateRuns, buildMetricsReport } from './recycled-scan.mjs';
 
 // ── R1: license gate, fail-closed ──
 test('R1 licenseGate — permissive licenses are LIFT-OK (tier 2)', () => {
@@ -363,4 +365,67 @@ test('R22 latestByCandidate + summarizeOutcomes — latest observation supersede
   const fromDirty = latestByCandidate(dirty);
   assert.equal(fromDirty.length, 2);              // still just a + b; the 3 corrupt rows dropped
   assert.ok(fromDirty.every(r => typeof r.checked_at === 'string')); // no undefined-timestamp row leaks through
+});
+
+// ── R23: cross-run kill-rate (D16) — rollup rows only; null rate on no decisions (no 0/0=NaN) ──
+test('R23 killRate — counts rollup decisions only; KILL/SURVIVE/rate; null rate when empty', () => {
+  const rows = [
+    { candidate_id: 'a', skeptic: 1, verdict: 'KILL', bars: { x: 'FAIL' } },   // skeptic row — NOT a decision
+    { candidate_id: 'a', skeptic: 'rollup', verdict: 'KILL' },
+    { candidate_id: 'b', skeptic: 'rollup', verdict: 'SURVIVE' },
+    { candidate_id: 'c', skeptic: 'rollup', verdict: 'KILL' },
+  ];
+  assert.deepEqual(killRate(rows), { rollups: 3, killed: 2, survived: 1, rate: 2 / 3 });
+  assert.equal(killRate([]).rate, null);  // no decisions → null, never NaN
+  assert.equal(killRate(null).rollups, 0);
+});
+
+// ── R24: failure-reason distribution (D16) — THE SCHEMA-DRIFT GUARD: bar keys read dynamically across runs ──
+test('R24 failureReasonDistribution — dynamic bar keys (old+new schema); gate kills bucketed; skeptic-kill ≠ gate kill', () => {
+  const rows = [
+    { skeptic: 1, bars: { not_frankenstein: 'PASS', ai_native_not_feature: 'FAIL', is_zero_to_one: 'FAIL' } }, // OLD schema
+    { skeptic: 2, bars: { not_frankenstein: 'PASS', real_demand: 'FAIL', is_zero_to_one: 'FAIL' } },           // NEW schema
+    { candidate_id: 'x', skeptic: 'rollup', verdict: 'KILL', ground_truth_ok: true, kill_reason: 'commodity' }, // normal skeptic-driven kill
+    { candidate_id: 'y', skeptic: 'rollup', verdict: 'KILL', ground_truth_ok: false, kill_reason: 'ground-truth gate: no packet' },
+    { candidate_id: 'z', skeptic: 'rollup', verdict: 'KILL', kill_reason: 'abstain: only 1 skeptic' },
+  ];
+  const d = failureReasonDistribution(rows);
+  assert.equal(d.by_bar.is_zero_to_one, 2);            // counted across BOTH schemas
+  assert.equal(d.by_bar.ai_native_not_feature, 1);     // old key NOT hardcoded away
+  assert.equal(d.by_bar.real_demand, 1);               // new key counted
+  assert.equal(d.by_bar.not_frankenstein, undefined);  // PASS never counted
+  assert.deepEqual(d.by_gate, { ground_truth_gate: 1, abstain: 1 }); // skeptic-driven rollup KILL is NOT a gate kill
+});
+
+// ── R25: greenlight-yield (D16) — null yield on 0 candidates (no divide-by-zero, no fake denominator) ──
+test('R25 greenlightYield — fraction when candidates>0; yield:null on 0 candidates', () => {
+  assert.deepEqual(greenlightYield(1, 4), { greenlights: 1, candidates: 4, yield: 0.25 });
+  assert.deepEqual(greenlightYield(0, 10), { greenlights: 0, candidates: 10, yield: 0 });
+  assert.equal(greenlightYield(0, 0).yield, null);                 // 0/0 → null, never NaN
+  assert.equal(greenlightYield(undefined, undefined).yield, null);
+});
+
+// ── R26: durability-gate pass rate (D16) — n:0 cleanly on empty (no rate over nothing) ──
+test('R26 durabilityPassRate — counts passes; n:0 on empty', () => {
+  const rows = [
+    { candidate_id: 'a', durability_pass: true, first_principles_pass: false },
+    { candidate_id: 'b', durability_pass: true, first_principles_pass: true },
+  ];
+  assert.deepEqual(durabilityPassRate(rows), { n: 2, durability_pass: 2, first_principles_pass: 1 });
+  assert.deepEqual(durabilityPassRate([]), { n: 0, durability_pass: 0, first_principles_pass: 0 });
+});
+
+// ── R27: aggregateRuns + buildMetricsReport (D16) — injected reader; honest nulls/notes, never faked ──
+test('R27 aggregateRuns + buildMetricsReport — injectable reader; assembles KPIs with honest gaps', () => {
+  const empty = aggregateRuns('/nonexistent/runs/root', { readJsonl: () => [] });
+  assert.equal(empty.runs, 0);                          // missing root → 0 runs, not a crash
+  const report = buildMetricsReport({
+    runs: 2, candidates: 10, greenlights: 0, durability: [], outcomes: [],
+    verdicts: [{ skeptic: 'rollup', verdict: 'KILL' }, { skeptic: 'rollup', verdict: 'KILL' }],
+  });
+  assert.equal(report.computable.kill_rate.rate, 1);
+  assert.equal(report.computable.greenlight_yield.yield, 0);
+  assert.equal(report.computable.ideas_killed_per_greenlight, null); // 0 greenlights → undefined, not div-by-zero
+  assert.ok(report.computable.durability_gate.note);                 // empty durability → honest note, not a fake rate
+  assert.ok(report.not_yet_measurable.cycle_time);                   // honest gap surfaced
 });

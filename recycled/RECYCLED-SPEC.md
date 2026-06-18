@@ -55,6 +55,11 @@ The scout's single-skeptic SURVIVE is a far better deep-dive predictor than tria
 | R20 | `evaluateGreenlight()` requires BOTH `durability_pass` AND `first_principles_pass` — a kill-pass-clean, paths-verified spec is REJECTED without them | R20 |
 | R21 | `makeOutcome()` (D15): validates + normalizes at the boundary — coerces `revenue`, trims `candidate_id`, rejects bad label / negative revenue / empty id / non-ISO `checked_at` | `make recycled-verify` (R21) |
 | R22 | `latestByCandidate()` + `summarizeOutcomes()` (D15): append-only log → current state (latest `checked_at` wins per candidate); descriptive counts; inputs not mutated | R22 |
+| R23 | `killRate()` (D16): rollup rows only; KILL/SURVIVE/rate; `rate:null` on no decisions (no 0/0=NaN) | `make recycled-verify` (R23) |
+| R24 | `failureReasonDistribution()` (D16): bar keys read DYNAMICALLY across schema drift (`ai_native_not_feature`+`real_demand` both counted); gate kills bucketed; a skeptic-driven rollup KILL is NOT a gate kill | R24 |
+| R25 | `greenlightYield()` (D16): fraction when candidates>0; `yield:null` on 0 candidates (no divide-by-zero, no fake denominator) | R25 |
+| R26 | `durabilityPassRate()` (D16): pass counts; `n:0` cleanly on empty (no rate over nothing) | R26 |
+| R27 | `aggregateRuns()` + `buildMetricsReport()` (D16): injectable reader; assembles KPIs with honest `null`/`n/a` gaps (ideas/greenlight undefined at 0; durability note on empty) | R27 |
 | R9 | `projectCandidates()`: thin shape; OWN→`license_human_confirmed:true`, Tier-2→`false`; `consumed:false` | R9 |
 | R10 | `eligibleTopCandidate()`: lowest rank among unconsumed + license-confirmed; `null` when dry | R10 |
 | R11 | `mergeCandidates()`: dedupe by `spec_id`; re-projection never un-consumes; inputs not mutated | R11 |
@@ -145,6 +150,22 @@ outcomes. Outcome-capture wires the proprietary, non-re-scrapable layer (private
 - **Honest limit.** This only *seeds* capture. The kill-accuracy bake-off needs a verdict↔outcome join at labeled
   volume that does not exist yet, so `stats` prints an explicit "NOT a calibration claim" disclaimer. We claim we
   started earning a moat, not that we have one. The founder is observer #1 (logging our own theses' fates).
+
+## Cross-run metrics — the kaizen instrument (D16, R23–R27)
+
+The manufacturing standard ([DECISIONS.md](../DECISIONS.md) D16) is made **bulletproof by measurement, not assertion.**
+Each run's artifacts are siloed in `runs/recycled/<run-id>/`; this aggregates them into honest cross-run KPIs. It also
+**seeds the factory digital twin** — it *measures* the line today; the twin will *simulate* it forward (same data spine).
+
+- **CLI.** `recycled-scan.mjs metrics` (human) / `metrics --json`, surfaced as `make recycled-metrics`. $0, reads `runs/` only.
+- **Pure fns (R23–R27).** `killRate`, `failureReasonDistribution` (bar keys read **dynamically** — bar sets drift across
+  runs, so a hardcoded list would silently under-count old runs), `greenlightYield` (`null` on 0 candidates),
+  `durabilityPassRate` (`n:0` on empty), `aggregateRuns` (injectable `readJsonl`), `buildMetricsReport` (pure assembler).
+- **Honest by construction.** Reports zeros and `n/a` with reasons; never fakes an unmeasurable KPI. Computable now:
+  kill-rate, greenlight-yield, failure-reason distribution, ideas-killed-per-greenlight, outcome distribution. Not yet
+  measurable (flagged, not faked): cycle/takt time + time-to-preview + per-SKU build cost (need timestamps / a shipped
+  SKU), parts-bin reuse (backlogged), Day-45 profitable yield (no SKU past Day 1). The footer rejects the inflated
+  claims (no Toyota-level / ~95% / 10×) and notes every number is recomputable from `runs/recycled/*.jsonl`.
 
 ## Out of scope (still backlogged)
 
