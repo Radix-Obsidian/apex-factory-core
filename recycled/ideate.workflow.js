@@ -46,12 +46,14 @@ const PAIN_CLUSTERS = { type: 'object', required: ['clusters'], properties: { cl
     evidence: { type: 'array', items: { type: 'string' } },  // quoted real complaints
     sources: { type: 'array', items: { type: 'string' } } } } } } }; // REAL urls actually consulted
 const OPPORTUNITIES = { type: 'object', required: ['candidates'], properties: { candidates: { type: 'array', items: {
-  type: 'object', required: ['candidate_id', 'lane', 'product', 'ai_native_test', 'zero_to_one_rank', 'whitespace', 'scores'], properties: {
+  type: 'object', required: ['candidate_id', 'lane', 'product', 'ai_native_test', 'does_it_for_you', 'zero_to_one_rank', 'whitespace', 'scores'], properties: {
     candidate_id: { type: 'string' }, lane: { type: 'string', enum: ['consumer', 'SMB', 'AI-native-service'] }, product: { type: 'string' },
     vertical: { type: 'string' }, icp: { type: 'string' }, wedge: { type: 'string' },
     // named incumbents who serve the broad pain + the SPECIFIC underserved wedge this targets + why incumbents can't follow
     whitespace: { type: 'string' },
-    ai_native_test: { type: 'string', enum: ['PASS', 'FAIL'] }, zero_to_one_rank: { type: 'string', enum: ['true-zero-to-one', 'incremental', 'me-too'] },
+    ai_native_test: { type: 'string', enum: ['PASS', 'FAIL'] },
+    // D19: does it OWN THE OUTCOME / close the loop, or is it horizontal SaaS handing the user another tool to operate?
+    does_it_for_you: { type: 'string', enum: ['PASS', 'FAIL'] }, zero_to_one_rank: { type: 'string', enum: ['true-zero-to-one', 'incremental', 'me-too'] },
     scores: { type: 'object', required: ['reuse_leverage', 'dependency_cost_inverted', 'capability_novelty', 'buildable_in_budget', 'market_pull'], properties: {
       reuse_leverage: { type: 'integer' }, dependency_cost_inverted: { type: 'integer' }, capability_novelty: { type: 'integer' },
       buildable_in_budget: { type: 'integer' }, market_pull: { type: 'integer' } } } } } } } };
@@ -66,10 +68,10 @@ const GROUNDTRUTH = { type: 'object', required: ['searched_landscape', 'competit
   demand_read: { type: 'string', enum: ['evidenced-demand', 'plausible', 'no-evidence'] } } };
 // Net-new kill-pass verdict: the cost bar is reuse_over_rebuild (NOT salvage_cheaper_than_rebuild) — there's no repo to salvage.
 const VERDICT = { type: 'object', required: ['bars', 'verdict', 'confidence'], properties: {
-  bars: { type: 'object', required: ['not_frankenstein', 'not_horizontal_sprawl', 'real_demand', 'is_zero_to_one', 'reuse_over_rebuild'], properties: {
+  bars: { type: 'object', required: ['not_frankenstein', 'not_horizontal_sprawl', 'real_demand', 'is_zero_to_one', 'does_it_for_you', 'reuse_over_rebuild'], properties: {
     not_frankenstein: { type: 'string', enum: ['PASS', 'FAIL'] }, not_horizontal_sprawl: { type: 'string', enum: ['PASS', 'FAIL'] },
     real_demand: { type: 'string', enum: ['PASS', 'FAIL'] }, is_zero_to_one: { type: 'string', enum: ['PASS', 'FAIL'] },
-    reuse_over_rebuild: { type: 'string', enum: ['PASS', 'FAIL'] } } },
+    does_it_for_you: { type: 'string', enum: ['PASS', 'FAIL'] }, reuse_over_rebuild: { type: 'string', enum: ['PASS', 'FAIL'] } } },
   verdict: { type: 'string', enum: ['SURVIVE', 'KILL'] }, kill_reason: { type: 'string' }, confidence: { type: 'number' } } };
 const BUILDSPEC = { type: 'object', required: ['product', 'wrap_plan', 'ai_native_test'], properties: {
   product: { type: 'string' }, icp: { type: 'string' }, wedge: { type: 'string' },
@@ -83,7 +85,7 @@ const DURABILITY_SCHEMA = { type: 'object', required: ['seven_questions', 'first
   first_principles: { type: 'object', required: FP_CHECKS, properties: _qa(FP_CHECKS) } } };
 
 // ── inline mirrors of recycled-scan.mjs (the tested source of truth). MUST stay in sync. ──
-const IDEATION_BARS = ['not_frankenstein', 'not_horizontal_sprawl', 'real_demand', 'is_zero_to_one', 'reuse_over_rebuild'];
+const IDEATION_BARS = ['not_frankenstein', 'not_horizontal_sprawl', 'real_demand', 'is_zero_to_one', 'does_it_for_you', 'reuse_over_rebuild'];
 function rollup(list, min = 3) {
   const l = (list || []).filter(Boolean);
   if (l.length < min) return { verdict: 'KILL', reason: `abstain: ${l.length}/${min} skeptics` };
@@ -135,10 +137,11 @@ const mapped = (await parallel(pains.map(p => () => agent(
   `STEP 1 — LANDSCAPE SWEEP FIRST (do this before proposing anything): search who ALREADY serves this pain for this segment — named incumbents + OSS, their current behavior and pricing. The last ideation run died because every idea was a me-too of an existing product; do this check NOW so that can't happen again.\n` +
   `STEP 2 — find the GAP the incumbents miss: a narrower niche, an underserved sub-segment, the specific workflow incumbents skip or do badly, or a wedge their business model can't follow. If the pain is fully and well served with NO defensible gap, return ZERO candidates for it — honest, do NOT force a me-too.\n` +
   `THE BAR: specific + vertical (NOT horizontal), DEFENSIBLY DIFFERENTIATED vs the named incumbents (zero_to_one_rank MUST be "true-zero-to-one"; do not propose "incremental"/"me-too"), real evidenced demand, buildable mostly by orchestrating proven components in a small budget.\n` +
+  `D19 — DOES-IT-FOR-YOU (a HARD gate): the product must OWN THE OUTCOME and close the loop — it does the work for the user and keeps them in the loop (monitor → act → notify), NOT a horizontal dashboard/tool the user still has to operate with AI bolted on as a feature. Set does_it_for_you=PASS ONLY for a genuine outcome-owning, closed-loop product; mark FAIL for anything that's "just another tool you operate". This is the difference between a cool feature and a moat.\n` +
   `REQUIRED per candidate — whitespace: name the incumbents who serve the broad pain + the SPECIFIC underserved wedge this targets + WHY the incumbents don't/can't cover it (business-model conflict, too-small-for-them, wrong-segment).\n` +
-  `Score 0-5: reuse_leverage, dependency_cost_inverted, capability_novelty, buildable_in_budget, market_pull (honest). Give lane, vertical, icp, wedge, ai_native_test (remove AI — collapse=PASS; informational, not a gate). Return {candidates:[...]} — 0 to 2 (FEWER is better than forced; quality over quota).`,
+  `Score 0-5: reuse_leverage, dependency_cost_inverted, capability_novelty, buildable_in_budget, market_pull (honest). Give lane, vertical, icp, wedge, ai_native_test (remove AI — collapse=PASS; informational, not a gate), does_it_for_you (the D19 gate above). Return {candidates:[...]} — 0 to 2 (FEWER is better than forced; quality over quota).`,
   { model: 'sonnet', phase: 'Synthesize', label: `synth:${(p.segment || 'pain').slice(0, 24)}`, schema: OPPORTUNITIES })
-    .then(r => ({ pain: p, candidates: (r.candidates || []).filter(c => c.zero_to_one_rank === 'true-zero-to-one').slice(0, 2) })))
+    .then(r => ({ pain: p, candidates: (r.candidates || []).filter(c => c.zero_to_one_rank === 'true-zero-to-one' && c.does_it_for_you === 'PASS').slice(0, 2) })))
 )).filter(Boolean);
 
 let candidates = mapped.flatMap((m, mi) => m.candidates.map((c, i) => ({
@@ -167,14 +170,15 @@ const judged = (await parallel(candidates.map(cand => async () => {
     `You are a RUTHLESS skeptic. Try to REFUTE this net-new product idea. Default to FAIL on doubt.\n` +
     `Candidate: ${JSON.stringify(cand)}\n` +
     `LIVE GROUND-TRUTH (judge is_zero_to_one and real_demand against THIS, never the idea's self-claims — if a competitor already ships it, is_zero_to_one FAILs): ${JSON.stringify(packet)}\n` +
-    `THE BAR: a winner is defensible + vertical + has real demand + cheaply buildable by orchestration. AI-native is a PLUS, not a gate.\n` +
-    `Judge all 5 bars (PASS only if it clearly clears):\n` +
+    `THE BAR: a winner is defensible + vertical + has real demand + cheaply buildable by orchestration + OWNS THE OUTCOME. AI-native is a PLUS, not a gate.\n` +
+    `Judge all 6 bars (PASS only if it clearly clears):\n` +
     `- not_frankenstein: a coherent single product, NOT a fragile duct-tape of unrelated APIs/features?\n` +
     `- not_horizontal_sprawl: a focused vertical wedge, NOT a generic horizontal tool?\n` +
     `- real_demand: real, evidenced market pull (use the ground-truth demand_evidence) with a specific ICP who'd PAY, NOT a solution in search of a problem?\n` +
     `- is_zero_to_one: genuinely new / defensibly differentiated vs the ground-truth competitors, NOT a crowded me-too?\n` +
+    `- does_it_for_you (D19): does it OWN THE OUTCOME and close the loop — DO the work for the user and keep them in the loop (monitor → act → notify) — NOT a horizontal dashboard/tool the user still operates with AI bolted on? FAIL anything that just informs or hands the user another tool. This is the cool-vs-moat line.\n` +
     `- reuse_over_rebuild: can a real v1 be built MOSTLY by orchestrating proven components within a small budget (not a from-scratch heavy lift)? (the net-new cost bar — the common silent kill)\n` +
-    `verdict = SURVIVE only if ALL 5 bars PASS. Give kill_reason if KILL, and a confidence 0-1.`,
+    `verdict = SURVIVE only if ALL 6 bars PASS. Give kill_reason if KILL, and a confidence 0-1.`,
     { agentType: 'code-reviewer', model: 'sonnet', phase: 'Kill', label: `skeptic${n}:${cand.candidate_id}`, schema: VERDICT })
       .then(v => ({ ...v, skeptic: n, candidate_id: cand.candidate_id }))
   ))).filter(Boolean);

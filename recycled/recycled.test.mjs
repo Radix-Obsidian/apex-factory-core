@@ -51,13 +51,13 @@ test('R2 isSourcePath — node_modules / build artifacts / non-source are exclud
 // ── R4: kill-pass rollup — default-to-kill ──
 const survive = (skeptic, confidence = 0.9) => ({
   candidate_id: 'opp-1', skeptic, confidence, verdict: 'SURVIVE',
-  bars: { not_frankenstein: 'PASS', not_horizontal_sprawl: 'PASS', real_demand: 'PASS', is_zero_to_one: 'PASS', salvage_cheaper_than_rebuild: 'PASS' },
+  bars: { not_frankenstein: 'PASS', not_horizontal_sprawl: 'PASS', real_demand: 'PASS', is_zero_to_one: 'PASS', does_it_for_you: 'PASS', salvage_cheaper_than_rebuild: 'PASS' },
 });
 test('R4 rollupVerdict — 3 unanimous SURVIVE on all bars → SURVIVE', () => {
   assert.equal(rollupVerdict([survive(1), survive(2), survive(3)]).verdict, 'SURVIVE');
 });
 test('R4 rollupVerdict — 2 SURVIVE + 1 KILL → KILL', () => {
-  const kill = { candidate_id: 'opp-1', skeptic: 3, verdict: 'KILL', confidence: 0.8, kill_reason: 'rebuild cheaper', bars: { not_frankenstein: 'PASS', not_horizontal_sprawl: 'PASS', real_demand: 'PASS', is_zero_to_one: 'PASS', salvage_cheaper_than_rebuild: 'FAIL' } };
+  const kill = { candidate_id: 'opp-1', skeptic: 3, verdict: 'KILL', confidence: 0.8, kill_reason: 'rebuild cheaper', bars: { not_frankenstein: 'PASS', not_horizontal_sprawl: 'PASS', real_demand: 'PASS', is_zero_to_one: 'PASS', does_it_for_you: 'PASS', salvage_cheaper_than_rebuild: 'FAIL' } };
   assert.equal(rollupVerdict([survive(1), survive(2), kill]).verdict, 'KILL');
 });
 test('R4 rollupVerdict — one failed bar despite SURVIVE label → KILL', () => {
@@ -133,7 +133,7 @@ test('R17 rollupVerdictGrounded — INADMISSIBLE ground-truth + 3 unanimous SURV
   assert.match(r.reason, /ground-truth gate/);
 });
 test('R17 rollupVerdictGrounded — admissible ground-truth still respects default-to-kill (a KILL skeptic → KILL)', () => {
-  const kill = { skeptic: 3, verdict: 'KILL', confidence: 0.8, kill_reason: 'crowded me-too', bars: { not_frankenstein: 'PASS', not_horizontal_sprawl: 'PASS', real_demand: 'PASS', is_zero_to_one: 'FAIL', salvage_cheaper_than_rebuild: 'PASS' } };
+  const kill = { skeptic: 3, verdict: 'KILL', confidence: 0.8, kill_reason: 'crowded me-too', bars: { not_frankenstein: 'PASS', not_horizontal_sprawl: 'PASS', real_demand: 'PASS', is_zero_to_one: 'FAIL', does_it_for_you: 'PASS', salvage_cheaper_than_rebuild: 'PASS' } };
   const r = rollupVerdictGrounded([survive(1), survive(2), kill], freshPacket(), { now: NOW });
   assert.equal(r.verdict, 'KILL');
   assert.equal(r.ground_truth_ok, true); // gate passed; the skeptic killed it
@@ -435,10 +435,10 @@ test('R27 aggregateRuns + buildMetricsReport — injectable reader; assembles KP
 // the gate stays just as brutal (all 5 must PASS), and the SALVAGE default is unchanged (backward-compat). ──
 const surviveIdeation = (skeptic, confidence = 0.9) => ({
   candidate_id: 'idea-1', skeptic, confidence, verdict: 'SURVIVE',
-  bars: { not_frankenstein: 'PASS', not_horizontal_sprawl: 'PASS', real_demand: 'PASS', is_zero_to_one: 'PASS', reuse_over_rebuild: 'PASS' },
+  bars: { not_frankenstein: 'PASS', not_horizontal_sprawl: 'PASS', real_demand: 'PASS', is_zero_to_one: 'PASS', does_it_for_you: 'PASS', reuse_over_rebuild: 'PASS' },
 });
 test('R28 IDEATION_BARS — net-new bar set differs only in the cost bar; salvage default untouched', () => {
-  assert.deepEqual(IDEATION_BARS, ['not_frankenstein', 'not_horizontal_sprawl', 'real_demand', 'is_zero_to_one', 'reuse_over_rebuild']);
+  assert.deepEqual(IDEATION_BARS, ['not_frankenstein', 'not_horizontal_sprawl', 'real_demand', 'is_zero_to_one', 'does_it_for_you', 'reuse_over_rebuild']);
   assert.equal(BARS.includes('salvage_cheaper_than_rebuild'), true);   // salvage default unchanged
   assert.equal(IDEATION_BARS.includes('salvage_cheaper_than_rebuild'), false);
   assert.equal(BARS.length, IDEATION_BARS.length);                     // same brutality (same count)
@@ -454,6 +454,27 @@ test('R28 rollupVerdict — a net-new verdict (no salvage bar) judged by the SAL
   // proves WHY the swap exists: net-new verdicts lack salvage_cheaper_than_rebuild, so the salvage default
   // would auto-kill them — feeding net-new through the default set would be dishonest, not strict.
   assert.equal(rollupVerdict([surviveIdeation(1), surviveIdeation(2), surviveIdeation(3)]).verdict, 'KILL');
+});
+
+// ── R33: does-it-for-you gate (D19) — every idea must OWN THE OUTCOME / close the loop, NOT be horizontal
+// SaaS with AI bolted on. Enforced as a hard bar in BOTH BARS (salvage) and IDEATION_BARS (net-new). ──
+test('R33 does_it_for_you is a hard bar in BOTH the salvage and ideation sets', () => {
+  assert.equal(BARS.includes('does_it_for_you'), true);
+  assert.equal(IDEATION_BARS.includes('does_it_for_you'), true);
+});
+test('R33 rollupVerdict — does_it_for_you FAIL on any skeptic → KILL (salvage set), with the reason naming the bar', () => {
+  const bad = survive(3); bad.bars.does_it_for_you = 'FAIL';
+  const r = rollupVerdict([survive(1), survive(2), bad]);
+  assert.equal(r.verdict, 'KILL');
+  assert.match(r.reason, /does_it_for_you/);
+});
+test('R33 rollupVerdict(bars=IDEATION_BARS) — does_it_for_you FAIL on any skeptic → KILL (net-new set)', () => {
+  const bad = surviveIdeation(3); bad.bars.does_it_for_you = 'FAIL';
+  assert.equal(rollupVerdict([surviveIdeation(1), surviveIdeation(2), bad], 3, IDEATION_BARS).verdict, 'KILL');
+});
+test('R33 horizontal-SaaS-with-AI (only does_it_for_you fails) cannot SURVIVE even if every other bar passes', () => {
+  const horizontal = survive(1); horizontal.bars.does_it_for_you = 'FAIL';
+  assert.equal(rollupVerdict([horizontal, survive(2), survive(3)]).verdict, 'KILL');
 });
 
 // ── R29: grounded rollup threads the bar set — ground-truth gate still fires first, then ideation bars apply ──

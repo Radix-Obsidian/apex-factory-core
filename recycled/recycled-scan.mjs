@@ -53,13 +53,15 @@ export function licenseGate(spdx, tier) {
 // ── Kill-pass rollup (R4): SURVIVE iff EVERY skeptic SURVIVEs on ALL bars with confidence >= floor.
 // Any KILL, any failed bar, any abstain (missing skeptic), or any low-confidence SURVIVE → KILL. ──
 export const CONFIDENCE_FLOOR = 0.6;
-// Salvage kill bars (the default). Net-new ideation (D17) swaps the last bar: salvage_cheaper_than_rebuild →
-// reuse_over_rebuild. A net-new idea has NO repo to salvage, so it would auto-FAIL salvage_cheaper_than_rebuild —
-// feeding it through the salvage set unchanged would be a rigged auto-kill, not honesty. reuse_over_rebuild keeps
-// the SAME cost discipline (buildable mostly by orchestrating proven components within budget, not a from-scratch
-// heavy lift — the Higgsfield "orchestrate, don't build" rule). Same count, same brutality; only the cost bar is reframed.
-export const BARS = ['not_frankenstein', 'not_horizontal_sprawl', 'real_demand', 'is_zero_to_one', 'salvage_cheaper_than_rebuild'];
-export const IDEATION_BARS = ['not_frankenstein', 'not_horizontal_sprawl', 'real_demand', 'is_zero_to_one', 'reuse_over_rebuild'];
+// Kill bars. D19 adds `does_it_for_you` to BOTH sets: every idea — salvage or net-new — must OWN THE OUTCOME
+// (a closed-loop "we do the work AND keep you in the loop" product), NOT horizontal SaaS that hands the user
+// yet another tool to operate with AI bolted on as a feature. It is ORTHOGONAL to `ai_native_test` (which stays
+// a PLUS, not a gate — we don't REQUIRE AI; we DO require closing the loop / delivering the outcome). The cost bar
+// differs by path: salvage keeps salvage_cheaper_than_rebuild; net-new ideation (D17) swaps it for reuse_over_rebuild
+// (a net-new idea has NO repo to salvage, so salvage_cheaper_than_rebuild would rig an auto-kill — reuse_over_rebuild
+// keeps the SAME cost discipline: buildable mostly by orchestrating proven components, not a from-scratch heavy lift).
+export const BARS = ['not_frankenstein', 'not_horizontal_sprawl', 'real_demand', 'is_zero_to_one', 'does_it_for_you', 'salvage_cheaper_than_rebuild'];
+export const IDEATION_BARS = ['not_frankenstein', 'not_horizontal_sprawl', 'real_demand', 'is_zero_to_one', 'does_it_for_you', 'reuse_over_rebuild'];
 export function rollupVerdict(verdicts, minSkeptics = 3, bars = BARS) {
   const list = Array.isArray(verdicts) ? verdicts.filter(Boolean) : [];
   if (list.length < minSkeptics) return { verdict: 'KILL', reason: `abstain: ${list.length}/${minSkeptics} skeptics returned` };
