@@ -50,6 +50,16 @@ does not charge real customers — that waits for the publish+charge gate.
 - [ ] **Validate structure (deterministic, $0):** `make design-check SKU=../<sku-repo>` passes. Non-blocking
       by policy (a quality checklist item, not a hard deploy gate).
 
+### [ ] Phase 2.6 — Closed-loop / does-it-for-you (D19)
+- [ ] **Build it as a closed loop, not a tool the user operates.** The SKU must OWN THE OUTCOME: persist the
+      user's state → DO the work for them → proactively keep them in the loop (remind/alert) — NOT a horizontal
+      dashboard with AI bolted on. This is the cool-vs-moat line (Hu's open→closed loop; Thiel vertical
+      monopoly; Thomas/YC: sell the outcome, not features).
+- [ ] **Declare the loop in `CLOSED-LOOP.md`** (outcome / does / state / keep-in-loop) and validate it
+      (deterministic, $0): `make closed-loop-check SKU=../<sku-repo>` passes. The judge-side gate (the
+      `does_it_for_you` kill bar) already blocked horizontal-SaaS-with-AI at ideation; this confirms the BUILD
+      actually closed the loop.
+
 ### [ ] Phase 3 — Copywriting injection (must pass the copywriter-auditor hook)
 - [ ] Seth Godin tribal-status filter on all customer-facing copy.
 - [ ] Alex Hormozi value stack + risk-reversal / guarantee in the checkout UI.

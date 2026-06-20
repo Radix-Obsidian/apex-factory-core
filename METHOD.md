@@ -14,6 +14,13 @@ It is an AI-native, **closed-loop** company in the sense the best builders now m
 exactly one human stop — the founder-only publish+charge gate (D5). Everything upstream — research, build, test,
 preview — is autonomous; only charging a real customer requires a human.
 
+And what the line ships inherits that shape (D19): **every SKU is itself closed-loop and does-it-for-you** — it owns
+the user's outcome (persist their state → do the work → proactively keep them in the loop), never a horizontal tool
+with AI bolted on as a feature. We don't require a SKU to *use* AI (that stays a plus, not a gate); we require it to
+*close the loop*. Enforced on both sides: a kill-pass bar (`does_it_for_you`) blocks horizontal-SaaS-with-AI at the
+gate, and a deterministic build check (`closed-loop-check`) confirms the shipped SKU actually closed it. The line in
+one phrase: own a small market completely (Thiel) by selling the outcome, not features (Thomas/YC's AI-native bet).
+
 ## 2. The standard in one screen — manufacturing principles → mechanism
 
 We run the Toyota / Tesla / SpaceX manufacturing disciplines. Almost all of this is **already built**; naming it is the

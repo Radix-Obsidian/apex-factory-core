@@ -295,3 +295,39 @@ handoff via `/design-sync` (the API is "coming weeks" per Anthropic; when it shi
 stage). The validator proves *structure, not quality*: a SKU can pass `design-check` and still look mediocre — beauty is
 **trusted to Claude Design**, not gated. Proven on **one** SKU (DOT Navigator); the standard generalizes the workflow we
 just ran, it has not yet run unattended inside `loop.sh`.
+
+## D19 — does-it-for-you / closed-loop: every SKU owns the outcome, NOT horizontal-SaaS-with-AI (2026-06-20)
+DOT Navigator shipped and charged (D17/charge-pass), and the founder, staring at the live paid packet, named the gap:
+it *tells* a carrier what's due, then makes them go do the hardest part themselves — the exact thing they avoided. "Cool,
+not a moat." Three lenses agree: **Hu** (YC) — open-loop *informs*, closed-loop *monitors → acts → keeps you in the loop*;
+**Thiel** — own a small market completely by owning the outcome, not selling a feature; **Thomas AI** (YC) — sell the
+*outcome that makes/saves money*, not another tool. So we promote "does-it-for-you" from a soft plus to a **hard gate**,
+on both the judge and the build sides.
+
+**The gap this closes.** The kill-pass had no closed-loop bar, and `ai_native_test` was explicitly *"a scored plus, NOT a
+gate"* (recycled-scan.mjs) — so the factory could (and did) bless an *open-loop, informational* product. Nothing required
+a SKU to **do the work** and **keep the user in the loop**.
+
+**Orthogonal to `ai_native_test` (the key nuance).** D19 is NOT "must it use AI?" — that stays a plus (a great non-AI
+vertical tool is fine). D19 is "does it **own the outcome / close the loop**, or hand the user another tool to operate with
+AI bolted on?" Different axis; both honest. A horizontal dashboard-with-AI now FAILS the gate even though `ai_native_test`
+would PASS.
+
+**What's new vs reused.**
+- **Reused:** the kill-pass unanimity rollup (R4/R17) — a new bar flows through it for free; the D18 `design-check`
+  deterministic-checker pattern; METHOD's existing closed-loop language (which described the *factory*; D19 extends it to
+  the *SKUs the factory ships*).
+- **New (judge side):** `does_it_for_you` added to BOTH `BARS` and `IDEATION_BARS` — every idea, salvage or net-new, must
+  clear it (3 skeptics, unanimous, default-to-kill). Baked into `ideate.workflow.js`: a synthesis filter
+  (`does_it_for_you === 'PASS'`) and a 6th skeptic bar. Tests R33 (green; 63/63).
+- **New (build side):** `scripts/closed-loop-check.mjs` + `make closed-loop-check` + PRD **Phase 2.6** — the SKU must
+  declare its loop in `CLOSED-LOOP.md` (outcome / does / state / keep-in-loop); deterministic, $0, non-blocking by policy
+  (the bar judges substance; the check confirms the build *committed* to the loop).
+
+**Honest limitation (recorded not hidden).** Same shape-not-truth caveat as the other bars: `does_it_for_you` is
+skeptic-judged, and the build check is *structural* (it verifies the loop was DECLARED, not that it's excellent). And —
+pointedly — **DOT Navigator itself FAILS `closed-loop-check` today** (it's open-loop; no `CLOSED-LOOP.md`). That's not a
+bug; it's the standard defined *ahead* of the instance (define-then-build): the next pass rebuilds DOT Navigator to clear
+the bar (accounts + true-state tracking + pre-filled documents + a next-action engine + proactive reminders — the honest
+"does-it-for-you," since FMCSA legally requires the carrier's own signature to file, so we prepare/track/remind/one-click,
+never silently auto-submit). The factory now ships moats by construction, not by luck.
