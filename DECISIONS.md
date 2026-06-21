@@ -48,6 +48,15 @@ token). Rotate via `claude setup-token` before the one-year expiry. From 2026-06
 monthly "Agent SDK credit" (still subscription). This is the "agentic staff" identity, separate from AJ's
 interactive Max session.
 
+**Addendum (2026-06-21) — dedicated factory token + two-key split, guard-enforced.** The factory now runs
+on its OWN dedicated Claude credentials (no longer shared with the other projects), and the model is two keys
+with non-overlapping roles: **`CLAUDE_CODE_OAUTH_TOKEN` (sk-ant-oat01-…) = the FACTORY** (its own build/design/
+test work), and **the Anthropic API key (sk-ant-api03-…) = SKUs ONLY** (per-token, injected per-repo via
+Railway — never the factory). The `unset` in `loop.sh` enforced this *silently*; now `auth-guard.sh` makes it
+LOUD and fail-closed — the loop pre-flight refuses to start (and Telegram-alerts) if a SKU API key is found in
+`factory-core/.env`, if `CLAUDE_CODE_OAUTH_TOKEN` is absent, or if it isn't an `sk-ant-oat01-` OAuth token.
+Wired into `make auth-guard` / `make guard-test` / `make verify`; fixtures in `tests/auth-guard.test.sh`.
+
 ## D9 — production posture: enabled, crash-recovery (not cold-start)
 Per founder ("wire AND enable, real outcomes from day one"): the `apex-heartbeat` cron is **ENABLED**.
 The heartbeat does **crash-recovery** — it relaunches a loop that was running and died (detected via the

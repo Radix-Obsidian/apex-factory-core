@@ -37,6 +37,15 @@ run_loop() {
   ls -1t "$HERE"/runs/loop.*.log 2>/dev/null | tail -n +6 | xargs rm -f 2>/dev/null || true
   : > "$log"; rm -f "$HERE/runs/done.flag" "$HERE/runs/.fable-budget"   # reset the Fable per-run budget
 
+  # Credential invariant (auth-guard): the SKU API key must NEVER live in the factory .env. The `unset`
+  # above swallows it silently — the guard turns that misconfiguration into a LOUD, deliberate stop so a
+  # mis-pasted key is caught, not quietly worked around. (Reads the .env file, so it's unaffected by the unset.)
+  if ! bash "$HERE/auth-guard.sh" >>"$log" 2>&1; then
+    alert "🔴 factory auth-guard FAILED — credential misconfig in .env (API key in the factory slot?) — see runs/loop.log"
+    echo "AUTH_GUARD_FAILED" | tee -a "$log"
+    rm -f "$HERE/runs/loop.active"; return 0   # deliberate stop, needs human — don't auto-retry a misconfig
+  fi
+
   # Pre-flight auth: one cheap Haiku ping distinguishes an expired token from a real build error.
   if [ -z "${LOOP_CMD:-}" ]; then
     if ! runto 90 claude -p "Reply only: OK" --model claude-haiku-4-5-20251001 >/dev/null 2>&1; then

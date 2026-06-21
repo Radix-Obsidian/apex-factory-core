@@ -54,7 +54,10 @@ Eval tier-2 judges + the 6h heartbeat narration run on **OpenRouter free** ($0, 
 - Hardening: pre-flight auth ping, per-iteration `timeout`, failure backoff + circuit breaker, crash marker + immediate Telegram alert, log rotation, anchored `ALL_DONE` sentinel.
 
 ## Auth facts (verified, high confidence)
+- **Two-key model (2026-06-21):** the factory runs on its OWN dedicated Claude credentials, split by role —
+  **`CLAUDE_CODE_OAUTH_TOKEN` (sk-ant-oat01-…) = the FACTORY** (build/design/test), and the **Anthropic API key (sk-ant-api03-…) = SKUs ONLY** (per-token, in each SKU's Railway env — never the factory).
 - Factory agents authenticate via **`CLAUDE_CODE_OAUTH_TOKEN`** (gitignored `.env`) — a `claude setup-token` one-year token. Bills the **subscription**, **$0/token**; from **2026-06-15** `claude -p` draws on a monthly "Agent SDK credit" (still subscription, not API credits).
 - **`ANTHROPIC_API_KEY` / `ANTHROPIC_AUTH_TOKEN` OUTRANK** the OAuth token — `loop.sh` `unset`s both before calling `claude`. Never pass `--bare` (it ignores the token). Re-run `claude setup-token` to rotate before the one-year expiry.
+- **`auth-guard.sh` enforces the invariant** (fail-closed, loud): the loop pre-flight stops + Telegram-alerts if a SKU API key sits in `factory-core/.env`, if the OAuth token is missing, or if it isn't an `sk-ant-oat01-` token. Run standalone via `make auth-guard`; fixtures in `tests/auth-guard.test.sh` (`make guard-test`).
 
 Sources: `platform.claude.com/docs/.../models/overview` & `/pricing`; `code.claude.com/docs/en/authentication`; benchmark/positioning from Anthropic + independent outlets (the-decoder, TechCrunch, VentureBeat, Artificial Analysis).
