@@ -40,3 +40,11 @@ node "$HERE/usage.mjs" || echo "• usage analyzer unavailable (node?) — skipp
 # 4. Treasury + gate
 if [ -n "${STRIPE_SECRET_KEY:-}" ]; then echo "• stripe: configured (net read at gate-time)"; else echo "• stripe: n/a (test phase — no charging)"; fi
 if [ -n "${PUBLISH_APPROVAL_TOKEN:-}" ]; then echo "• gate: ARMED (token set)"; else echo "• gate: SEALED (no token — cannot charge)"; fi
+
+# 5. Post-launch SKU operations — deterministic snapshot per LIVE SKU (health + revenue + support).
+#    $0 LLM, network-bounded. Degrades to n/a where a Stripe key / inbox isn't wired. The LLM operate
+#    tick (drafting replies, narrating, escalating) is the factory-operator agent's job via `make operate`.
+if [ -f "$HERE/ops/operate.mjs" ]; then
+  echo "• SKUs (D20 operate snapshot):"
+  node "$HERE/ops/operate.mjs" --brief 2>/dev/null | sed 's/^/  /' || echo "  operate snapshot unavailable (node?)"
+fi

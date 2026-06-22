@@ -4,7 +4,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { licenseGate, isSourcePath, rollupVerdict, frozenArchiveNote, classifyRepoAge,
   buildManifest, dedupeBuildSpecs, verifyExtractPaths, evaluateGreenlight,
-  projectCandidates, mergeCandidates, eligibleTopCandidate, markConsumed } from './recycled-scan.mjs';
+  projectCandidates, mergeCandidates, eligibleTopCandidate, markConsumed,
+  groundTruthAdmissible, rollupVerdictGrounded, GROUND_TRUTH_MAX_AGE_DAYS,
+  scoreSevenQuestions, scoreFirstPrinciples,
+  makeOutcome, latestByCandidate, summarizeOutcomes,
+  killRate, failureReasonDistribution, greenlightYield, durabilityPassRate,
+  aggregateRuns, buildMetricsReport,
+  BARS, IDEATION_BARS, makeNetNewBuildSpec } from './recycled-scan.mjs';
 
 // ── R1: license gate, fail-closed ──
 test('R1 licenseGate — permissive licenses are LIFT-OK (tier 2)', () => {
@@ -45,13 +51,13 @@ test('R2 isSourcePath — node_modules / build artifacts / non-source are exclud
 // ── R4: kill-pass rollup — default-to-kill ──
 const survive = (skeptic, confidence = 0.9) => ({
   candidate_id: 'opp-1', skeptic, confidence, verdict: 'SURVIVE',
-  bars: { not_frankenstein: 'PASS', not_horizontal_sprawl: 'PASS', real_demand: 'PASS', is_zero_to_one: 'PASS', salvage_cheaper_than_rebuild: 'PASS' },
+  bars: { not_frankenstein: 'PASS', not_horizontal_sprawl: 'PASS', real_demand: 'PASS', is_zero_to_one: 'PASS', does_it_for_you: 'PASS', salvage_cheaper_than_rebuild: 'PASS' },
 });
 test('R4 rollupVerdict — 3 unanimous SURVIVE on all bars → SURVIVE', () => {
   assert.equal(rollupVerdict([survive(1), survive(2), survive(3)]).verdict, 'SURVIVE');
 });
 test('R4 rollupVerdict — 2 SURVIVE + 1 KILL → KILL', () => {
-  const kill = { candidate_id: 'opp-1', skeptic: 3, verdict: 'KILL', confidence: 0.8, kill_reason: 'rebuild cheaper', bars: { not_frankenstein: 'PASS', not_horizontal_sprawl: 'PASS', real_demand: 'PASS', is_zero_to_one: 'PASS', salvage_cheaper_than_rebuild: 'FAIL' } };
+  const kill = { candidate_id: 'opp-1', skeptic: 3, verdict: 'KILL', confidence: 0.8, kill_reason: 'rebuild cheaper', bars: { not_frankenstein: 'PASS', not_horizontal_sprawl: 'PASS', real_demand: 'PASS', is_zero_to_one: 'PASS', does_it_for_you: 'PASS', salvage_cheaper_than_rebuild: 'FAIL' } };
   assert.equal(rollupVerdict([survive(1), survive(2), kill]).verdict, 'KILL');
 });
 test('R4 rollupVerdict — one failed bar despite SURVIVE label → KILL', () => {
@@ -72,6 +78,65 @@ test('R7 frozenArchiveNote — label-only, reversible, TRULY-DEAD', () => {
   assert.equal(n.archive_action, 'label-only');
   assert.equal(n.reversible, true);
   assert.equal(n.verdict, 'TRULY-DEAD');
+});
+
+// ── R16: ground-truth gate — the kill-skeptic must judge market bars against LIVE landscape, fail-closed ──
+const NOW = Date.parse('2026-06-16T00:00:00Z');
+const freshPacket = (over = {}) => ({
+  searched_landscape: true,
+  competitors: [{ name: 'LiteLLM', what_they_ship: 'mid-stream prefill failover', overlap: 'direct' }],
+  sources: ['https://github.com/BerriAI/litellm/blob/main/litellm/router.py'],
+  checked_at: '2026-06-15T00:00:00Z',
+  ...over,
+});
+test('R16 groundTruthAdmissible — fresh, sourced, competitor-bearing packet is admissible', () => {
+  assert.equal(groundTruthAdmissible(freshPacket(), { now: NOW }).ok, true);
+});
+test('R16 groundTruthAdmissible — missing/empty packet is INADMISSIBLE (competitively blind)', () => {
+  assert.equal(groundTruthAdmissible(null, { now: NOW }).ok, false);
+  assert.equal(groundTruthAdmissible(undefined, { now: NOW }).ok, false);
+  assert.equal(groundTruthAdmissible({}, { now: NOW }).ok, false);
+});
+test('R16 groundTruthAdmissible — competitors but NO sources → inadmissible (uncited is a guess)', () => {
+  assert.equal(groundTruthAdmissible(freshPacket({ sources: [] }), { now: NOW }).ok, false);
+});
+test('R16 groundTruthAdmissible — empty competitors WITHOUT attested search → inadmissible', () => {
+  assert.equal(groundTruthAdmissible(freshPacket({ competitors: [], searched_landscape: false }), { now: NOW }).ok, false);
+});
+test('R16 groundTruthAdmissible — empty competitors WITH attested search + sources → admissible (honest empty field)', () => {
+  assert.equal(groundTruthAdmissible(freshPacket({ competitors: [], searched_landscape: true }), { now: NOW }).ok, true);
+});
+test('R16 groundTruthAdmissible — missing/invalid checked_at → inadmissible', () => {
+  assert.equal(groundTruthAdmissible(freshPacket({ checked_at: undefined }), { now: NOW }).ok, false);
+  assert.equal(groundTruthAdmissible(freshPacket({ checked_at: 'whenever' }), { now: NOW }).ok, false);
+});
+test('R16 groundTruthAdmissible — stale beyond the max age → inadmissible', () => {
+  const stale = freshPacket({ checked_at: '2026-04-01T00:00:00Z' }); // ~76d before NOW
+  assert.equal(groundTruthAdmissible(stale, { now: NOW }).ok, false);
+  assert.ok((NOW - Date.parse(stale.checked_at)) / 86_400_000 > GROUND_TRUTH_MAX_AGE_DAYS);
+});
+test('R16 groundTruthAdmissible — future checked_at → inadmissible (clock skew / forgery)', () => {
+  assert.equal(groundTruthAdmissible(freshPacket({ checked_at: '2026-07-01T00:00:00Z' }), { now: NOW }).ok, false);
+});
+
+// ── R17: grounded kill-pass — inadmissible ground-truth short-circuits to KILL before skeptics are weighed ──
+test('R17 rollupVerdictGrounded — admissible ground-truth + 3 unanimous SURVIVE → SURVIVE', () => {
+  const r = rollupVerdictGrounded([survive(1), survive(2), survive(3)], freshPacket(), { now: NOW });
+  assert.equal(r.verdict, 'SURVIVE');
+  assert.equal(r.ground_truth_ok, true);
+});
+test('R17 rollupVerdictGrounded — INADMISSIBLE ground-truth + 3 unanimous SURVIVE → KILL (the blindness cure)', () => {
+  // This is the exact 2026-06-16 false-positive: skeptics all say SURVIVE, but with no market awareness it must KILL.
+  const r = rollupVerdictGrounded([survive(1), survive(2), survive(3)], null, { now: NOW });
+  assert.equal(r.verdict, 'KILL');
+  assert.equal(r.ground_truth_ok, false);
+  assert.match(r.reason, /ground-truth gate/);
+});
+test('R17 rollupVerdictGrounded — admissible ground-truth still respects default-to-kill (a KILL skeptic → KILL)', () => {
+  const kill = { skeptic: 3, verdict: 'KILL', confidence: 0.8, kill_reason: 'crowded me-too', bars: { not_frankenstein: 'PASS', not_horizontal_sprawl: 'PASS', real_demand: 'PASS', is_zero_to_one: 'FAIL', does_it_for_you: 'PASS', salvage_cheaper_than_rebuild: 'PASS' } };
+  const r = rollupVerdictGrounded([survive(1), survive(2), kill], freshPacket(), { now: NOW });
+  assert.equal(r.verdict, 'KILL');
+  assert.equal(r.ground_truth_ok, true); // gate passed; the skeptic killed it
 });
 
 // ── repo-age classifier (Stage 0 bucket) ──
@@ -126,12 +191,14 @@ test('R6 verifyExtractPaths — unresolved path → extracts_verified false', ()
   assert.equal(ok[0].extracts_verified, true);
 });
 
-// ── honest-greenlight gate: survived + hours>=3 + zero-to-one + paths verified (AI is a plus, NOT a gate) ──
-test('evaluateGreenlight — passes when survived + hours>=3 + zero-to-one + paths verified', () => {
+// ── honest-greenlight gate: survived + hours>=3 + zero-to-one + paths verified + durability + first-principles ──
+const durOK = [{ candidate_id: 'c1', durability_pass: true, first_principles_pass: true }];
+test('evaluateGreenlight — passes when survived + hours>=3 + zero-to-one + paths verified + durability/first-principles', () => {
   const base = {
     candidates: [{ candidate_id: 'c1', ai_native_test: 'PASS', zero_to_one_rank: 'true-zero-to-one', scores: { hours_saved_vs_rebuild: 4 } }],
     judged: [{ candidate_id: 'c1', rollup: { verdict: 'SURVIVE' } }],
     buildspecs: [{ spec_id: 's1', candidate_id: 'c1', product: 'P', extracts_verified: true }],
+    durability: durOK,
   };
   assert.equal(evaluateGreenlight(base).count, 1);
   const lowHours = structuredClone(base); lowHours.candidates[0].scores.hours_saved_vs_rebuild = 2;
@@ -146,8 +213,53 @@ test('evaluateGreenlight — a NON-AI candidate still greenlights (broadened bar
     candidates: [{ candidate_id: 'c1', ai_native_test: 'FAIL', zero_to_one_rank: 'true-zero-to-one', scores: { hours_saved_vs_rebuild: 5 } }],
     judged: [{ candidate_id: 'c1', rollup: { verdict: 'SURVIVE' } }],
     buildspecs: [{ spec_id: 's1', candidate_id: 'c1', product: 'NoLeakAi-type non-AI tool', extracts_verified: true }],
+    durability: durOK,
   };
   assert.equal(evaluateGreenlight(nonAi).count, 1);
+});
+
+// ── R18: Thiel 7-questions durability score (>=6 of 7), missing answers default-to-fail ──
+const sevenAll = (over = {}) => ({
+  engineering: { pass: true }, timing: { pass: true }, monopoly: { pass: true }, people: { pass: true },
+  distribution: { pass: true }, durability: { pass: true }, secret: { pass: true }, ...over,
+});
+test('R18 scoreSevenQuestions — 7/7 and 6/7 pass; 5/7 fails; missing answers default-to-fail', () => {
+  assert.equal(scoreSevenQuestions(sevenAll()).durability_pass, true);            // 7/7
+  assert.equal(scoreSevenQuestions(sevenAll({ secret: { pass: false } })).durability_pass, true);  // 6/7
+  const five = scoreSevenQuestions(sevenAll({ secret: { pass: false }, engineering: { pass: false } }));
+  assert.equal(five.passed, 5);
+  assert.equal(five.durability_pass, false);                                       // 5/7
+  const missing = scoreSevenQuestions({ engineering: { pass: true } });            // 6 missing → fail
+  assert.equal(missing.passed, 1);
+  assert.equal(missing.durability_pass, false);
+  assert.equal(scoreSevenQuestions(null).durability_pass, false);                  // null → fail-closed
+});
+
+// ── R19: Elon first-principles gate — core (reasoned_from_fundamentals) non-negotiable, then >=2 of 3 ──
+test('R19 scoreFirstPrinciples — core required; analogy-only fails even at 2/3; null fail-closed', () => {
+  const all = { reasoned_from_fundamentals: { pass: true }, requirements_questioned: { pass: true }, irreducible: { pass: true } };
+  assert.equal(scoreFirstPrinciples(all).first_principles_pass, true);             // 3/3
+  assert.equal(scoreFirstPrinciples({ ...all, irreducible: { pass: false } }).first_principles_pass, true); // core + 2/3
+  // 2 of 3 but the CORE (reasoned_from_fundamentals) failed → must FAIL (analogy/me-too)
+  const analogy = { reasoned_from_fundamentals: { pass: false }, requirements_questioned: { pass: true }, irreducible: { pass: true } };
+  assert.equal(scoreFirstPrinciples(analogy).passed, 2);
+  assert.equal(scoreFirstPrinciples(analogy).first_principles_pass, false);
+  // core only (1/3) → fails the >=2 quality bar
+  assert.equal(scoreFirstPrinciples({ reasoned_from_fundamentals: { pass: true } }).first_principles_pass, false);
+  assert.equal(scoreFirstPrinciples(null).first_principles_pass, false);           // null → fail-closed
+});
+
+// ── R20: evaluateGreenlight requires BOTH durability_pass AND first_principles_pass ──
+test('R20 evaluateGreenlight — a kill-pass-clean, paths-verified spec is REJECTED without durability + first-principles', () => {
+  const base = {
+    candidates: [{ candidate_id: 'c1', ai_native_test: 'PASS', zero_to_one_rank: 'true-zero-to-one', scores: { hours_saved_vs_rebuild: 4 } }],
+    judged: [{ candidate_id: 'c1', rollup: { verdict: 'SURVIVE' } }],
+    buildspecs: [{ spec_id: 's1', candidate_id: 'c1', product: 'P', extracts_verified: true }],
+  };
+  assert.equal(evaluateGreenlight(base).count, 0);                                                    // no durability data → rejected
+  assert.equal(evaluateGreenlight({ ...base, durability: [{ candidate_id: 'c1', durability_pass: false, first_principles_pass: true }] }).count, 0); // <6/7
+  assert.equal(evaluateGreenlight({ ...base, durability: [{ candidate_id: 'c1', durability_pass: true, first_principles_pass: false }] }).count, 0); // analogy/me-too
+  assert.equal(evaluateGreenlight({ ...base, durability: [{ candidate_id: 'c1', durability_pass: true, first_principles_pass: true }] }).count, 1);  // both → greenlit
 });
 
 // ── Phase B: factory consumption queue (projection → eligible pick → consume) ──
@@ -211,4 +323,219 @@ test('R15 eligibleTopCandidate — a NaN/missing rank does not corrupt the sort'
     { spec_id: 's2', rank: 3, consumed: false, license_human_confirmed: true },
   ];
   assert.equal(eligibleTopCandidate(q).spec_id, 's2');  // finite rank beats NaN (treated as +inf)
+});
+
+// ── R21: outcome-capture (D15) — validates + normalizes at the boundary, fails fast on garbage ──
+test('R21 makeOutcome — builds a validated event; coerces revenue; rejects bad label/revenue/empty id/bad ts', () => {
+  const ts = '2026-06-17T00:00:00.000Z';
+  assert.deepEqual(
+    makeOutcome('cand-1', 'made_money', { revenue: '500', checked_at: ts }),
+    { candidate_id: 'cand-1', outcome_label: 'made_money', revenue: 500, checked_at: ts });
+  assert.equal(makeOutcome('c', 'failed', { checked_at: ts }).revenue, null);   // no revenue → null
+  assert.equal(makeOutcome('  c  ', 'unknown', { checked_at: ts }).candidate_id, 'c'); // trimmed
+  assert.throws(() => makeOutcome('', 'made_money', { checked_at: ts }), /candidate_id is required/);
+  assert.throws(() => makeOutcome('c', 'rich', { checked_at: ts }), /label must be one of/);
+  assert.throws(() => makeOutcome('c', 'made_money', { revenue: -5, checked_at: ts }), /revenue must be/);
+  assert.throws(() => makeOutcome('c', 'made_money', { revenue: 'lots', checked_at: ts }), /revenue must be/);
+  assert.throws(() => makeOutcome('c', 'made_money', { revenue: true, checked_at: ts }), /revenue must be/);  // boolean must not coerce to 1
+  assert.throws(() => makeOutcome('c', 'made_money', { revenue: [5], checked_at: ts }), /revenue must be/);   // array must not coerce
+  assert.throws(() => makeOutcome('c', 'made_money', { checked_at: 'not-a-date' }), /checked_at must be/);
+});
+
+// ── R22: append-only log → current state; latest checked_at wins per candidate; honest counts; immutable ──
+test('R22 latestByCandidate + summarizeOutcomes — latest observation supersedes; counts; inputs not mutated', () => {
+  const log = [
+    { candidate_id: 'a', outcome_label: 'unknown', revenue: null, checked_at: '2026-01-01T00:00:00.000Z' },
+    { candidate_id: 'a', outcome_label: 'made_money', revenue: 500, checked_at: '2026-06-01T00:00:00.000Z' },
+    { candidate_id: 'b', outcome_label: 'failed', revenue: null, checked_at: '2026-03-01T00:00:00.000Z' },
+  ];
+  const snapshot = JSON.stringify(log);
+  const latest = latestByCandidate(log);
+  assert.equal(latest.length, 2);
+  const a = latest.find(r => r.candidate_id === 'a');
+  assert.equal(a.outcome_label, 'made_money');   // the June observation supersedes January
+  assert.equal(a.revenue, 500);
+  const s = summarizeOutcomes(log);
+  assert.deepEqual(s.by_label, { made_money: 1, failed: 1, unknown: 0 }); // counts CURRENT state, not raw log
+  assert.equal(s.revenue_total, 500);
+  assert.equal(s.candidates, 2);
+  assert.equal(s.observations, 3);
+  assert.equal(JSON.stringify(log), snapshot);    // inputs not mutated
+  // corrupt rows (missing/junk checked_at, non-string candidate_id) are skipped, never crash the reducer
+  const dirty = [...log, { candidate_id: 'c', outcome_label: 'failed', checked_at: undefined }, { candidate_id: 42 }, null];
+  const fromDirty = latestByCandidate(dirty);
+  assert.equal(fromDirty.length, 2);              // still just a + b; the 3 corrupt rows dropped
+  assert.ok(fromDirty.every(r => typeof r.checked_at === 'string')); // no undefined-timestamp row leaks through
+});
+
+// ── R23: cross-run kill-rate (D16) — rollup rows only; null rate on no decisions (no 0/0=NaN) ──
+test('R23 killRate — counts rollup decisions only; KILL/SURVIVE/rate; null rate when empty', () => {
+  const rows = [
+    { candidate_id: 'a', skeptic: 1, verdict: 'KILL', bars: { x: 'FAIL' } },   // skeptic row — NOT a decision
+    { candidate_id: 'a', skeptic: 'rollup', verdict: 'KILL' },
+    { candidate_id: 'b', skeptic: 'rollup', verdict: 'SURVIVE' },
+    { candidate_id: 'c', skeptic: 'rollup', verdict: 'KILL' },
+  ];
+  assert.deepEqual(killRate(rows), { rollups: 3, killed: 2, survived: 1, rate: 2 / 3 });
+  assert.equal(killRate([]).rate, null);  // no decisions → null, never NaN
+  assert.equal(killRate(null).rollups, 0);
+});
+
+// ── R24: failure-reason distribution (D16) — THE SCHEMA-DRIFT GUARD: bar keys read dynamically across runs ──
+test('R24 failureReasonDistribution — dynamic bar keys (old+new schema); gate kills bucketed; skeptic-kill ≠ gate kill', () => {
+  const rows = [
+    { skeptic: 1, bars: { not_frankenstein: 'PASS', ai_native_not_feature: 'FAIL', is_zero_to_one: 'FAIL' } }, // OLD schema
+    { skeptic: 2, bars: { not_frankenstein: 'PASS', real_demand: 'FAIL', is_zero_to_one: 'FAIL' } },           // NEW schema
+    { candidate_id: 'x', skeptic: 'rollup', verdict: 'KILL', ground_truth_ok: true, kill_reason: 'commodity' }, // normal skeptic-driven kill
+    { candidate_id: 'y', skeptic: 'rollup', verdict: 'KILL', ground_truth_ok: false, kill_reason: 'ground-truth gate: no packet' },
+    { candidate_id: 'z', skeptic: 'rollup', verdict: 'KILL', kill_reason: 'abstain: only 1 skeptic' },
+  ];
+  const d = failureReasonDistribution(rows);
+  assert.equal(d.by_bar.is_zero_to_one, 2);            // counted across BOTH schemas
+  assert.equal(d.by_bar.ai_native_not_feature, 1);     // old key NOT hardcoded away
+  assert.equal(d.by_bar.real_demand, 1);               // new key counted
+  assert.equal(d.by_bar.not_frankenstein, undefined);  // PASS never counted
+  assert.deepEqual(d.by_gate, { ground_truth_gate: 1, abstain: 1 }); // skeptic-driven rollup KILL is NOT a gate kill
+});
+
+// ── R25: greenlight-yield (D16) — null yield on 0 candidates (no divide-by-zero, no fake denominator) ──
+test('R25 greenlightYield — fraction when candidates>0; yield:null on 0 candidates', () => {
+  assert.deepEqual(greenlightYield(1, 4), { greenlights: 1, candidates: 4, yield: 0.25 });
+  assert.deepEqual(greenlightYield(0, 10), { greenlights: 0, candidates: 10, yield: 0 });
+  assert.equal(greenlightYield(0, 0).yield, null);                 // 0/0 → null, never NaN
+  assert.equal(greenlightYield(undefined, undefined).yield, null);
+});
+
+// ── R26: durability-gate pass rate (D16) — n:0 cleanly on empty (no rate over nothing) ──
+test('R26 durabilityPassRate — counts passes; n:0 on empty', () => {
+  const rows = [
+    { candidate_id: 'a', durability_pass: true, first_principles_pass: false },
+    { candidate_id: 'b', durability_pass: true, first_principles_pass: true },
+  ];
+  assert.deepEqual(durabilityPassRate(rows), { n: 2, durability_pass: 2, first_principles_pass: 1 });
+  assert.deepEqual(durabilityPassRate([]), { n: 0, durability_pass: 0, first_principles_pass: 0 });
+});
+
+// ── R27: aggregateRuns + buildMetricsReport (D16) — injected reader; honest nulls/notes, never faked ──
+test('R27 aggregateRuns + buildMetricsReport — injectable reader; assembles KPIs with honest gaps', () => {
+  const empty = aggregateRuns('/nonexistent/runs/root', { readJsonl: () => [] });
+  assert.equal(empty.runs, 0);                          // missing root → 0 runs, not a crash
+  const report = buildMetricsReport({
+    runs: 2, candidates: 10, greenlights: 0, durability: [], outcomes: [],
+    verdicts: [{ skeptic: 'rollup', verdict: 'KILL' }, { skeptic: 'rollup', verdict: 'KILL' }],
+  });
+  assert.equal(report.computable.kill_rate.rate, 1);
+  assert.equal(report.computable.greenlight_yield.yield, 0);
+  assert.equal(report.computable.ideas_killed_per_greenlight, null); // 0 greenlights → undefined, not div-by-zero
+  assert.ok(report.computable.durability_gate.note);                 // empty durability → honest note, not a fake rate
+  assert.ok(report.not_yet_measurable.cycle_time);                   // honest gap surfaced
+});
+
+// ── R28: net-new ideation bars (D17) — IDEATION_BARS swaps salvage_cheaper_than_rebuild → reuse_over_rebuild;
+// the gate stays just as brutal (all 5 must PASS), and the SALVAGE default is unchanged (backward-compat). ──
+const surviveIdeation = (skeptic, confidence = 0.9) => ({
+  candidate_id: 'idea-1', skeptic, confidence, verdict: 'SURVIVE',
+  bars: { not_frankenstein: 'PASS', not_horizontal_sprawl: 'PASS', real_demand: 'PASS', is_zero_to_one: 'PASS', does_it_for_you: 'PASS', reuse_over_rebuild: 'PASS' },
+});
+test('R28 IDEATION_BARS — net-new bar set differs only in the cost bar; salvage default untouched', () => {
+  assert.deepEqual(IDEATION_BARS, ['not_frankenstein', 'not_horizontal_sprawl', 'real_demand', 'is_zero_to_one', 'does_it_for_you', 'reuse_over_rebuild']);
+  assert.equal(BARS.includes('salvage_cheaper_than_rebuild'), true);   // salvage default unchanged
+  assert.equal(IDEATION_BARS.includes('salvage_cheaper_than_rebuild'), false);
+  assert.equal(BARS.length, IDEATION_BARS.length);                     // same brutality (same count)
+});
+test('R28 rollupVerdict(bars=IDEATION_BARS) — 3 unanimous on ideation bars → SURVIVE', () => {
+  assert.equal(rollupVerdict([surviveIdeation(1), surviveIdeation(2), surviveIdeation(3)], 3, IDEATION_BARS).verdict, 'SURVIVE');
+});
+test('R28 rollupVerdict(bars=IDEATION_BARS) — reuse_over_rebuild FAIL on any skeptic → KILL', () => {
+  const bad = surviveIdeation(3); bad.bars.reuse_over_rebuild = 'FAIL';
+  assert.equal(rollupVerdict([surviveIdeation(1), surviveIdeation(2), bad], 3, IDEATION_BARS).verdict, 'KILL');
+});
+test('R28 rollupVerdict — a net-new verdict (no salvage bar) judged by the SALVAGE default → KILL (rigged-kill guard)', () => {
+  // proves WHY the swap exists: net-new verdicts lack salvage_cheaper_than_rebuild, so the salvage default
+  // would auto-kill them — feeding net-new through the default set would be dishonest, not strict.
+  assert.equal(rollupVerdict([surviveIdeation(1), surviveIdeation(2), surviveIdeation(3)]).verdict, 'KILL');
+});
+
+// ── R33: does-it-for-you gate (D19) — every idea must OWN THE OUTCOME / close the loop, NOT be horizontal
+// SaaS with AI bolted on. Enforced as a hard bar in BOTH BARS (salvage) and IDEATION_BARS (net-new). ──
+test('R33 does_it_for_you is a hard bar in BOTH the salvage and ideation sets', () => {
+  assert.equal(BARS.includes('does_it_for_you'), true);
+  assert.equal(IDEATION_BARS.includes('does_it_for_you'), true);
+});
+test('R33 rollupVerdict — does_it_for_you FAIL on any skeptic → KILL (salvage set), with the reason naming the bar', () => {
+  const bad = survive(3); bad.bars.does_it_for_you = 'FAIL';
+  const r = rollupVerdict([survive(1), survive(2), bad]);
+  assert.equal(r.verdict, 'KILL');
+  assert.match(r.reason, /does_it_for_you/);
+});
+test('R33 rollupVerdict(bars=IDEATION_BARS) — does_it_for_you FAIL on any skeptic → KILL (net-new set)', () => {
+  const bad = surviveIdeation(3); bad.bars.does_it_for_you = 'FAIL';
+  assert.equal(rollupVerdict([surviveIdeation(1), surviveIdeation(2), bad], 3, IDEATION_BARS).verdict, 'KILL');
+});
+test('R33 horizontal-SaaS-with-AI (only does_it_for_you fails) cannot SURVIVE even if every other bar passes', () => {
+  const horizontal = survive(1); horizontal.bars.does_it_for_you = 'FAIL';
+  assert.equal(rollupVerdict([horizontal, survive(2), survive(3)]).verdict, 'KILL');
+});
+
+// ── R29: grounded rollup threads the bar set — ground-truth gate still fires first, then ideation bars apply ──
+test('R29 rollupVerdictGrounded(bars=IDEATION_BARS) — admissible packet + unanimous ideation bars → SURVIVE', () => {
+  const packet = freshPacket();
+  const r = rollupVerdictGrounded([surviveIdeation(1), surviveIdeation(2), surviveIdeation(3)], packet, { bars: IDEATION_BARS, now: NOW });
+  assert.equal(r.verdict, 'SURVIVE');
+  assert.equal(r.ground_truth_ok, true);
+});
+test('R29 rollupVerdictGrounded — inadmissible ground-truth KILLs net-new BEFORE bars (gate unchanged)', () => {
+  const r = rollupVerdictGrounded([surviveIdeation(1), surviveIdeation(2), surviveIdeation(3)], null, { bars: IDEATION_BARS, now: NOW });
+  assert.equal(r.verdict, 'KILL');
+  assert.equal(r.ground_truth_ok, false);
+});
+
+// ── R30: makeNetNewBuildSpec (D17) — fail-fast scaffold; correct net-new shape ──
+test('R30 makeNetNewBuildSpec — requires candidate_id/product/wrap_plan; emits net_new shape', () => {
+  assert.throws(() => makeNetNewBuildSpec({ product: 'x', wrap_plan: 'y' }), /candidate_id/);
+  assert.throws(() => makeNetNewBuildSpec({ candidate_id: 'a', wrap_plan: 'y' }), /product/);
+  assert.throws(() => makeNetNewBuildSpec({ candidate_id: 'a', product: 'x' }), /wrap_plan/);
+  const s = makeNetNewBuildSpec({ candidate_id: 'idea-1', product: 'Boring B2B tool', wrap_plan: 'build from scratch', icp: 'ops leads' });
+  assert.equal(s.net_new, true);
+  assert.equal(s.source_repo, null);
+  assert.deepEqual(s.extract_list, []);
+  assert.equal(s.extracts_verified, true);          // nothing to lift → vacuously verified
+  assert.equal(s.license_human_confirmed, true);    // net-new = we own it
+  assert.equal(s.spec_id, 'ideate-idea-1');
+});
+
+// ── R31: evaluateGreenlight net-new (D17) — skips salvage-only gates, keeps EVERY other gate at full strength ──
+const netNewResult = (over = {}) => {
+  const cand = { candidate_id: 'idea-1', net_new: true, zero_to_one_rank: 'true-zero-to-one', scores: {}, ...(over.cand || {}) };
+  const spec = makeNetNewBuildSpec({ candidate_id: 'idea-1', product: 'Boring B2B tool', wrap_plan: 'plan' });
+  return {
+    candidates: [cand],
+    judged: [{ candidate_id: 'idea-1', rollup: { verdict: over.survived === false ? 'KILL' : 'SURVIVE' } }],
+    durability: [{ candidate_id: 'idea-1', durability_pass: over.durability !== false, first_principles_pass: over.fp !== false }],
+    buildspecs: [{ ...spec, ...(over.spec || {}) }],
+  };
+};
+test('R31 evaluateGreenlight — net-new greenlights WITHOUT hours_saved / extract verification', () => {
+  const g = evaluateGreenlight(netNewResult());
+  assert.equal(g.count, 1, JSON.stringify(g.rejected));    // no salvage scores, empty extract_list — still greenlit
+});
+test('R31 evaluateGreenlight — net-new STILL requires kill-pass survival + true-zero-to-one + durability + first-principles', () => {
+  assert.equal(evaluateGreenlight(netNewResult({ survived: false })).count, 0);
+  assert.equal(evaluateGreenlight(netNewResult({ cand: { zero_to_one_rank: 'me-too' } })).count, 0);
+  assert.equal(evaluateGreenlight(netNewResult({ durability: false })).count, 0);
+  assert.equal(evaluateGreenlight(netNewResult({ fp: false })).count, 0);
+});
+
+// ── R32: dedupe + extract-verify treat net-new correctly (no collapse under shared null repo; verify is N/A) ──
+test('R32 dedupeBuildSpecs — distinct net-new specs do NOT collapse under shared null source_repo', () => {
+  const a = makeNetNewBuildSpec({ candidate_id: 'idea-a', product: 'A', wrap_plan: 'p', rank: 1 });
+  const b = makeNetNewBuildSpec({ candidate_id: 'idea-b', product: 'B', wrap_plan: 'p', rank: 2 });
+  assert.equal(dedupeBuildSpecs([a, b]).length, 2);        // both kept (would be 1 if keyed by null repo)
+});
+test('R32 verifyExtractPaths — net-new passes through as verified without touching any repo', () => {
+  const a = makeNetNewBuildSpec({ candidate_id: 'idea-a', product: 'A', wrap_plan: 'p' });
+  const never = () => { throw new Error('pathExists must NOT be called for net-new'); };
+  const [out] = verifyExtractPaths([a], never);
+  assert.equal(out.extracts_verified, true);
+  assert.deepEqual(out.path_checks, []);
 });

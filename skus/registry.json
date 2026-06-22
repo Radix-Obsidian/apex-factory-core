@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "updated": "2026-06-22",
+  "note": "The SKU portfolio — the object the post-launch operate loop iterates (D20). One entry per shipped SKU. secret_env fields hold the NAME of an env var (a read-only restricted key), never the key itself.",
+  "framework": {
+    "name": "chassis",
+    "repo": "https://github.com/Radix-Obsidian/chassis",
+    "local_path": "../chassis",
+    "template": true,
+    "note": "Scaffold every new SKU from this template (D21): gh repo create Radix-Obsidian/<sku> --private --template Radix-Obsidian/chassis, then implement a DomainPack. The spine is inherited, not rebuilt."
+  },
+  "skus": [
+    {
+      "slug": "dot-navigator",
+      "name": "New Entrant DOT Navigator",
+      "domain": "FMCSA new-entrant compliance (first-year motor carriers)",
+      "status": "staged",
+      "repo": "https://github.com/Radix-Obsidian/dot-navigator",
+      "local_path": "../dot-navigator",
+      "live_url": "https://web-production-f8359.up.railway.app",
+      "deploy": { "target": "railway", "service": "web-production-f8359" },
+      "health": { "path": "/", "slow_ms": 3000 },
+      "billing": {
+        "provider": "stripe",
+        "mode": "test",
+        "model": "subscription",
+        "price_usd": 49.99,
+        "secret_env": "DOTNAV_STRIPE_RO_KEY"
+      },
+      "support": {
+        "source": "inbox-file",
+        "inbox": "ops/inbox/dot-navigator.jsonl",
+        "from": "hello@itsvoco.com"
+      },
+      "owning_agents": ["factory-operator", "factory-support"],
+      "pending_founder_actions": [
+        "Provision Railway Postgres + Brevo + reminder cron per dot-navigator/GO-LIVE.md §A (needed even in TEST).",
+        "Set DOTNAV_STRIPE_RO_KEY in factory-core/.env to a Stripe restricted READ-ONLY key (sub/charge read scopes) to switch revenue telemetry from n/a to live numbers.",
+        "When ready to charge: complete GO-LIVE.md §B/§C and flip LIVE_CHARGES_ENABLED=true (the D5 founder gate), then set status:\"live\" + billing.mode:\"live\" here."
+      ],
+      "created": "2026-06-21"
+    }
+  ]
+}

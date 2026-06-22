@@ -18,3 +18,6 @@ runs/
 
 # ECC / tool caches that may land here
 .agentshield-cache/
+
+# Support queue files hold customer PII — never commit; keep only ops/inbox/README.md
+ops/inbox/*.jsonl

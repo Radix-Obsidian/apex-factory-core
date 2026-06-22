@@ -12,11 +12,15 @@ preflight: ## AC1 — verify tools + .env
 copytest: ## AC2 — copy gate: tier-1 regex baseline (~75% F1); tier-2 G-Eval lifts to 85.7%
 	@node evals/eval-regex-gate.mjs || echo "  ↳ tier-1 below the 85% SYSTEM target by design — tier-2 (evals/) covers the gap. Not a regression unless F1 < 75%."
 
-guard-test: ## AC3+AC4 — deploy-guard + gate acceptance (fixture-based)
+guard-test: ## AC3+AC4 — deploy-guard + auth-guard acceptance (fixture-based)
 	@bash tests/guard.test.sh
+	@bash tests/auth-guard.test.sh
 
 gate: ## AC4 — show the live .env gate status (must refuse publish while sealed)
 	@if bash deploy-guard.sh publish >/dev/null 2>&1; then echo "✗ GATE FAILED — publish was allowed!"; exit 1; else echo "✓ gate sealed — publish refused (real .env)"; fi
+
+auth-guard: ## D8 — assert the factory's two-key credential invariant against the live .env (no API key in factory slot)
+	@if bash auth-guard.sh >/dev/null 2>&1; then echo "✓ auth-guard OK — factory OAuth token present, no API key in .env"; else echo "✗ auth-guard FAILED — credential misconfig in .env (run: bash auth-guard.sh)"; exit 1; fi
 
 dryrun: ## AC5 — full $0 end-to-end gated slice (loop → preview → notify)
 	@LOOP_CMD='bash deploy-guard.sh preview && echo ALL_DONE' PRD_FILE=evals/dryrun-PRD.md MAX_ITERS=2 bash loop.sh __run
@@ -34,7 +38,41 @@ recycled-verify: ## Recycled — deterministic guardrail tests (R1/R2/R4/R7), $0
 recycled-scan: ## Recycled — Stage 0: enumerate own dormant/dead repos (metadata only, $0)
 	@node recycled/recycled-scan.mjs
 
-verify: preflight guard-test gate ## run mechanical acceptance checks (fast)
+recycled-metrics: ## Recycled — cross-run KPIs (D16): kaizen instrument; seed of the digital twin ($0, reads runs/)
+	@node recycled/recycled-scan.mjs metrics
+
+recycled-ideate: ## Recycled — net-new ideation (D17): run recipe (the run is a Workflow invocation = LLM spend; ingest is $0)
+	@echo "Recycled net-new ideation (D17) — the generator the salvage line lacked. Run recipe:"
+	@echo "  1. Invoke the Workflow tool on recycled/ideate.workflow.js (spends Anthropic; bounded by usage.mjs)."
+	@echo "     optional args: {domain, maxPains, maxIdeas} — default domain = boring high-intent low-competition B2B."
+	@echo "  2. Pipe the result JSON into the deterministic ingest (zero-cost, persists artifacts + queues greenlights):"
+	@echo "       node recycled/recycled-scan.mjs ideate ingest <run-id>"
+	@echo "  3. The build loop Phase-1 then picks it up: node recycled/recycled-scan.mjs candidates next"
+	@echo "  NOTE: the kill-pass is NOT weakened for net-new (D17 IDEATION_BARS); 0 survivors is a valid honest result."
+
+design-check: ## D18 — validate a SKU ships a well-formed Claude-Design brand kit (deterministic, $0). Usage: make design-check SKU=../<sku-repo>
+	@node scripts/design-check.mjs "$(SKU)"
+
+closed-loop-check: ## D19 — validate a SKU owns the outcome / closes the loop (deterministic, $0). Usage: make closed-loop-check SKU=../<sku-repo>
+	@node scripts/closed-loop-check.mjs "$(SKU)"
+
+# ── D20: post-launch operations — operate each LIVE SKU (registry-driven, deterministic, $0) ──
+sku-list: ## Ops — list the SKU portfolio registry ($0)
+	@node ops/registry.mjs list
+sku-validate: ## Ops — structural-validate the SKU registry ($0)
+	@node ops/registry.mjs validate
+canary: ## Ops — per-SKU health probe (exit≠0 if any DOWN/DEGRADED; network read, $0 LLM)
+	@node ops/canary.mjs
+portfolio: ## Ops — per-SKU + total revenue from Stripe (read-only key per registry; n/a without it)
+	@node ops/revenue.mjs
+support-triage: ## Ops — deterministic support triage + founder escalations ($0)
+	@node ops/support.mjs
+operate: ## Ops — ONE post-launch tick (health + revenue + support) over all live SKUs ($0, deterministic)
+	@node ops/operate.mjs
+ops-verify: ## Ops — deterministic tests for the operations layer ($0 LLM)
+	@node --test ops/ops.test.mjs && echo "── ops-verify GREEN ──"
+
+verify: preflight guard-test gate auth-guard ops-verify ## run mechanical acceptance checks (fast)
 	@echo "── verify GREEN ──"
 
 launch: ## fire the REAL gated cycle (⚠ spends shared Anthropic + Higgsfield pools)
@@ -73,4 +111,4 @@ worktree-status: ## show all worktrees + the loop branch
 worktree-remove: ## tear down the loop worktree (keeps the loop/auto branch + history)
 	@bash scripts/worktree.sh remove
 
-.PHONY: help preflight copytest guard-test gate dryrun heartbeat usage recycled-verify recycled-scan verify launch cron-enable cron-disable crashcron-install crashcron-uninstall hooks-install worktree-setup worktree-status worktree-remove
+.PHONY: help preflight copytest guard-test gate auth-guard dryrun heartbeat usage recycled-verify recycled-scan recycled-metrics recycled-ideate design-check closed-loop-check verify launch cron-enable cron-disable crashcron-install crashcron-uninstall hooks-install worktree-setup worktree-status worktree-remove

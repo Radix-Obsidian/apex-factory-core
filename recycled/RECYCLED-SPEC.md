@@ -14,7 +14,9 @@ builds, never charges, **never deletes**. The factory builds; the founder charge
 1. **Inventory + classify** — `code-explorer` per system → LIVE/DORMANT/DEAD-LEGACY/TRULY-DEAD → `01-inventory.jsonl`
 2. **Capability extraction** — `refactor-cleaner` + `code-architect` per dormant module → `02-capabilities.jsonl`
 3. **Opportunity mapping** — `code-architect` per capability → `03-opportunities.jsonl`
-4. **Adversarial kill-pass** — 3 `code-reviewer` skeptics per candidate → `04-verdicts.jsonl`
+3.5. **Ground-truth sweep (S1 Market-Intelligence)** — a live web sweep per candidate (named competitors + demand evidence + sources) → `07-ground-truth.jsonl`. **Fail-closed gate:** an inadmissible packet KILLs the candidate before any skeptic runs. This is the *cure for the competitive-blindness defect* caught 2026-06-16 (the stock scout false-SURVIVEd commodity because the skeptic had zero market awareness).
+4. **Adversarial kill-pass** — 3 `code-reviewer` skeptics per candidate, **judging `is_zero_to_one` + `real_demand` against the ground-truth, not the candidate's self-claims** → `04-verdicts.jsonl`
+4.5. **Durability + first-principles gate (D13/D14)** — per kill-pass survivor: Thiel's 7 questions (≥6/7 → `durability_pass`) + Elon's first-principles (`reasoned_from_fundamentals` core + ≥2/3 → `first_principles_pass`), judged against the live ground-truth → `08-durability.jsonl`. **BOTH must pass to be build-eligible** (fail-closed); only build-eligible survivors reach Stage 5.
 5. **Build-spec output** — deterministic synth → `05-buildspecs.jsonl`, `parts-bin/index.jsonl`, `06-frozen-archive.jsonl`
 
 Artifacts land under `runs/recycled/<run-id>/` (gitignored). Schemas in [schemas/](schemas/) are the output contracts.
@@ -46,6 +48,23 @@ The scout's single-skeptic SURVIVE is a far better deep-dive predictor than tria
 | R6 | every BuildSpec `extract_list` path resolves in source (no hallucinated lifts) | R6 |
 | R7 | every FrozenArchiveNote has `archive_action:"label-only"` and `reversible:true` (never delete) | R7 |
 | R8 | end-to-end dry run on the 2-repo fixture → all 6 JSONL artifacts, **$0 LLM** (stubbed) | R8 |
+| R16 | `groundTruthAdmissible()`: fail-closed — missing/uncited/empty-without-attestation/stale/future packet → inadmissible; only a fresh, sourced, competitor-bearing (or attested-empty) packet is admissible | `make recycled-verify` (R16) |
+| R17 | `rollupVerdictGrounded()`: inadmissible ground-truth short-circuits to KILL *before* skeptics are weighed (a blind run can never SURVIVE); admissible packet still honors default-to-kill | R17 |
+| R18 | `scoreSevenQuestions()` (Thiel, D13): ≥6 of 7 → `durability_pass`; missing/malformed answers default-to-fail | `make recycled-verify` (R18) |
+| R19 | `scoreFirstPrinciples()` (Elon, D14): `reasoned_from_fundamentals` core non-negotiable + ≥2/3 → `first_principles_pass`; analogy-only fails even at 2/3; null fail-closed | R19 |
+| R20 | `evaluateGreenlight()` requires BOTH `durability_pass` AND `first_principles_pass` — a kill-pass-clean, paths-verified spec is REJECTED without them | R20 |
+| R21 | `makeOutcome()` (D15): validates + normalizes at the boundary — coerces `revenue`, trims `candidate_id`, rejects bad label / negative revenue / empty id / non-ISO `checked_at` | `make recycled-verify` (R21) |
+| R22 | `latestByCandidate()` + `summarizeOutcomes()` (D15): append-only log → current state (latest `checked_at` wins per candidate); descriptive counts; inputs not mutated | R22 |
+| R23 | `killRate()` (D16): rollup rows only; KILL/SURVIVE/rate; `rate:null` on no decisions (no 0/0=NaN) | `make recycled-verify` (R23) |
+| R24 | `failureReasonDistribution()` (D16): bar keys read DYNAMICALLY across schema drift (`ai_native_not_feature`+`real_demand` both counted); gate kills bucketed; a skeptic-driven rollup KILL is NOT a gate kill | R24 |
+| R25 | `greenlightYield()` (D16): fraction when candidates>0; `yield:null` on 0 candidates (no divide-by-zero, no fake denominator) | R25 |
+| R26 | `durabilityPassRate()` (D16): pass counts; `n:0` cleanly on empty (no rate over nothing) | R26 |
+| R27 | `aggregateRuns()` + `buildMetricsReport()` (D16): injectable reader; assembles KPIs with honest `null`/`n/a` gaps (ideas/greenlight undefined at 0; durability note on empty) | R27 |
+| R28 | `IDEATION_BARS` + `rollupVerdict(…, bars)` (D17): net-new swaps `salvage_cheaper_than_rebuild`→`reuse_over_rebuild`; same count/brutality; salvage default unchanged; a net-new verdict judged by the salvage default → KILL (rigged-kill guard) | `make recycled-verify` (R28) |
+| R29 | `rollupVerdictGrounded(…, {bars})` (D17): threads the bar set; ground-truth gate still fires FIRST; admissible + unanimous ideation bars → SURVIVE; inadmissible → KILL | R29 |
+| R30 | `makeNetNewBuildSpec()` (D17): fail-fast on missing candidate_id/product/wrap_plan; emits net-new shape (null `source_repo`, empty `extract_list`, vacuously verified, license-confirmed) | R30 |
+| R31 | `evaluateGreenlight()` net-new (D17): skips salvage-only gates (`hours_saved`, extract-verify) yet STILL requires kill-pass survival + true-zero-to-one + Thiel durability + first-principles | R31 |
+| R32 | net-new `dedupeBuildSpecs` (distinct ideas don't collapse under shared null repo) + `verifyExtractPaths` (passes net-new through verified without touching a repo) | R32 |
 | R9 | `projectCandidates()`: thin shape; OWN→`license_human_confirmed:true`, Tier-2→`false`; `consumed:false` | R9 |
 | R10 | `eligibleTopCandidate()`: lowest rank among unconsumed + license-confirmed; `null` when dry | R10 |
 | R11 | `mergeCandidates()`: dedupe by `spec_id`; re-projection never un-consumes; inputs not mutated | R11 |
@@ -63,14 +82,34 @@ A winner is **defensible + vertical + real demand + legally liftable.** An AI-na
 4. **is_zero_to_one** — genuinely new / defensibly differentiated, not a crowded me-too.
 5. **salvage_cheaper_than_rebuild** — salvaging actually beats rebuilding clean (the most common silent kill).
 
+**Bars 3–4 are judged against LIVE ground-truth, never the candidate's self-claims.** Before the kill-pass, a per-candidate ground-truth sweep (S1 Market-Intelligence) establishes the named competitors + demand evidence + sources. The verdict is **inadmissible without a fresh, sourced packet** (`groundTruthAdmissible`, R16) — fail-closed to KILL. This is the encoded cure for the competitive-blindness defect: on 2026-06-16 the stock scout false-SURVIVEd a thesis we had already KILLED that week, purely because the skeptic had no market awareness. The ground-truth packets persist to `07-ground-truth.jsonl`, seeding the dated-verdict **corpus** (the compounding Market-Intelligence moat).
+
 `ai_native_test` is still recorded on every candidate as a **scored plus** (informational), but it is no longer a kill bar.
+
+## The durability + first-principles gate (D13/D14 — "is the BUSINESS durable, and reasoned from fundamentals?")
+
+The 5 kill-pass bars ask *"is the code good?"*. They do not ask whether the **business** is durable or whether the thesis
+is reduced to fundamentals — the gap a Thiel brutal bar exposed (it killed our own consumer thesis at ~3/7). So every
+kill-pass survivor faces two more gates before it is **build-eligible**, judged against the same live ground-truth packet:
+
+- **Thiel's 7 questions (D13):** *Engineering* (≥10x tech, not marginal) · *Timing* · *Monopoly* (big share of a small
+  market) · *People* · *Distribution* · *Durability* (defensible 10–20 yrs) · *Secret*. **≥6 of 7** → `durability_pass`.
+- **Elon's first-principles (D14):** `reasoned_from_fundamentals` (the **non-negotiable core** — NOT analogy/me-too) +
+  `requirements_questioned` + `irreducible`. Core + **≥2 of 3** → `first_principles_pass`.
+
+BOTH must pass; default-to-fail on a missing/empty scorecard (fail-closed). Mechanized like the kill-pass bars: tested
+pure fns `scoreSevenQuestions`/`scoreFirstPrinciples` (R18/R19) + inline mirrors in `workflow.js` (Durability phase).
+The build-phase **Musk 5-step algorithm** (requirements-less-dumb → delete → simplify → accelerate → automate-last) is
+doctrine the build agents apply downstream. Scorecards persist to `08-durability.jsonl` (the seed of the learning corpus).
 
 ## The honest-greenlight gate (first real run = the founder's bar)
 A run PASSES iff `honest_greenlight >= 1`. A greenlight is **honest** iff:
 1. its candidate survived Stage 4 — all 3 skeptics SURVIVE on all 5 bars;
 2. `hours_saved_vs_rebuild >= 3` (clears the silent killer, not squeaks);
 3. `zero_to_one_rank == "true-zero-to-one"` (AI-native is a plus, not required);
-4. every `extract_list` path verified present in the source repo.
+4. every `extract_list` path verified present in the source repo;
+5. **`durability_pass`** — clears Thiel's 7 questions (≥6/7) (D13);
+6. **`first_principles_pass`** — reduced to fundamentals, not analogy/me-too (D14).
 
 **Zero honest greenlights is a valid, honest outcome** — report "corpus yielded no build-ready
 opportunity this pass." Never manufacture a weak greenlight to make the run look productive.
@@ -81,6 +120,7 @@ opportunity this pass." Never manufacture a weak greenlight to make the run look
 - Defensible + vertical + real demand + legally liftable; AI-native is a strong plus, not a gate.
 - Never delete — truly-dead code gets a label-only frozen note; Recycled never runs `gh repo archive`/delete.
 - License-gate fail-closed on all Tier-2 code before Stage 1.
+- **Ground-truth fail-closed on every candidate before the kill-pass** — the skeptic judges novelty + demand against the live landscape, never the candidate's self-claims; a missing/uncited/stale packet → KILL. The line can never again go competitively blind.
 - Tier-2 BuildSpecs carry `license_human_confirmed:false` — a hard blocker the factory must clear before building (Phase B).
 
 ## Factory consumption (Phase B core — WIRED 2026-06-13)
@@ -98,6 +138,61 @@ The connective tissue that makes Recycled part of manufacturing. Deterministic, 
   queue dry → the loop falls through to normal trend discovery. **Non-destructive: an empty queue changes nothing.**
 - The queue file is version-controlled with the control plane so the loop's isolated worktree sees it; projection
   runs on the main tree (where `runs/` exists), the loop only `next`/`consume`s the committed queue.
+
+## Outcome-capture — the learning-loop moat seed (D15, R21/R22)
+
+The brutal bar's hardest finding: this corpus is **data-access, not data-advantage** — it stores judgments, zero
+outcomes. Outcome-capture wires the proprietary, non-re-scrapable layer (private idea → judgment → outcome pairs) so it
+**starts compounding from observation #1**, before the platform ships. It is a separate facility, not a pipeline stage.
+
+- **Artifact.** Append-only `recycled-outcomes.jsonl` at the control-plane root (tracked, like the candidates queue —
+  the corpus *is* the asset), keyed by `candidate_id`. Contract: [schemas/outcome-record.schema.json](schemas/outcome-record.schema.json).
+  Deliberately **separate from the kill-pass verdict** — a skeptic judging in-the-moment cannot know the future.
+- **CLI.** `recycled-scan.mjs outcome <candidate_id> <made_money|failed|unknown> [revenue]` logs an observation;
+  `outcome list` shows latest-per-candidate; `outcome stats` prints descriptive counts. Accepts **any** judged
+  `candidate_id`, not just queued greenlights — the highest-value signal is a **KILL someone else shipped and
+  monetized** (a false kill), which only the kills can teach.
+- **Honest limit.** This only *seeds* capture. The kill-accuracy bake-off needs a verdict↔outcome join at labeled
+  volume that does not exist yet, so `stats` prints an explicit "NOT a calibration claim" disclaimer. We claim we
+  started earning a moat, not that we have one. The founder is observer #1 (logging our own theses' fates).
+
+## Cross-run metrics — the kaizen instrument (D16, R23–R27)
+
+The manufacturing standard ([DECISIONS.md](../DECISIONS.md) D16) is made **bulletproof by measurement, not assertion.**
+Each run's artifacts are siloed in `runs/recycled/<run-id>/`; this aggregates them into honest cross-run KPIs. It also
+**seeds the factory digital twin** — it *measures* the line today; the twin will *simulate* it forward (same data spine).
+
+- **CLI.** `recycled-scan.mjs metrics` (human) / `metrics --json`, surfaced as `make recycled-metrics`. $0, reads `runs/` only.
+- **Pure fns (R23–R27).** `killRate`, `failureReasonDistribution` (bar keys read **dynamically** — bar sets drift across
+  runs, so a hardcoded list would silently under-count old runs), `greenlightYield` (`null` on 0 candidates),
+  `durabilityPassRate` (`n:0` on empty), `aggregateRuns` (injectable `readJsonl`), `buildMetricsReport` (pure assembler).
+- **Honest by construction.** Reports zeros and `n/a` with reasons; never fakes an unmeasurable KPI. Computable now:
+  kill-rate, greenlight-yield, failure-reason distribution, ideas-killed-per-greenlight, outcome distribution. Not yet
+  measurable (flagged, not faked): cycle/takt time + time-to-preview + per-SKU build cost (need timestamps / a shipped
+  SKU), parts-bin reuse (backlogged), Day-45 profitable yield (no SKU past Day 1). The footer rejects the inflated
+  claims (no Toyota-level / ~95% / 10×) and notes every number is recomputable from `runs/recycled/*.jsonl`.
+
+## Net-new ideation — the generator the salvage line lacked (D17, R28–R32)
+
+`recycled/ideate.workflow.js` GENERATES fresh product ideas from real demand and runs them through the SAME honest
+judge as salvage (ground-truth gate → kill-pass → durability → first-principles). **Reuse-first:** the judge is reused
+wholesale; only the **generator** (demand-mine + synthesis) and the net-new cost bar are new — methodology, not infra
+(Amy Hoy "Sales Safari" pain-mining + JTBD + PG "live in the future" + YC "build for existing demand").
+
+- **Pipeline.** I1 demand-mine (cited, repeated, demand-backed pain in a boring-B2B-by-default domain) → I2 synthesize
+  specific zero-to-one candidates → I3 ground-truth sweep → I4 three adversarial skeptics on **IDEATION_BARS** → I4.5
+  Thiel 7-Q (≥6/7) + first-principles → I5 net-new BuildSpec (build-from-scratch; empty `extract_list`; `net_new:true`).
+- **The net-new bar (R28).** `salvage_cheaper_than_rebuild` → `reuse_over_rebuild` ("buildable mostly by orchestrating
+  proven components within budget, not a from-scratch heavy lift"). Same count, same brutality. Feeding net-new through
+  the salvage default would be a **rigged auto-kill** (no repo to salvage) — the swap keeps it HONEST, not weaker. The
+  kill-pass is NOT relaxed for our own ideas (the dogfood integrity rule).
+- **Seam.** Workflow result → `node recycled/recycled-scan.mjs ideate ingest <run-id>` (deterministic, $0): persists run
+  artifacts (auditable + feeds D16 metrics — `reuse_over_rebuild` counts via R24's dynamic bar keys) AND projects
+  greenlights into `recycled-candidates.jsonl`, which the build loop's Phase-1 `candidates next` already consumes
+  (net-new carries `net_new` + `wrap_plan`; the loop builds from `wrap_plan`, not an extract_list).
+- **Greenlight (R31).** Net-new skips only the two salvage-SPECIFIC gates (`hours_saved_vs_rebuild`, extract-path
+  verify — N/A with no repo); EVERY other gate applies unchanged. `make recycled-ideate` prints the run recipe;
+  **0 survivors is a valid honest result** (stop and refine the domain/sources — the gap stays open, never force a build).
 
 ## Out of scope (still backlogged)
 
