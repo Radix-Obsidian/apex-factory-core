@@ -56,7 +56,23 @@ design-check: ## D18 — validate a SKU ships a well-formed Claude-Design brand 
 closed-loop-check: ## D19 — validate a SKU owns the outcome / closes the loop (deterministic, $0). Usage: make closed-loop-check SKU=../<sku-repo>
 	@node scripts/closed-loop-check.mjs "$(SKU)"
 
-verify: preflight guard-test gate auth-guard ## run mechanical acceptance checks (fast)
+# ── D20: post-launch operations — operate each LIVE SKU (registry-driven, deterministic, $0) ──
+sku-list: ## Ops — list the SKU portfolio registry ($0)
+	@node ops/registry.mjs list
+sku-validate: ## Ops — structural-validate the SKU registry ($0)
+	@node ops/registry.mjs validate
+canary: ## Ops — per-SKU health probe (exit≠0 if any DOWN/DEGRADED; network read, $0 LLM)
+	@node ops/canary.mjs
+portfolio: ## Ops — per-SKU + total revenue from Stripe (read-only key per registry; n/a without it)
+	@node ops/revenue.mjs
+support-triage: ## Ops — deterministic support triage + founder escalations ($0)
+	@node ops/support.mjs
+operate: ## Ops — ONE post-launch tick (health + revenue + support) over all live SKUs ($0, deterministic)
+	@node ops/operate.mjs
+ops-verify: ## Ops — deterministic tests for the operations layer ($0 LLM)
+	@node --test ops/ops.test.mjs && echo "── ops-verify GREEN ──"
+
+verify: preflight guard-test gate auth-guard ops-verify ## run mechanical acceptance checks (fast)
 	@echo "── verify GREEN ──"
 
 launch: ## fire the REAL gated cycle (⚠ spends shared Anthropic + Higgsfield pools)

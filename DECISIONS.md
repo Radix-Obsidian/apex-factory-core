@@ -340,3 +340,35 @@ bug; it's the standard defined *ahead* of the instance (define-then-build): the 
 the bar (accounts + true-state tracking + pre-filled documents + a next-action engine + proactive reminders — the honest
 "does-it-for-you," since FMCSA legally requires the carrier's own signature to file, so we prepare/track/remind/one-click,
 never silently auto-submit). The factory now ships moats by construction, not by luck.
+
+## D20 — post-launch operations layer: the agents OPERATE each shipped SKU, not just build it (2026-06-22)
+
+**The gap.** The line was all *pre-launch* — ideate → kill → build → eval → gate → ship → notify → heartbeat — and
+stopped the moment a SKU went live. There was no loop that **operates** what shipped, and no registry of what *had*
+shipped. IDENTITY.md promises "agents manage, operate, and scale each SKU and track revenue / customer support";
+METHOD §6 honestly labelled that future "NAMED, not built." This builds it.
+
+**The decision.** Add a post-launch half to the line, same shape as the rest of the factory: deterministic `.mjs`
+cores ($0, no LLM, never hang) with judgment layered on as agents, honest-to-`n/a`, irreversible actions founder-gated.
+
+**What's new.**
+- **The registry** (`skus/registry.json` + `skus/schema/sku.schema.json`) — the portfolio object the loop iterates;
+  one entry per shipped SKU (repo, live URL, deploy, billing, support source, owning agents, `pending_founder_actions`).
+  `secret_env` holds the env-var NAME of a **read-only restricted** Stripe key, never the key (validator rejects a raw key).
+- **The operators** (`ops/`): `canary.mjs` (health → OK/SLOW/DEGRADED/DOWN), `revenue.mjs` (Stripe subscription read →
+  paying MRR with trials excluded — the honest dollar), `support.mjs` (triage + the irreversible-action andon cord),
+  `operate.mjs` (one tick = all three over every live SKU; appends `runs/operate.jsonl`).
+- **The agents**: `factory-operator` (Sonnet) drives the tick, narrates, delegates, escalates; `factory-support` (Haiku)
+  drafts replies grounded in the SKU's docs. Neither sends money or data; both stop at the founder.
+- **Wiring**: `make sku-list|sku-validate|canary|portfolio|support-triage|operate|ops-verify`; `ops-verify` folded into
+  `make verify`; a deterministic `operate --brief` snapshot folded into the 6h `heartbeat.sh`.
+
+**Reused.** The deterministic-core-then-LLM-agent split (recycled/*), the $0/`--json`/graceful-degrade conventions
+(`usage.mjs`), the founder-gate discipline (D5) applied to refunds/cancellations/data-deletion, the model ladder (MODELS.md).
+
+**Honest limitation (recorded, not hidden).** Revenue is `n/a` until the founder wires a read-only key — **0 paying
+customers / $0 today**, reported as exactly that, never fabricated (METHOD §5). Support triage is keyword-deterministic
+(default-to-escalate on anything irreversible); the prose draft is the agent's. The first registered SKU, dot-navigator,
+is `staged` (TEST mode, not charging) — the loop already watches its live health; it will report real dollars the moment
+the founder completes GO-LIVE and flips the D5 gate. The standard is defined ahead of the instance (define-then-build),
+same as D18/D19.
