@@ -35,7 +35,7 @@
       "owning_agents": ["factory-operator", "factory-support"],
       "pending_founder_actions": [
         "Provision Railway Postgres + Brevo + reminder cron per dot-navigator/GO-LIVE.md §A (needed even in TEST).",
-        "Set DOTNAV_STRIPE_RO_KEY in factory-core/.env to a Stripe restricted READ-ONLY key (sub/charge read scopes) to switch revenue telemetry from n/a to live numbers.",
+        "Revenue telemetry is WIRED + reading live (2026-06-22), but DOTNAV_STRIPE_RO_KEY currently reuses dot-navigator's full TEST secret key. Before LIVE: replace it with a restricted READ-ONLY key (Subscriptions + Customers: Read) — least privilege.",
         "When ready to charge: complete GO-LIVE.md §B/§C and flip LIVE_CHARGES_ENABLED=true (the D5 founder gate), then set status:\"live\" + billing.mode:\"live\" here."
       ],
       "created": "2026-06-21"
