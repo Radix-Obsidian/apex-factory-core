@@ -22,7 +22,7 @@
       "health": { "path": "/", "slow_ms": 3000 },
       "billing": {
         "provider": "stripe",
-        "mode": "test",
+        "mode": "live",
         "model": "subscription",
         "price_usd": 49.99,
         "secret_env": "DOTNAV_STRIPE_RO_KEY"
@@ -35,8 +35,7 @@
       "owning_agents": ["factory-operator", "factory-support"],
       "pending_founder_actions": [
         "Provision Railway Postgres + Brevo + reminder cron per dot-navigator/GO-LIVE.md §A (needed even in TEST).",
-        "Revenue telemetry is WIRED + reading live (2026-06-22), but DOTNAV_STRIPE_RO_KEY currently reuses dot-navigator's full TEST secret key. Before LIVE: replace it with a restricted READ-ONLY key (Subscriptions + Customers: Read) — least privilege.",
-        "When ready to charge: complete GO-LIVE.md §B/§C and flip LIVE_CHARGES_ENABLED=true (the D5 founder gate), then set status:\"live\" + billing.mode:\"live\" here."
+        "When ready to charge: complete GO-LIVE.md §B/§C and flip LIVE_CHARGES_ENABLED=true (the D5 founder gate), then set status:\"live\" here. (Revenue telemetry already wired: DOTNAV_STRIPE_RO_KEY = restricted read-only rk_live_ key, reading the LIVE account.)"
       ],
       "created": "2026-06-21"
     }
