@@ -2,6 +2,13 @@
   "version": 1,
   "updated": "2026-06-22",
   "note": "The SKU portfolio — the object the post-launch operate loop iterates (D20). One entry per shipped SKU. secret_env fields hold the NAME of an env var (a read-only restricted key), never the key itself.",
+  "framework": {
+    "name": "chassis",
+    "repo": "https://github.com/Radix-Obsidian/chassis",
+    "local_path": "../chassis",
+    "template": true,
+    "note": "Scaffold every new SKU from this template (D21): gh repo create Radix-Obsidian/<sku> --private --template Radix-Obsidian/chassis, then implement a DomainPack. The spine is inherited, not rebuilt."
+  },
   "skus": [
     {
       "slug": "dot-navigator",

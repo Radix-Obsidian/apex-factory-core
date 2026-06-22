@@ -372,3 +372,34 @@ customers / $0 today**, reported as exactly that, never fabricated (METHOD §5).
 is `staged` (TEST mode, not charging) — the loop already watches its live health; it will report real dollars the moment
 the founder completes GO-LIVE and flips the D5 gate. The standard is defined ahead of the instance (define-then-build),
 same as D18/D19.
+
+## D21 — the chassis: a reusable SKU framework, so SKU #2 is a domain-pack swap (2026-06-22)
+
+**The gap.** "One factory, many products" (D4) was true at the repo level but not the *code* level: DOT Navigator was a
+one-off. A second SKU would have been a fork-and-rewrite — no shared spine, no manufacturing-floor scaffold. The
+Reusability principle (METHOD §2, the SpaceX-booster discipline) had no concrete artifact.
+
+**The decision.** Extract the proven spine from DOT Navigator into a standalone **chassis** template repo
+(`Radix-Obsidian/chassis`) that every SKU inherits, with a single seam — the `DomainPack` — for what makes a SKU itself.
+
+**What's new.**
+- **Chassis repo** (Next.js + Stripe + Prisma): the generic spine (passwordless auth, Stripe checkout + the
+  founder-gated `assertChargesAllowed` live-charge guard, HMAC entitlement, subscription tiers, Brevo email, idempotent
+  reminder scheduler, db) reused unchanged by any SKU. Published as a GitHub **template** repo.
+- **The seam** (`domain/contract.ts`): a `DomainPack` = brand + profile fields + reminder cadence + a rules engine
+  (`generateWorkItems`) + an artifact registry. The spine reads the active pack via `domain/{brand,index}.ts` and never
+  imports a SKU's modules directly — swap two re-exports to re-skin.
+- **Reference pack** (`domains/fmcsa`): DOT Navigator's CFR rules engine + document registry + cadence + brand,
+  assembled into the contract. A new SKU mirrors this file.
+- **Wiring**: PRD Phase 2 now scaffolds SKUs from the chassis (`gh repo create --template`) instead of hand-rolling;
+  the legacy empty `The-Native-Factory` repo is explicitly retired (it became H\RNESS).
+
+**Proof.** DOT Navigator reconstituted on the chassis (FMCSA as the active pack) = **63 tests green** (59 spine + 4
+contract) + production build green; brand/copy now flow through the pack. The abstraction holds at N=1.
+
+**Honest limitation (recorded, not hidden).** Extracted **conservatively** (YAGNI from N=1): the spine + the
+DomainPack contract + brand/copy routing are done and proven; the **UI** (`app/`, `components/`) and the **entity
+schema** (`Carrier` + FMCSA columns → generic `Account` + `profile` + `WorkItem`/`Artifact`/`Event`) remain
+FMCSA-shaped and are deferred until a real second SKU pulls on them — we abstract on the second instance, not the
+first. The chassis is committed locally; pushing the new repo is a founder action (the harness fail-closes on relocating
+private code to a new remote — by design).

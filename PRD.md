@@ -32,13 +32,18 @@ does not charge real customers — that waits for the publish+charge gate.
 - [ ] Document the SKU thesis to `~/life/projects/sku_001/summary.md`.
 
 ### [ ] Phase 2 — Core engineering & media synthesis
-- [ ] Init a new Git repo for the SKU (separate from this control plane). Use the empty
-      `Radix-Obsidian/The-Native-Factory` repo, or create a fresh one via `gh`.
+- [ ] **Scaffold the SKU from the chassis (D21)** — `gh repo create Radix-Obsidian/<sku> --private --template
+      Radix-Obsidian/chassis`. The chassis ships the spine (auth, billing + the founder-gated live-charge guard,
+      entitlement, subscription tiers, Brevo email, idempotent reminder scheduler, Prisma). Do **not** hand-roll the
+      spine, and do **not** reuse the legacy `Radix-Obsidian/The-Native-Factory` repo — that's now H\RNESS.
 - [ ] Media: use the Higgsfield **CLI** (authed, headless) for visual identity — logo, background
       loop, asset skins. Respect the per-run media cap (small fixed budget; reuse over regenerate).
       If the headless token fails, take the graceful-skip path and flag it; do not hang.
-- [ ] Write core backend + frontend (Next.js / Tailwind).
-- [ ] TDD the checkout flow: failing integration test first → implement Stripe (TEST mode) → green.
+- [ ] **Implement the SKU's `DomainPack`** (`domain/<sku>/{brand,pack}.ts`: brand, profile fields, reminder cadence,
+      rules engine, artifact registry) + the domain UI, then point `domain/{brand,index}.ts` at it. The chassis
+      contract suite `domain/pack.test.ts` must pass.
+- [ ] Checkout comes from the chassis spine (already TDD'd, Stripe TEST mode). TDD the SKU's **rules engine** instead:
+      failing test for the domain's work-item schedule first → implement → green.
 
 ### [ ] Phase 2.5 — Design system (brand kit via Claude Design, D18)
 - [ ] **Author/refresh the per-SKU brand kit via Claude Design + the `/design-sync` skill** — a unique,
