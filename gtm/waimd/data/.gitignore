@@ -1,0 +1,3 @@
+# Lead data is local/runtime state, never committed (contains sourced PII: carrier emails/phones).
+*
+!.gitignore

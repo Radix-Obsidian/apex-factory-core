@@ -1,0 +1,75 @@
+// config.mjs — the Waimd GTM lead engine, single source of truth. All knobs live here so the pipeline
+// stays declarative. $0 to run: the FMCSA Company Census is a free Socrata dataset (no key required;
+// an app token only raises rate limits). Verified live 2026-06-24 (dataset az4n-8mr2 refreshes daily;
+// newest add_date was yesterday; ~100% of recent new entrants carry an email_address).
+
+export const CENSUS = {
+  // FMCSA Company Census File on data.transportation.gov (Socrata SODA API).
+  resource: "az4n-8mr2",
+  base: "https://data.transportation.gov/resource/az4n-8mr2.json",
+  // Optional Socrata app token for higher rate limits (X-App-Token). Unauthenticated works for our volume.
+  appToken: process.env.FMCSA_APP_TOKEN || "",
+  pageSize: 1000,
+  maxPages: 10, // hard ceiling so a bad query can never page forever (≤ 10k candidates/run)
+};
+
+// The ICP: brand-new INTERSTATE carriers (carrier_operation 'A') that are active and reachable by email.
+// carrier_operation codes are the federal classification, verified against FMCSA docs:
+//   A = Interstate, B = Intrastate Hazmat, C = Intrastate Non-Hazmat.
+// Only interstate carriers face the federal New Entrant Safety Audit — the calendar's conversion hook.
+export const FILTER = {
+  carrierOperation: "A", // interstate only (the audit-window hook applies to these)
+  statusCode: "A", // active registrations only
+  requireEmail: true,
+  // The audit-PREP sweet spot: target carriers whose New Entrant Safety Audit is roughly 30-180 days
+  // out — close enough to feel urgent, far enough that prep still helps. audit-due = add_date + 330d, so
+  // that maps to a registration age of 150-300 days. (The "freshest carriers" cohort, age 14-45, is a
+  // valid alternative campaign — widen this window to test it.)
+  minAgeDays: 150,
+  maxAgeDays: 300,
+};
+
+// The make-or-break hook: the New Entrant Safety Audit prep window. This offset MUST match the
+// `safety-audit-window` milestone in dot-navigator/lib/calendar-engine.ts (offsetDays: 330) so the
+// outreach date and the on-site roadmap agree.
+export const AUDIT_OFFSET_DAYS = 330;
+
+// The locked deep-link contract (see memory: dot-navigator-live-paid-funnel). An outreach email links
+// here so the carrier lands on an instant, prefilled, auto-generated roadmap with attribution captured.
+export const DEEPLINK = {
+  base: "https://waimd.org/navigator",
+  utm: {
+    source: "email",
+    medium: "cold",
+    campaign: "fmcsa-new-entrant",
+  },
+};
+
+// CAN-SPAM is non-negotiable before any real send: a truthful from, a working unsubscribe, and a valid
+// physical postal address. These are read from env so no address is hard-coded; send.mjs (later) refuses
+// to send if the postal address or unsubscribe base is missing.
+export const SENDER = {
+  from: process.env.WAIMD_OUTREACH_FROM || "Waimd <hello@outreach.waimd.org>",
+  replyTo: process.env.WAIMD_REPLY_TO || "hello@itsvoco.com",
+  postalAddress: process.env.WAIMD_POSTAL_ADDRESS || "", // REQUIRED before sending (CAN-SPAM)
+  unsubscribeBase: process.env.WAIMD_UNSUBSCRIBE_BASE || "https://waimd.org/unsubscribe",
+};
+
+// Sending is OFF until deliberately ramped. dailyCap=0 means send.mjs refuses to send anything — the
+// hard gate that keeps "engine built" from becoming "engine blasting" before outreach.waimd.org is
+// warmed (task: compliant sending). Warmup ramp: start ~20/day, roughly double weekly, watch the metrics.
+export const SEND = {
+  dailyCap: Number(process.env.WAIMD_DAILY_CAP || 0),
+  ratePerMin: 20,
+  // Hard stop the autonomous sender if deliverability degrades (wired when Brevo feedback is connected).
+  maxBouncePct: 2.0,
+  maxComplaintPct: 0.3,
+};
+
+// Data files (gitignored). leads.jsonl is the durable store; suppression.txt is never-contact (unsubs,
+// bounces, existing customers, complaints).
+export const PATHS = {
+  leads: new URL("./data/leads.jsonl", import.meta.url).pathname,
+  suppression: new URL("./data/suppression.txt", import.meta.url).pathname,
+  batches: new URL("./data/batches", import.meta.url).pathname,
+};
