@@ -18,6 +18,7 @@ import { fetchNewEntrants } from "./census.mjs";
 import { toLead, draftEmail } from "./personalize.mjs";
 import { qcEnabled, validateDot } from "./qcmobile.mjs";
 import { loadLeads, saveLeads, upsertLeads, loadSuppression, isSuppressed } from "./store.mjs";
+import { syncSuppression } from "./sync-suppression.mjs";
 import { PATHS, FILTER } from "./config.mjs";
 
 const args = process.argv.slice(2);
@@ -33,6 +34,11 @@ const log = (...a) => !JSON_OUT && console.log(...a);
 async function main() {
   const now = new Date();
   const nowIso = now.toISOString();
+
+  // Pull on-site unsubscribes first (best-effort; no-ops until WAIMD_SUPPRESSION_URL/TOKEN are set), so
+  // an opt-out can never be re-emailed.
+  const sync = await syncSuppression();
+  if (sync.ok) log(`   synced suppressions: +${sync.added} (of ${sync.fetched} fetched)`);
 
   const suppression = loadSuppression();
   const store = loadLeads();
