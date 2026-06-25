@@ -11,16 +11,10 @@ const titleCase = (s) =>
     .replace(/\b([a-z])/g, (m) => m.toUpperCase())
     .trim();
 
-// FMCSA officer fields are messy ("LAST, FIRST" or "FIRST LAST"). Pull a plausible first name, else null
-// (we greet "there" rather than guess wrong — a wrong name reads worse than none).
-function greetingName(officer) {
-  const raw = String(officer || "").trim();
-  if (!raw) return null;
-  let first;
-  if (raw.includes(",")) first = raw.split(",")[1]?.trim().split(/\s+/)[0];
-  else first = raw.split(/\s+/)[0];
-  if (!first || first.length < 2 || /\d/.test(first)) return null;
-  return titleCase(first);
+// FMCSA officer fields are unreliable ("LAST, FIRST", garbled, or blank). We never guess a name.
+// The email always addresses the business. A wrong name is worse than no name.
+function greetingName(_officer) {
+  return null;
 }
 
 // Census row → normalized Lead (no store metadata; store.mjs adds firstSeenAt/status/etc).
@@ -61,51 +55,48 @@ export function buildDeepLink(lead) {
 const PRETTY = (iso) =>
   iso ? new Date(iso + "T00:00:00Z").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" }) : null;
 
-// Cold email draft. Honest, short, audit-date-led. The CAN-SPAM footer (postal address + unsubscribe) is
-// assembled here; send.mjs refuses to send if the postal address is unset, so a draft can preview without
-// it but a real send cannot go out non-compliant.
+// Cold email draft. Blair Warren framework, two sentences of body. The deadline does the selling.
+// CAN-SPAM footer assembled here; send.mjs refuses to send if postal address is unset.
 export function draftEmail(lead) {
-  const hi = lead.officerFirstName ? `Hi ${lead.officerFirstName},` : "Hi there,";
   const company = lead.dbaName || lead.legalName || "your carrier";
   const auditPretty = PRETTY(lead.auditDueDate);
   const subject = auditPretty
-    ? `${company}: your FMCSA new-entrant safety audit window (due ~${auditPretty})`
-    : `${company}: your FMCSA new-entrant compliance roadmap`;
+    ? `USDOT ${lead.dotNumber} — your safety audit window opens ${auditPretty}`
+    : `USDOT ${lead.dotNumber} — your FMCSA compliance checklist`;
 
   const unsubUrl = `${SENDER.unsubscribeBase}?e=${encodeURIComponent(lead.email || "")}`;
   const postal = SENDER.postalAddress || "[postal address required before sending]";
 
+  const bodyLine1 = auditPretty
+    ? `Your New Entrant Safety Audit window opens around ${auditPretty}.`
+    : `Your New Entrant Safety Audit window is coming up.`;
+  const bodyLine2 = `Here's a free dated checklist so nothing sneaks up on you:`;
+
   const text = [
-    hi,
+    `Hi ${company},`,
     "",
-    `Congrats on getting ${company} (USDOT ${lead.dotNumber}) on the road. As a brand-new interstate carrier, FMCSA will run a New Entrant Safety Audit within your first 12 months${auditPretty ? ` — for you that window lands around ${auditPretty}` : ""}. A failed audit can pull your new-entrant registration, so prep is everything.`,
-    "",
-    "We built a free tool that gives you a dated, 18-month compliance roadmap anchored to your exact authority date — every federal milestone (drug & alcohol program, DQFs, ELD/HOS, the audit packet) on the day it's actually due for you:",
+    `${bodyLine1} ${bodyLine2}`,
     "",
     lead.deepLink,
     "",
-    "It's free, no account needed. If it's useful, there's a one-time audit-ready packet you can unlock — but the roadmap itself costs nothing.",
+    "Waimd by Voco Technologies, Inc.",
     "",
-    "This is decision-support, not legal advice; always verify against FMCSA.",
+    "Decision-support, not legal advice. Always verify against FMCSA.",
     "",
-    "— The Waimd team",
-    "",
-    "—",
+    "---",
     `You're receiving this because ${company} is a newly registered interstate carrier in the public FMCSA Company Census. Not interested? Unsubscribe and we won't email again: ${unsubUrl}`,
     postal,
   ].join("\n");
 
   const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   const html = `<div style="font-family:system-ui,Arial,sans-serif;font-size:15px;line-height:1.5;color:#1a1a1a">
-<p>${esc(hi)}</p>
-<p>Congrats on getting <strong>${esc(company)}</strong> (USDOT ${esc(lead.dotNumber)}) on the road. As a brand-new interstate carrier, FMCSA will run a <strong>New Entrant Safety Audit</strong> within your first 12 months${auditPretty ? ` — for you that window lands around <strong>${esc(auditPretty)}</strong>` : ""}. A failed audit can pull your new-entrant registration, so prep is everything.</p>
-<p>We built a free tool that gives you a dated, 18-month compliance roadmap anchored to your exact authority date — every federal milestone on the day it's actually due for you:</p>
-<p><a href="${esc(lead.deepLink)}" style="color:#b3261e;font-weight:600">See your dated FMCSA roadmap →</a></p>
-<p>It's free, no account needed. If it's useful, there's a one-time audit-ready packet you can unlock — but the roadmap itself costs nothing.</p>
-<p style="color:#666;font-size:13px">This is decision-support, not legal advice; always verify against FMCSA.</p>
-<p>— The Waimd team</p>
-<hr style="border:none;border-top:1px solid #ddd"/>
-<p style="color:#888;font-size:12px">You're receiving this because ${esc(company)} is a newly registered interstate carrier in the public FMCSA Company Census. Not interested? <a href="${esc(unsubUrl)}" style="color:#888">Unsubscribe</a> and we won't email again.<br/>${esc(postal)}</p>
+<p>Hi ${esc(company)},</p>
+<p>${esc(bodyLine1)} ${esc(bodyLine2)}</p>
+<p><a href="${esc(lead.deepLink)}" style="color:#b3261e;font-weight:600">See your free dated checklist</a></p>
+<p>Waimd by Voco Technologies, Inc.</p>
+<p style="color:#999;font-size:12px">Decision-support, not legal advice. Always verify against FMCSA.</p>
+<hr style="border:none;border-top:1px solid #eee"/>
+<p style="color:#999;font-size:11px">You're receiving this because ${esc(company)} is a newly registered interstate carrier in the public FMCSA Company Census. Not interested? <a href="${esc(unsubUrl)}" style="color:#999">Unsubscribe</a> and we won't email again.<br/>${esc(postal)}</p>
 </div>`;
 
   return { subject, text, html, unsubscribeUrl: unsubUrl };
