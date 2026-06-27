@@ -33,7 +33,7 @@ function walk(dir){ let out=[]; let ents; try{ents=fs.readdirSync(dir,{withFileT
 function claudeUsage(){
   const now = Date.now();
   const windows = { '5h': 5*3600e3, '7d': 7*24*3600e3 };
-  const agg = {}; for(const k of Object.keys(windows)) agg[k]={proxy:0,tokens:0,opusProxy:0,calls:0};
+  const agg = {}; for(const k of Object.keys(windows)) agg[k]={proxy:0,tokens:0,opusProxy:0,calls:0,rawInput:0,cacheWrite:0,cacheRead:0};
   const seen = new Set();
   for(const f of walk(PROJECTS)){
     let lines; try{ lines=fs.readFileSync(f,'utf8').split('\n'); }catch{ continue; }
@@ -49,7 +49,8 @@ function claudeUsage(){
       const toks = inp+cc+cr+out;
       const isOpus = /opus/i.test(j?.message?.model||'');
       for(const [k,span] of Object.entries(windows)){
-        if(now-ts<=span){ const a=agg[k]; a.proxy+=proxy; a.tokens+=toks; a.calls++; if(isOpus) a.opusProxy+=proxy; }
+        if(now-ts<=span){ const a=agg[k]; a.proxy+=proxy; a.tokens+=toks; a.calls++; if(isOpus) a.opusProxy+=proxy;
+          a.rawInput+=inp; a.cacheWrite+=cc; a.cacheRead+=cr; }
       }
     }
   }
@@ -65,6 +66,26 @@ function higgsUsage(){
 }
 
 const claude = claudeUsage();
+
+// --cache: surface the factory's PROMPT-CACHE hit-rate (D22, see CACHING.md). Caching is automatic
+// in the loop/DSL; this makes it VISIBLE so a regressed prefix (a volatile token slipped ahead of the
+// cacheable block) shows up as a falling read%. $0, transcript-only — no higgsfield shell-out.
+if(process.argv.includes('--cache')){
+  const P = n => (n*100).toFixed(1)+'%';
+  const M = n => (n/1e6).toFixed(2)+'M';
+  console.log('— PROMPT-CACHE HIT-RATE (factory subscription; D22, see CACHING.md) —');
+  for(const k of ['5h','7d']){
+    const a = claude[k];
+    const inb = a.rawInput + a.cacheWrite + a.cacheRead; // total input tokens (after/at the breakpoint)
+    const read = inb ? a.cacheRead/inb : 0, write = inb ? a.cacheWrite/inb : 0, fresh = inb ? a.rawInput/inb : 0;
+    console.log(`  ${k.padEnd(3)} read ${P(read).padStart(6)}  write ${P(write).padStart(6)}  uncached ${P(fresh).padStart(6)}`
+      + `  ·  in ${M(inb)} tok (read ${M(a.cacheRead)} / write ${M(a.cacheWrite)} / fresh ${M(a.rawInput)}) · ${a.calls} calls`);
+  }
+  console.log('read% = input tokens served from cache (billed 0.1×). High + stable = prefixes reused well;');
+  console.log('a falling read% means a cacheable prefix regressed — a volatile token slipped ahead of it (CACHING.md).');
+  process.exit(0);
+}
+
 const higgs = higgsUsage();
 
 // ---- analysis / verdict (HEARTBEAT.md §1) ----

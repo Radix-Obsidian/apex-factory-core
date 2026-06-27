@@ -56,6 +56,15 @@ design-check: ## D18 — validate a SKU ships a well-formed Claude-Design brand 
 closed-loop-check: ## D19 — validate a SKU owns the outcome / closes the loop (deterministic, $0). Usage: make closed-loop-check SKU=../<sku-repo>
 	@node scripts/closed-loop-check.mjs "$(SKU)"
 
+caching-check: ## D22 — validate a SKU routes model calls through a cached wrapper (deterministic, $0). Usage: make caching-check SKU=../<sku-repo>
+	@node scripts/caching-check.mjs "$(SKU)"
+
+caching-verify: ## D22 — unit tests for the prompt-caching detector ($0 LLM)
+	@node --test hooks/caching-core.test.mjs && echo "── caching-verify GREEN ──"
+
+cachingtest: ## D22 — tier-1 caching-gate eval: detector F1 vs labeled corpus (deterministic, $0)
+	@node evals/caching-gate.mjs
+
 # ── D20: post-launch operations — operate each LIVE SKU (registry-driven, deterministic, $0) ──
 sku-list: ## Ops — list the SKU portfolio registry ($0)
 	@node ops/registry.mjs list
@@ -72,7 +81,7 @@ operate: ## Ops — ONE post-launch tick (health + revenue + support) over all l
 ops-verify: ## Ops — deterministic tests for the operations layer ($0 LLM)
 	@node --test ops/ops.test.mjs && echo "── ops-verify GREEN ──"
 
-verify: preflight guard-test gate auth-guard ops-verify ## run mechanical acceptance checks (fast)
+verify: preflight guard-test gate auth-guard ops-verify caching-verify ## run mechanical acceptance checks (fast)
 	@echo "── verify GREEN ──"
 
 launch: ## fire the REAL gated cycle (⚠ spends shared Anthropic + Higgsfield pools)
@@ -111,4 +120,4 @@ worktree-status: ## show all worktrees + the loop branch
 worktree-remove: ## tear down the loop worktree (keeps the loop/auto branch + history)
 	@bash scripts/worktree.sh remove
 
-.PHONY: help preflight copytest guard-test gate auth-guard dryrun heartbeat usage recycled-verify recycled-scan recycled-metrics recycled-ideate design-check closed-loop-check verify launch cron-enable cron-disable crashcron-install crashcron-uninstall hooks-install worktree-setup worktree-status worktree-remove
+.PHONY: help preflight copytest guard-test gate auth-guard dryrun heartbeat usage recycled-verify recycled-scan recycled-metrics recycled-ideate design-check closed-loop-check caching-check caching-verify cachingtest verify launch cron-enable cron-disable crashcron-install crashcron-uninstall hooks-install worktree-setup worktree-status worktree-remove
