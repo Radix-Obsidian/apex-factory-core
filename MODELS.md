@@ -16,6 +16,7 @@ by default**, cost-effective at a **≥10× ROI** bar.
 - `claude-mythos-5` is **invitation-only** (Project Glasswing) — not usable here.
 - **Fable 5 IS callable under the factory subscription OAuth token at $0/token** — confirmed by live CLI probe 2026-06-11. (An earlier draft of this file wrongly said it wasn't selectable; that was an unverified inference, now corrected.)
 - **Because all four are $0 on the subscription, dollars are not the constraint — rate-limit allowance and latency are.** Heavier models (Fable, Opus) burn the allowance faster and are slower. So: lightest model that achieves the outcome; escalate only where a better decision changes what ships.
+- **Prompt caching stretches that allowance** (cache reads bill at the Cache-R column ≈ 0.1× input) and cuts SKU per-token $. The loop/DSL cache automatically; SKU calls route through the chassis `llm` wrapper. Standard + measurement: [CACHING.md](CACHING.md) (D22) and `node usage.mjs --cache`.
 
 ## The ladder — 4 rungs
 

@@ -18,6 +18,10 @@ Stripe revenue.
 - **Shared credit pools:** Anthropic compute AND Higgsfield generation are shared across THREE
   projects. No single run may drain either. Cheap LLM calls (heartbeats) go to OpenRouter free
   models. Media generation is capped per run; reuse over regenerate.
+- **Prompt caching is mandatory on SKU API calls (D22).** Route every model call through the chassis
+  `llm` wrapper (cache_control on the static `system` block) — no raw inline `messages.create`. The
+  loop/DSL already cache automatically; keep the cacheable prefix stable (static first, varying last).
+  See [CACHING.md](CACHING.md); enforced by the caching-auditor hook + `make caching-check`.
 - Day 29: first dollar of Stripe revenue must be secured, else isolate the failure, pivot the SKU,
   redeploy. Day 45: net profitability target.
 - If burn approaches a pool limit without corresponding revenue, HEARTBEAT halts non-essential cron

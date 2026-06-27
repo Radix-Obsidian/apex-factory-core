@@ -403,3 +403,54 @@ schema** (`Carrier` + FMCSA columns → generic `Account` + `profile` + `WorkIte
 FMCSA-shaped and are deferred until a real second SKU pulls on them — we abstract on the second instance, not the
 first. The chassis is committed locally; pushing the new repo is a founder action (the harness fail-closes on relocating
 private code to a new remote — by design).
+
+## D22 — prompt caching is a factory + SKU standard, enforced like the copy gate (2026-06-27)
+
+**The gap.** "Add prompt caching to our LLM calls" had no target: the factory makes **zero** direct Anthropic calls — the
+loop (`claude -p`) and the Workflow DSL (`agent()`) run on the Max subscription, and the Claude Code harness **already**
+caches them automatically (transcripts show six-figure `cache_read_input_tokens`). The per-token money is in the SKUs,
+which *do* call the API directly. One SKU (domuschef) had independently wired a cached chokepoint; the others hadn't, and
+there was a *discipline but no standard*: nothing documented the rule, nothing enforced it, nothing measured it, and
+nothing carried it into the next SKU.
+
+**The decision.** Promote prompt caching to a named manufacturing standard ([CACHING.md](CACHING.md)), enforced with the
+**same machinery as the copy gate** (D-parity with D18/D19): a shared deterministic detector, a write-time hook, a
+per-SKU build gate, a tier-1 eval, a measurement view, and chassis propagation. The factory side is *discipline +
+visibility* (caching is already on); the SKU side is *mandatory wiring* (route every call through a wrapper that tags the
+static `system` block with `cache_control`).
+
+**What's new.**
+- **Doctrine:** `CACHING.md` — static-first/varying-last, the two-surface split, the **1024-token floor** caveat, TTL
+  guidance, the wrapper mandate.
+- **The detector** (`hooks/caching-core.mjs`, pure/$0): classifies a file's call sites as `compliant` / `raw-uncached` /
+  `n/a`. One source of truth, imported by all three enforcers (the copy gate's `audit-core.mjs` pattern).
+- **Write-time hook** (`hooks/caching-auditor.mjs`, registered in `.claude/settings.json`): **blocks** a raw inline call
+  that bypasses a wrapper; **warns** a wrapper call missing `cache_control` (the floor makes "uncached" sometimes
+  legitimate, so absence warns, bypass blocks).
+- **Per-SKU gate** (`scripts/caching-check.mjs` → `make caching-check SKU=...`, PRD Phase 2.7): deterministic, $0.
+- **Tier-1 eval** (`evals/caching-gate.mjs` + `evals/caching-corpus.jsonl` → `make cachingtest`): F1 of the detector vs a
+  labeled corpus, gate at F1 ≥ 0.85 — measures the *real* hook.
+- **Measurement** (`usage.mjs --cache`): surfaces the factory's cache hit-rate per 5h + 7d window (the "is it working"
+  number), reusing the existing transcript aggregation.
+- **Propagation** (`chassis/lib/llm.ts` + `llm.test.ts`): the canonical cached `complete()` every future AI SKU inherits
+  from the template. **Fetch-based, zero new dependencies** — same posture as the chassis's own `lib/email.ts` (Brevo over
+  fetch): the bundle stays light and the unit tests stay dependency-free. The cache breakpoint + no-key guard are baked in;
+  it mirrors domuschef's proven `withSystemCacheBreakpoint()`.
+
+**Reused.** The `audit-core` → hook + eval split; the `design-check`/`closed-loop-check` per-SKU deterministic-checker
+pattern; `usage.mjs`'s existing `cache_creation`/`cache_read` accounting (already priced at 1.25× / 0.10×); the
+founder-gate and $0/`--json`/graceful-degrade conventions; domuschef's proven `complete()` wrapper shape.
+
+**Honest limitation (recorded, not hidden).** (1) **The factory side enables nothing** — caching is already on there; the
+work is visibility + prefix hygiene. (2) **The minimum-prefix floor** (1,024 tok Sonnet/Opus, 4,096 tok Haiku) means
+`cache_control` is a no-op on every current SKU prompt (all single-shot, ~400–1,050 tok); we mandate *routing through the
+wrapper* (auto-engages above the floor / when multi-turn) rather than promising a fixed % saving. (3) **Current SKU
+status** (corrected against reality at build time, not the planning snapshot): **domuschef PASSES** — its `complete()`
+chokepoint already tags the system block via `withSystemCacheBreakpoint()` (shipped with its own audit spec
+`specs/prompt-caching-and-batch-audit.md` + eval), so the detector reads it compliant and the chassis wrapper mirrors that
+proven shape. **heatlog is the one real debt** (2 inline `fetch` routes, below floor) — next retrofit pass; dot-navigator
+passes (no model calls). Same define-then-build posture as D18/D19; existing SKUs are frozen template snapshots that won't
+auto-inherit the chassis wrapper. (4) The detector is a **structural** scan (regex over source), not a type-checker: it
+requires Anthropic context (so Twilio's `.messages.create` and system-less health pings are correctly ignored) and a
+visible `system:` block, and deliberately does NOT flag spread-param wrappers whose caching transform isn't visible
+in-file — high-precision over high-recall, by design.

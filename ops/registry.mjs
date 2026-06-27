@@ -10,6 +10,12 @@ import { fileURLToPath } from 'node:url';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const REGISTRY_PATH = path.join(HERE, '..', 'skus', 'registry.json');
 
+// Load factory-core/.env so every ops CLI sees env-configured values (e.g. DOTNAV_STRIPE_RO_KEY) no
+// matter how it's invoked — `make`, a direct `node ops/*.mjs`, or the heartbeat (which already exports
+// them; loadEnvFile never overrides an already-set var). A missing or unparseable .env is non-fatal:
+// revenue/etc. simply degrade to n/a. (registry.mjs is imported by every ops module, so this runs once.)
+try { process.loadEnvFile?.(path.join(HERE, '..', '.env')); } catch { /* no/odd .env — ops degrade to n/a */ }
+
 const STATUSES = new Set(['staged', 'live', 'paused', 'killed']);
 
 export function loadRegistry(p = REGISTRY_PATH) {

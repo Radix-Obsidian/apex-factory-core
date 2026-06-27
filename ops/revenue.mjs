@@ -80,7 +80,7 @@ export async function skuRevenue(sku) {
   if (!key) return { slug: sku.slug, ok: false, reason: `n/a — ${sku.billing.secret_env} not set` };
   const r = await allSubscriptions(key);
   if (!r.ok) return { slug: sku.slug, ok: false, reason: r.error };
-  const mode = sku.billing.mode || (key.startsWith('sk_live') ? 'live' : 'test');
+  const mode = sku.billing.mode || (/^(sk|rk)_live_/.test(key) ? 'live' : 'test');
   return { slug: sku.slug, ok: true, mode, ...summarize(r.data) };
 }
 

@@ -21,3 +21,6 @@ runs/
 
 # Support queue files hold customer PII — never commit; keep only ops/inbox/README.md
 ops/inbox/*.jsonl
+
+# OpenClaw workspace state (runtime, never commit)
+.openclaw/

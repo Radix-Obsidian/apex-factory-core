@@ -65,6 +65,13 @@ does not charge real customers — that waits for the publish+charge gate.
       `does_it_for_you` kill bar) already blocked horizontal-SaaS-with-AI at ideation; this confirms the BUILD
       actually closed the loop.
 
+### [ ] Phase 2.7 — Prompt-caching discipline (D22)
+- [ ] **Route every model call through a cached wrapper.** If the SKU calls the Anthropic API, no inline
+      `messages.create` / raw `fetch(api.anthropic.com)`: use the chassis `complete()` (chassis/lib/llm.ts),
+      which tags the static `system` block with `cache_control`. See [CACHING.md](CACHING.md).
+- [ ] **Validate it (deterministic, $0):** `make caching-check SKU=../<sku-repo>` passes. Passes trivially for
+      SKUs with no model calls. The write-time `caching-auditor` hook flags raw uncached calls as they're written.
+
 ### [ ] Phase 3 — Copywriting injection (must pass the copywriter-auditor hook)
 - [ ] Seth Godin tribal-status filter on all customer-facing copy.
 - [ ] Alex Hormozi value stack + risk-reversal / guarantee in the checkout UI.

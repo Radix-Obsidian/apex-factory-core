@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated": "2026-06-22",
+  "updated": "2026-06-24",
   "note": "The SKU portfolio — the object the post-launch operate loop iterates (D20). One entry per shipped SKU. secret_env fields hold the NAME of an env var (a read-only restricted key), never the key itself.",
   "framework": {
     "name": "chassis",
@@ -12,18 +12,18 @@
   "skus": [
     {
       "slug": "dot-navigator",
-      "name": "New Entrant DOT Navigator",
+      "name": "Waimd — New Entrant DOT Navigator",
       "domain": "FMCSA new-entrant compliance (first-year motor carriers)",
-      "status": "staged",
+      "status": "live",
       "repo": "https://github.com/Radix-Obsidian/dot-navigator",
       "local_path": "../dot-navigator",
-      "live_url": "https://web-production-f8359.up.railway.app",
-      "deploy": { "target": "railway", "service": "web-production-f8359" },
+      "live_url": "https://waimd.org",
+      "deploy": { "target": "railway", "service": "dot-navigator-app" },
       "health": { "path": "/", "slow_ms": 3000 },
       "billing": {
         "provider": "stripe",
-        "mode": "test",
-        "model": "subscription",
+        "mode": "live",
+        "model": "one-time + subscription",
         "price_usd": 49.99,
         "secret_env": "DOTNAV_STRIPE_RO_KEY"
       },
@@ -32,11 +32,19 @@
         "inbox": "ops/inbox/dot-navigator.jsonl",
         "from": "hello@itsvoco.com"
       },
+      "gtm": {
+        "engine": "gtm/waimd",
+        "channels": ["cold-email", "reddit"],
+        "lead_source": "FMCSA Company Census (Socrata az4n-8mr2, free, daily)",
+        "deep_link": "https://waimd.org/navigator?usdot=&authorityDate=&carrierType=interstate&utm_*",
+        "sending_domain": "outreach.waimd.org",
+        "status": "engine built + funnel instrumented; sending GATED until outreach.waimd.org is warmed"
+      },
       "owning_agents": ["factory-operator", "factory-support"],
       "pending_founder_actions": [
-        "Provision Railway Postgres + Brevo + reminder cron per dot-navigator/GO-LIVE.md §A (needed even in TEST).",
-        "Set DOTNAV_STRIPE_RO_KEY in factory-core/.env to a Stripe restricted READ-ONLY key (sub/charge read scopes) to switch revenue telemetry from n/a to live numbers.",
-        "When ready to charge: complete GO-LIVE.md §B/§C and flip LIVE_CHARGES_ENABLED=true (the D5 founder gate), then set status:\"live\" + billing.mode:\"live\" here."
+        "Real test-subscribe end-to-end on waimd.org (subscription + webhook→unlock) before announcing.",
+        "Stand up outreach.waimd.org sending domain in Brevo (SPF/DKIM/DMARC p=none→ramp), build /unsubscribe, then warm 3-4 weeks before first real cold-email batch (gtm/waimd send.mjs refuses until ramped).",
+        "Set GTM env on the sender host: WAIMD_DAILY_CAP, BREVO_API_KEY, WAIMD_POSTAL_ADDRESS, WAIMD_OUTREACH_FROM."
       ],
       "created": "2026-06-21"
     }
