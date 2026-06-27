@@ -25,8 +25,11 @@ export function preflight(sender) {
   if (SEND.dailyCap <= 0) fail.push("WAIMD_DAILY_CAP is 0 (sending disabled until ramped)");
   if (!process.env.BREVO_API_KEY) fail.push("BREVO_API_KEY not set");
   if (!SENDER.postalAddress) fail.push("WAIMD_POSTAL_ADDRESS not set (CAN-SPAM requires a physical address)");
-  if (!/@(.*\.)?outreach\.waimd\.org$/i.test(sender.email))
-    fail.push(`from must be on outreach.waimd.org (got ${sender.email}) to isolate sending reputation`);
+  // Reputation guard: never send from the apex waimd.org (DMARC p=reject) — a cold-email blast there
+  // would burn the brand domain. Any isolated domain/subdomain is fine (itsvoco.com, outreach.waimd.org).
+  const fromDomain = (String(sender.email).split("@")[1] || "").toLowerCase();
+  if (fromDomain === "waimd.org")
+    fail.push(`from must not be the apex waimd.org (got ${sender.email}) — use an isolated sending domain`);
   return fail;
 }
 

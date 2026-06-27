@@ -49,7 +49,7 @@ the next most-urgent batch — no lead is stranded, none is contacted twice.
 - `WAIMD_DAILY_CAP > 0` (sending disabled until ramped; warmup ~20/day, ~double weekly)
 - `BREVO_API_KEY` (transport)
 - `WAIMD_POSTAL_ADDRESS` (CAN-SPAM physical address in every email)
-- `from` on **outreach.waimd.org** (isolates reputation from the apex `p=reject`)
+- `from` **not** the apex `waimd.org` (isolates reputation from the apex `p=reject`; `itsvoco.com` or an `outreach.waimd.org` subdomain are fine)
 - `--send --i-approve` (explicit two-key confirmation)
 
 Plus: suppression honored, already-sent skipped, daily cap enforced, `List-Unsubscribe` (one-click) set,

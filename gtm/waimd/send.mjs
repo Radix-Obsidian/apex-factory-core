@@ -10,7 +10,7 @@
 //   • WAIMD_DAILY_CAP > 0           (sending is off until explicitly ramped)
 //   • BREVO_API_KEY                 (transport)
 //   • WAIMD_POSTAL_ADDRESS          (CAN-SPAM: physical address in every email)
-//   • from = outreach.waimd.org     (isolate reputation from the apex domain's p=reject)
+//   • from ≠ apex waimd.org         (isolate reputation from the apex domain's p=reject)
 //   • --send AND --i-approve        (two-key human/explicit confirmation)
 // Plus: suppression honored, already-sent skipped, daily cap enforced, List-Unsubscribe header set,
 // every send logged. This is "near-zero-touch": approve a batch, then it runs within these rails.
