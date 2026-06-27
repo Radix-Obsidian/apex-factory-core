@@ -55,27 +55,19 @@ export function buildDeepLink(lead) {
 const PRETTY = (iso) =>
   iso ? new Date(iso + "T00:00:00Z").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" }) : null;
 
-// Cold email draft. Blair Warren framework, two sentences of body. The deadline does the selling.
-// CAN-SPAM footer assembled here; send.mjs refuses to send if postal address is unset.
-export function draftEmail(lead) {
+// Shared email scaffold. Blair Warren framework, two sentences of body, the deadline does the selling.
+// Every step (cold + 2 follow-ups) renders through here so the greeting, CTA link, CAN-SPAM footer
+// (postal + one-click unsubscribe), and liability disclaimer stay identical and DRY. send.mjs refuses to
+// send if the postal address is unset; the raw deep-link is what carries the per-lead attribution.
+function renderEmail(lead, { subject, line1, line2, ctaText }) {
   const company = lead.dbaName || lead.legalName || "your carrier";
-  const auditPretty = PRETTY(lead.auditDueDate);
-  const subject = auditPretty
-    ? `USDOT ${lead.dotNumber} — your safety audit window opens ${auditPretty}`
-    : `USDOT ${lead.dotNumber} — your FMCSA compliance checklist`;
-
   const unsubUrl = `${SENDER.unsubscribeBase}?e=${encodeURIComponent(lead.email || "")}`;
   const postal = SENDER.postalAddress || "[postal address required before sending]";
-
-  const bodyLine1 = auditPretty
-    ? `Your New Entrant Safety Audit window opens around ${auditPretty}.`
-    : `Your New Entrant Safety Audit window is coming up.`;
-  const bodyLine2 = `Here's a free dated checklist so nothing sneaks up on you:`;
 
   const text = [
     `Hi ${company},`,
     "",
-    `${bodyLine1} ${bodyLine2}`,
+    `${line1} ${line2}`,
     "",
     lead.deepLink,
     "",
@@ -91,8 +83,8 @@ export function draftEmail(lead) {
   const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   const html = `<div style="font-family:system-ui,Arial,sans-serif;font-size:15px;line-height:1.5;color:#1a1a1a">
 <p>Hi ${esc(company)},</p>
-<p>${esc(bodyLine1)} ${esc(bodyLine2)}</p>
-<p><a href="${esc(lead.deepLink)}" style="color:#b3261e;font-weight:600">See your free dated checklist</a></p>
+<p>${esc(line1)} ${esc(line2)}</p>
+<p><a href="${esc(lead.deepLink)}" style="color:#b3261e;font-weight:600">${esc(ctaText)}</a></p>
 <p>Waimd by Voco Technologies, Inc.</p>
 <p style="color:#999;font-size:12px">Decision-support, not legal advice. Always verify against FMCSA.</p>
 <hr style="border:none;border-top:1px solid #eee"/>
@@ -101,3 +93,49 @@ export function draftEmail(lead) {
 
   return { subject, text, html, unsubscribeUrl: unsubUrl };
 }
+
+// Email 1 (Day 1) — the cold/urgency draft: the audit deadline + a free dated checklist. Enrollment send.
+export function draftEmail(lead) {
+  const auditPretty = PRETTY(lead.auditDueDate);
+  return renderEmail(lead, {
+    subject: auditPretty
+      ? `USDOT ${lead.dotNumber} — your safety audit window opens ${auditPretty}`
+      : `USDOT ${lead.dotNumber} — your FMCSA compliance checklist`,
+    line1: auditPretty
+      ? `Your New Entrant Safety Audit window opens around ${auditPretty}.`
+      : `Your New Entrant Safety Audit window is coming up.`,
+    line2: `Here's a free dated checklist so nothing sneaks up on you:`,
+    ctaText: `See your free dated checklist`,
+  });
+}
+
+// Email 2 (Day 4) — registration risk: a failed/skipped audit can cost their operating authority.
+export function draftStep2(lead) {
+  const auditPretty = PRETTY(lead.auditDueDate);
+  return renderEmail(lead, {
+    subject: `USDOT ${lead.dotNumber} — a missed New Entrant audit can cost your authority`,
+    line1: auditPretty
+      ? `A failed or skipped New Entrant Safety Audit can put your operating authority on the line — your window opens around ${auditPretty}.`
+      : `A failed or skipped New Entrant Safety Audit can put your operating authority on the line.`,
+    line2: `Your free dated checklist shows exactly what auditors check, in the order they check it:`,
+    ctaText: `See what the audit checks`,
+  });
+}
+
+// Email 3 (Day 8) — final social-proof nudge before the audit window opens.
+export function draftStep3(lead) {
+  const auditPretty = PRETTY(lead.auditDueDate);
+  return renderEmail(lead, {
+    subject: auditPretty
+      ? `USDOT ${lead.dotNumber} — last call before your audit window (${auditPretty})`
+      : `USDOT ${lead.dotNumber} — last call before your New Entrant audit`,
+    line1: `New carriers like yours are walking into the New Entrant audit already prepared, using this dated roadmap.`,
+    line2: auditPretty
+      ? `Yours is still ready — the window opens ${auditPretty}, so here it is one last time:`
+      : `Yours is still ready — here it is one last time:`,
+    ctaText: `Open my dated roadmap`,
+  });
+}
+
+// Step number → drafter. sequence-send.mjs looks up the right email for the step that's due.
+export const STEP_DRAFTERS = { 1: draftEmail, 2: draftStep2, 3: draftStep3 };

@@ -54,10 +54,11 @@ export function addSuppression(entries) {
 }
 
 // ── leads ────────────────────────────────────────────────────────────────────
-export function loadLeads() {
+// `file` defaults to the durable store; an explicit path lets the sequencer/tests run against a fixture.
+export function loadLeads(file = PATHS.leads) {
   const byDot = new Map();
   try {
-    const txt = fs.readFileSync(PATHS.leads, "utf8");
+    const txt = fs.readFileSync(file, "utf8");
     for (const line of txt.split("\n")) {
       const t = line.trim();
       if (!t) continue;
@@ -74,13 +75,13 @@ export function loadLeads() {
   return byDot;
 }
 
-export function saveLeads(byDot) {
-  ensureDir(PATHS.leads);
+export function saveLeads(byDot, file = PATHS.leads) {
+  ensureDir(file);
   const lines = [...byDot.values()].map((l) => JSON.stringify(l));
   // atomic-ish: write to a temp then rename, so a crash mid-write can't truncate the store.
-  const tmp = PATHS.leads + ".tmp";
+  const tmp = file + ".tmp";
   fs.writeFileSync(tmp, lines.join("\n") + (lines.length ? "\n" : ""));
-  fs.renameSync(tmp, PATHS.leads);
+  fs.renameSync(tmp, file);
   return lines.length;
 }
 

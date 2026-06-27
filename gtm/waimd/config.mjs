@@ -55,6 +55,27 @@ export const SENDER = {
   unsubscribeBase: process.env.WAIMD_UNSUBSCRIBE_BASE || "https://waimd.org/unsubscribe",
 };
 
+// The 3-email follow-up sequence (self-hosted; Brevo has NO workflow-creation API — automations are
+// UI-only, which is why a POST to create one 404s). offsetDays is days AFTER the previous step, so the
+// drip lands on Day 1 / Day 4 / Day 8: step1 → +3d → step2 → +4d → step3. A lead drops out the moment
+// they engage (click the roadmap link) or unsubscribe — see sequence.mjs + sync-engagement.mjs.
+export const SEQUENCE = {
+  steps: [
+    { n: 1, offsetDays: 0 }, // enrollment send (Email 1, the cold/urgency draft)
+    { n: 2, offsetDays: 3 }, // +3d after step 1 → registration-risk follow-up
+    { n: 3, offsetDays: 4 }, // +4d after step 2 → final social-proof nudge
+  ],
+};
+
+// Engagement sync: pull "clicked the roadmap link" signals (waimd.org funnel's roadmap_generated events,
+// attributable per-lead via utm_content=dot_<USDOT>) so an engaged carrier is dropped from the drip.
+// Env-gated and best-effort: with no URL/token it cleanly no-ops, exactly like suppression sync, so the
+// engine runs fine before this endpoint exists. Mirrors WAIMD_SUPPRESSION_URL/TOKEN.
+export const ENGAGE = {
+  url: process.env.WAIMD_ENGAGEMENT_URL || "",
+  token: process.env.WAIMD_ENGAGEMENT_TOKEN || "",
+};
+
 // Sending is OFF until deliberately ramped. dailyCap=0 means send.mjs refuses to send anything — the
 // hard gate that keeps "engine built" from becoming "engine blasting" before outreach.waimd.org is
 // warmed (task: compliant sending). Warmup ramp: start ~20/day, roughly double weekly, watch the metrics.

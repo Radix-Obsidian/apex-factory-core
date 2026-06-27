@@ -9,6 +9,8 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { parseSender, preflight, sendOne } from "./transport.mjs";
+import { enroll } from "./sequence.mjs";
 
 // US state → IANA timezone (simplified: uses most-common tz per state)
 const STATE_TZ = {
@@ -110,26 +112,15 @@ async function main() {
     return;
   }
 
-  // Preflight checks
-  const fails = [];
-  if (SEND.dailyCap <= 0) fails.push("WAIMD_DAILY_CAP is 0");
-  if (!process.env.BREVO_API_KEY) fails.push("BREVO_API_KEY not set");
-  if (!SENDER.postalAddress) fails.push("WAIMD_POSTAL_ADDRESS not set");
+  // Preflight checks (shared rails, incl. from-on-outreach.waimd.org).
+  const sender = parseSender(SENDER.from);
+  const fails = preflight(sender);
   if (fails.length) {
     console.error("REFUSING — unmet rails:\n  - " + fails.join("\n  - "));
     process.exit(1);
   }
 
-  const BREVO_ENDPOINT = "https://api.brevo.com/v3/smtp/email";
   const SEND_LOG = new URL("./data/send-log.jsonl", import.meta.url).pathname;
-
-  function parseSender(from) {
-    const m = String(from).match(/^\s*(.*?)\s*<([^>]+)>\s*$/);
-    if (m) return { name: m[1] || "Waimd", email: m[2].trim() };
-    return { name: "Waimd", email: String(from).trim() };
-  }
-
-  const sender = parseSender(SENDER.from);
   let totalOk = 0, totalFailed = 0;
 
   for (const group of schedule) {
@@ -145,27 +136,18 @@ async function main() {
     for (const item of group.items) {
       const key = String(item.lead.dotNumber);
       try {
-        const listUnsub = `<mailto:${SENDER.replyTo}?subject=unsubscribe>, <${item.draft.unsubscribeUrl}>`;
-        const res = await fetch(BREVO_ENDPOINT, {
-          method: "POST",
-          headers: { "api-key": process.env.BREVO_API_KEY, "content-type": "application/json", accept: "application/json" },
-          body: JSON.stringify({
-            sender,
-            to: [{ email: item.lead.email }],
-            replyTo: { email: SENDER.replyTo },
-            subject: item.draft.subject,
-            htmlContent: item.draft.html,
-            textContent: item.draft.text,
-            headers: { "List-Unsubscribe": listUnsub, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" },
-          }),
+        const msgId = await sendOne(sender, {
+          to: item.lead.email,
+          subject: item.draft.subject,
+          html: item.draft.html,
+          text: item.draft.text,
+          unsubscribeUrl: item.draft.unsubscribeUrl,
         });
-        if (!res.ok) throw new Error(`Brevo ${res.status}: ${(await res.text().catch(() => "")).slice(0, 200)}`);
-        const data = await res.json().catch(() => ({}));
-        const msgId = data?.messageId != null ? String(data.messageId) : "sent";
-
+        const ts = new Date().toISOString();
         const prev = store.get(key) || item.lead;
-        store.set(key, { ...prev, status: "sent", lastContactedAt: new Date().toISOString(), contactCount: (prev.contactCount || 0) + 1 });
-        fs.appendFileSync(SEND_LOG, JSON.stringify({ ts: new Date().toISOString(), dot: key, email: normEmail(item.lead.email), messageId: msgId, tz: group.tz }) + "\n");
+        // Mark sent AND enroll into the drip (seqStep 1) so the follow-up runner can take it from here.
+        store.set(key, enroll({ ...prev, status: "sent", lastContactedAt: ts, contactCount: (prev.contactCount || 0) + 1 }, ts));
+        fs.appendFileSync(SEND_LOG, JSON.stringify({ ts, dot: key, email: normEmail(item.lead.email), messageId: msgId, step: 1, tz: group.tz }) + "\n");
         totalOk++;
       } catch (err) {
         totalFailed++;

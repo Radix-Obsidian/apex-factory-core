@@ -67,6 +67,43 @@ node --env-file=.env send.mjs --batch <file> --send --i-approve          # send 
 3. Set env: `WAIMD_DAILY_CAP`, `BREVO_API_KEY`, `WAIMD_POSTAL_ADDRESS`, `WAIMD_OUTREACH_FROM`.
 4. Warm the domain 3-4 weeks; watch bounce < 2% / complaints < 0.3% (auto-pause thresholds in config).
 
+## The 3-email sequence (self-hosted drip)
+
+Brevo has **no API to create automation workflows** — automations are UI-only (a POST to create one
+404s). So the follow-up drip is self-hosted: the timing and the "stop if clicked" branch live in
+`sequence.mjs`, and every email is one transactional `/v3/smtp/email` call through `transport.mjs`.
+
+Cadence (offsets in `config.mjs` → `SEQUENCE`):
+
+```text
+Email 1 (Day 1)  cold/urgency + free dated checklist   ← enrollment (send.mjs / send-scheduled.mjs)
+   wait 3d → engaged? ─ yes → STOP
+Email 2 (Day 4)  registration-risk follow-up
+   wait 4d → engaged? ─ yes → STOP
+Email 3 (Day 8)  final social-proof nudge
+```
+
+- **Enrollment** is the step-1 send: `send.mjs` / `send-scheduled.mjs` mark the lead `status:"sent"` and
+  `enroll()` it (`seqStep:1`). Leads contacted *before* this was wired (no `seqStep`) are never picked
+  up — the drip only applies to newly enrolled leads.
+- **Follow-ups** (steps 2 & 3) are sent by `sequence-send.mjs` — same rails as `send.mjs`, inert by
+  default. It reads the store directly (the drip is stateful over time, not batch-based):
+
+```bash
+node sequence-send.mjs                                       # dry run: schedule only, no send
+node sequence-send.mjs --leads data/leads.test.jsonl        # dry run against a fixture store
+node --env-file=.env sequence-send.mjs --send --i-approve   # send due steps (all rails required)
+```
+
+- **Stop if clicked** = engagement. The deep-link → `waimd.org/navigator` → `roadmap_generated` event
+  (attributable per-lead via `utm_content=dot_<USDOT>`). `sync-engagement.mjs` pulls engaged leads from
+  `WAIMD_ENGAGEMENT_URL` / `WAIMD_ENGAGEMENT_TOKEN` (mirrors the suppression sync; no-ops until set) and
+  drops them from the drip. Unsubscribes drop them too, via the existing suppression list.
+- **Schedule**: wire `sequence-send.mjs` into the daily cron *after* the step-1 sender so follow-ups
+  fire as they come due, within `WAIMD_DAILY_CAP`.
+
+Unit tests (zero deps): `node --test`.
+
 ## Compliance
 
 - **TCPA:** email only. No cold AI voice / cold SMS off this list (phone is stored for inbound/consented use only).
@@ -79,9 +116,15 @@ node --env-file=.env send.mjs --batch <file> --send --i-approve          # send 
 |---|---|
 | `config.mjs` | all knobs: dataset, ICP filter, deep-link, sender, send caps, paths |
 | `census.mjs` | SODA fetch + filter + date helpers |
-| `personalize.mjs` | census row → Lead + audit-due + deep-link + email draft |
+| `personalize.mjs` | census row → Lead; drafts all 3 emails (`STEP_DRAFTERS`) off one scaffold |
 | `qcmobile.mjs` | optional send-time validation (env-gated, no-ops without webKey) |
 | `store.mjs` | lead store (JSONL, dedup by USDOT) + suppression list |
 | `pipeline.mjs` | the tick: source → personalize → dedup → store + draft batch |
-| `send.mjs` | gated, ramped sender (Brevo) |
+| `transport.mjs` | the one Brevo transactional send + the shared send rails (`preflight`) |
+| `send.mjs` | gated step-1 sender; enrolls the lead into the drip on send |
+| `send-scheduled.mjs` | timezone-aware step-1 sender (8 AM local); also enrolls |
+| `sequence.mjs` | pure drip scheduler: `enroll`, `nextDue` (Day 1/4/8), stop-if-engaged |
+| `sequence-send.mjs` | gated follow-up runner — sends steps 2 & 3 when due |
+| `sync-suppression.mjs` | pull on-site unsubscribes → suppression list (env-gated) |
+| `sync-engagement.mjs` | pull "clicked the roadmap" engagement → drop from drip (env-gated) |
 | `data/` | `leads.jsonl`, `suppression.txt`, `batches/`, `send-log.jsonl` (gitignored) |

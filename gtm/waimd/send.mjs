@@ -17,8 +17,10 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { SENDER, SEND, PATHS } from "./config.mjs";
+import { SENDER, SEND } from "./config.mjs";
 import { loadLeads, saveLeads, loadSuppression, isSuppressed, normEmail } from "./store.mjs";
+import { enroll } from "./sequence.mjs";
+import { parseSender, preflight, sendOne } from "./transport.mjs";
 
 const args = process.argv.slice(2);
 const i = args.indexOf("--batch");
@@ -26,52 +28,12 @@ const BATCH_FILE = i >= 0 ? args[i + 1] : "";
 const DO_SEND = args.includes("--send");
 const APPROVED = args.includes("--i-approve");
 
-const BREVO_ENDPOINT = "https://api.brevo.com/v3/smtp/email";
 const SEND_LOG = new URL("./data/send-log.jsonl", import.meta.url).pathname;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-function parseSender(from) {
-  const m = String(from).match(/^\s*(.*?)\s*<([^>]+)>\s*$/);
-  if (m) return { name: m[1] || "Waimd", email: m[2].trim() };
-  return { name: "Waimd", email: String(from).trim() };
-}
-
-// Returns [] of blocking reasons; empty = all rails clear.
-function preflight(sender) {
-  const fail = [];
-  if (!BATCH_FILE) fail.push("no --batch <file>");
-  if (SEND.dailyCap <= 0) fail.push("WAIMD_DAILY_CAP is 0 (sending disabled until ramped)");
-  if (!process.env.BREVO_API_KEY) fail.push("BREVO_API_KEY not set");
-  if (!SENDER.postalAddress) fail.push("WAIMD_POSTAL_ADDRESS not set (CAN-SPAM requires a physical address)");
-  if (!/@(.*\.)?outreach\.waimd\.org$/i.test(sender.email))
-    fail.push(`from must be on outreach.waimd.org (got ${sender.email}) to isolate sending reputation`);
-  return fail;
-}
-
-async function sendOne(sender, item) {
-  const { lead, draft } = item;
-  const listUnsub = `<mailto:${SENDER.replyTo}?subject=unsubscribe>, <${draft.unsubscribeUrl}>`;
-  const res = await fetch(BREVO_ENDPOINT, {
-    method: "POST",
-    headers: { "api-key": process.env.BREVO_API_KEY, "content-type": "application/json", accept: "application/json" },
-    body: JSON.stringify({
-      sender,
-      to: [{ email: lead.email }],
-      replyTo: { email: SENDER.replyTo },
-      subject: draft.subject,
-      htmlContent: draft.html,
-      textContent: draft.text,
-      headers: { "List-Unsubscribe": listUnsub, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" },
-    }),
-  });
-  if (!res.ok) throw new Error(`Brevo ${res.status}: ${(await res.text().catch(() => "")).slice(0, 200)}`);
-  const data = await res.json().catch(() => ({}));
-  return data?.messageId != null ? String(data.messageId) : "sent";
-}
-
 async function main() {
   const sender = parseSender(SENDER.from);
-  const blocking = preflight(sender);
+  const blocking = [...(BATCH_FILE ? [] : ["no --batch <file>"]), ...preflight(sender)];
 
   const batch = JSON.parse(fs.readFileSync(BATCH_FILE, "utf8"));
   const suppression = loadSuppression();
@@ -107,10 +69,18 @@ async function main() {
   for (const item of toSend) {
     const key = String(item.lead.dotNumber);
     try {
-      const id = await sendOne(sender, item);
+      const id = await sendOne(sender, {
+        to: item.lead.email,
+        subject: item.draft.subject,
+        html: item.draft.html,
+        text: item.draft.text,
+        unsubscribeUrl: item.draft.unsubscribeUrl,
+      });
       const prev = store.get(key) || item.lead;
-      store.set(key, { ...prev, status: "sent", lastContactedAt: new Date().toISOString(), contactCount: (prev.contactCount || 0) + 1 });
-      fs.appendFileSync(SEND_LOG, JSON.stringify({ ts: new Date().toISOString(), dot: key, email: normEmail(item.lead.email), messageId: id }) + "\n");
+      const ts = new Date().toISOString();
+      // Mark sent AND enroll into the drip (seqStep 1) so the follow-up runner can take it from here.
+      store.set(key, enroll({ ...prev, status: "sent", lastContactedAt: ts, contactCount: (prev.contactCount || 0) + 1 }, ts));
+      fs.appendFileSync(SEND_LOG, JSON.stringify({ ts, dot: key, email: normEmail(item.lead.email), messageId: id, step: 1 }) + "\n");
       ok++;
     } catch (err) {
       failed++;
