@@ -131,7 +131,7 @@ Unit tests (zero deps): `node --test`.
 | `pipeline.mjs` | the tick: source → personalize → dedup → store + draft batch |
 | `transport.mjs` | the one Brevo transactional send + the shared send rails (`preflight`) |
 | `send.mjs` | gated step-1 sender; enrolls the lead into the drip on send |
-| `send-scheduled.mjs` | timezone-aware step-1 sender (8 AM local); also enrolls |
+| `send-scheduled.mjs` | timezone-aware step-1 sender; drains the store's queued backlog (most-urgent first), or a `--batch` file; enrolls on send |
 | `sequence.mjs` | pure drip scheduler: `enroll`, `nextDue` (Day 1/4/8), stop-if-engaged |
 | `sequence-send.mjs` | gated follow-up runner — sends steps 2 & 3 when due |
 | `sync-suppression.mjs` | pull on-site unsubscribes → suppression list (env-gated) |

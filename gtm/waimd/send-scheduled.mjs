@@ -72,20 +72,26 @@ async function main() {
   const DO_SEND = args.includes("--send");
   const APPROVED = args.includes("--i-approve");
 
-  if (!BATCH_FILE) {
-    console.error("Usage: node --env-file=.env send-scheduled.mjs --batch <file> [--send --i-approve]");
-    process.exit(1);
-  }
-
   const { SENDER, SEND, PATHS } = await import("./config.mjs");
-  const { loadLeads, saveLeads, loadSuppression, isSuppressed, normEmail } = await import("./store.mjs");
+  const { loadLeads, saveLeads, loadSuppression, isSuppressed, normEmail, queuedForSend } = await import("./store.mjs");
+  const { draftEmail } = await import("./personalize.mjs");
 
-  const batch = JSON.parse(fs.readFileSync(BATCH_FILE, "utf8"));
   const suppression = loadSuppression();
   const store = loadLeads();
 
-  // Filter eligible
-  const eligible = batch.items.filter((it) => {
+  // Candidates: an explicit --batch file (manual review path), else the whole store's queued backlog,
+  // most-urgent first — so old queued leads drain instead of being stranded behind each day's fresh batch.
+  let items;
+  let sourceLabel;
+  if (BATCH_FILE) {
+    items = JSON.parse(fs.readFileSync(BATCH_FILE, "utf8")).items;
+    sourceLabel = path.basename(BATCH_FILE);
+  } else {
+    items = queuedForSend(store, suppression).map((lead) => ({ lead, draft: draftEmail(lead) }));
+    sourceLabel = "store(queued, most-urgent first)";
+  }
+
+  const eligible = items.filter((it) => {
     const lead = store.get(String(it.lead.dotNumber)) || it.lead;
     if (isSuppressed(suppression, { email: it.lead.email, dotNumber: it.lead.dotNumber })) return false;
     if (lead.status === "sent") return false;
@@ -96,7 +102,7 @@ async function main() {
   const cap = SEND.dailyCap > 0 ? remainingToday() : eligible.length;
   const toSend = eligible.slice(0, cap);
 
-  console.log(`batch: ${path.basename(BATCH_FILE)} | ${batch.items.length} items | ${eligible.length} eligible | cap ${cap} | sending ${toSend.length}`);
+  console.log(`source: ${sourceLabel} | ${items.length} candidates | ${eligible.length} eligible | cap ${cap} | sending ${toSend.length}`);
 
   const groups = groupByTimezone(toSend);
   const schedule = [...groups.entries()]

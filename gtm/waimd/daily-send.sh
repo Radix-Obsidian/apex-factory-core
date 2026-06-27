@@ -14,10 +14,9 @@ node pipeline.mjs --commit --batch 200 >> "$LOG" 2>&1
 echo "Running drip follow-ups" | tee -a "$LOG"
 node --env-file=../../.env sequence-send.mjs --send --i-approve >> "$LOG" 2>&1
 
-# Then Email 1 to fresh leads, using whatever warmup budget remains for today.
-BATCH=$(ls -1t data/batches/*.json 2>/dev/null | head -1)
-if [ -z "$BATCH" ]; then echo "No batch found" | tee -a "$LOG"; exit 0; fi
-echo "Sending batch: $BATCH" | tee -a "$LOG"
-node --env-file=../../.env send-scheduled.mjs --batch "$BATCH" --send --i-approve >> "$LOG" 2>&1
+# Then Email 1 — drains the OLDEST/most-urgent queued leads from the store (not just today's batch),
+# using whatever warmup budget remains for today.
+echo "Sending Email 1 (store-drain, most-urgent first)" | tee -a "$LOG"
+node --env-file=../../.env send-scheduled.mjs --send --i-approve >> "$LOG" 2>&1
 
 echo "=== Done $(date -u +%FT%TZ) ===" | tee -a "$LOG"

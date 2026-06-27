@@ -85,6 +85,21 @@ export function saveLeads(byDot, file = PATHS.leads) {
   return lines.length;
 }
 
+// Leads eligible for a step-1 (Email 1) send, drawn from the WHOLE store so the backlog drains — not
+// just the newest batch. Filter: queued (never sent), reachable, not suppressed. Sorted most-urgent
+// first (soonest audit due ≈ oldest carrier), matching the pipeline's batch ordering, so older queued
+// leads are sent first instead of being stranded behind each day's fresh batch.
+export function queuedForSend(byDot, suppression) {
+  return [...byDot.values()]
+    .filter(
+      (l) =>
+        l.status === "queued" &&
+        l.email &&
+        !isSuppressed(suppression, { email: l.email, dotNumber: l.dotNumber }),
+    )
+    .sort((a, b) => String(a.auditDueDate).localeCompare(String(b.auditDueDate)));
+}
+
 // Merge freshly-sourced leads into the store. Never overwrites outreach state (status/contactCount) on
 // an existing lead; only refreshes carrier facts and lastSeenAt. Returns {added, updated}.
 export function upsertLeads(byDot, incoming, nowIso) {
