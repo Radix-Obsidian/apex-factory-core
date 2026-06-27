@@ -67,6 +67,15 @@ node --env-file=.env send.mjs --batch <file> --send --i-approve          # send 
 3. Set env: `WAIMD_DAILY_CAP`, `BREVO_API_KEY`, `WAIMD_POSTAL_ADDRESS`, `WAIMD_OUTREACH_FROM`.
 4. Warm the domain 3-4 weeks; watch bounce < 2% / complaints < 0.3% (auto-pause thresholds in config).
 
+### Warmup ramp (automatic)
+
+Set `WAIMD_WARMUP_START` (ISO date the warm began) and the engine auto-ramps the **daily total** so a
+near-cold domain isn't blasted: wk0 → 20/day, wk1 → 40, wk2 → 80, wk3 → 160, wk4+ → full
+`WAIMD_DAILY_CAP` (the ceiling). The cap is a true daily total shared across the step-1 sender and the
+follow-up runner (counted from `send-log.jsonl`), and `daily-send.sh` runs follow-ups **first** so they
+are never starved. Empty `WAIMD_WARMUP_START` = no ramp (full cap). Schedule: `config.mjs → WARMUP`.
+Deliverability-gated auto-pause (bounce/complaint) is not yet wired — glance at Brevo stats weekly while ramping.
+
 ## The 3-email sequence (self-hosted drip)
 
 Brevo has **no API to create automation workflows** — automations are UI-only (a POST to create one

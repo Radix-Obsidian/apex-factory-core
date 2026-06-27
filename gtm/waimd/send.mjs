@@ -21,6 +21,7 @@ import { SENDER, SEND } from "./config.mjs";
 import { loadLeads, saveLeads, loadSuppression, isSuppressed, normEmail } from "./store.mjs";
 import { enroll } from "./sequence.mjs";
 import { parseSender, preflight, sendOne } from "./transport.mjs";
+import { remainingToday } from "./warmup.mjs";
 
 const args = process.argv.slice(2);
 const i = args.indexOf("--batch");
@@ -46,9 +47,11 @@ async function main() {
     if (lead.status === "sent") return false;
     return true;
   });
-  const toSend = eligible.slice(0, SEND.dailyCap > 0 ? SEND.dailyCap : eligible.length);
+  // Cap = the warmup-ramped daily TOTAL still left today (shared with the follow-up runner via the log).
+  const cap = SEND.dailyCap > 0 ? remainingToday() : eligible.length;
+  const toSend = eligible.slice(0, cap);
 
-  console.log(`batch ${path.basename(BATCH_FILE)}: ${batch.items.length} items · ${eligible.length} eligible · cap ${SEND.dailyCap || "(unset)"} → ${toSend.length} to send`);
+  console.log(`batch ${path.basename(BATCH_FILE)}: ${batch.items.length} items · ${eligible.length} eligible · cap ${SEND.dailyCap > 0 ? cap : "(unset)"} → ${toSend.length} to send`);
 
   if (!DO_SEND || !APPROVED) {
     console.log(`\nPREVIEW ONLY — no email sent. To send: node --env-file=.env send.mjs --batch ${BATCH_FILE} --send --i-approve`);

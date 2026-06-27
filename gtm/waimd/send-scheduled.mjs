@@ -11,6 +11,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { parseSender, preflight, sendOne } from "./transport.mjs";
 import { enroll } from "./sequence.mjs";
+import { remainingToday } from "./warmup.mjs";
 
 // US state → IANA timezone (simplified: uses most-common tz per state)
 const STATE_TZ = {
@@ -91,7 +92,8 @@ async function main() {
     return true;
   });
 
-  const cap = SEND.dailyCap > 0 ? SEND.dailyCap : eligible.length;
+  // Cap = the warmup-ramped daily TOTAL still left today (shared with the follow-up runner via the log).
+  const cap = SEND.dailyCap > 0 ? remainingToday() : eligible.length;
   const toSend = eligible.slice(0, cap);
 
   console.log(`batch: ${path.basename(BATCH_FILE)} | ${batch.items.length} items | ${eligible.length} eligible | cap ${cap} | sending ${toSend.length}`);

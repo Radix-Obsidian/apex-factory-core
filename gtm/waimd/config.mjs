@@ -87,6 +87,16 @@ export const SEND = {
   maxComplaintPct: 0.3,
 };
 
+// Warmup ramp: cold-send volume must climb gradually, not jump to the full cap on day one, or a near-cold
+// domain gets spam-foldered. The EFFECTIVE daily total = min(SEND.dailyCap, ramp(week since start)) —
+// SEND.dailyCap stays the hard ceiling. Set WAIMD_WARMUP_START to the date the warm began (ISO
+// YYYY-MM-DD); empty = no ramp (use the full cap). `weekly[w]` is the cap for week w (0-indexed);
+// after the list, the full ceiling applies. warmup.mjs makes this a true daily total across both senders.
+export const WARMUP = {
+  startDate: process.env.WAIMD_WARMUP_START || "",
+  weekly: [20, 40, 80, 160], // wk0→20, wk1→40, wk2→80, wk3→160, wk4+→SEND.dailyCap
+};
+
 // Data files (gitignored). leads.jsonl is the durable store; suppression.txt is never-contact (unsubs,
 // bounces, existing customers, complaints).
 export const PATHS = {

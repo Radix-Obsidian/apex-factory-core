@@ -20,6 +20,7 @@ import { syncEngagement, applyEngagement } from "./sync-engagement.mjs";
 import { nextDue, nextDueAt, recordSent, isActive } from "./sequence.mjs";
 import { STEP_DRAFTERS } from "./personalize.mjs";
 import { parseSender, preflight, sendOne } from "./transport.mjs";
+import { remainingToday } from "./warmup.mjs";
 
 const args = process.argv.slice(2);
 const DO_SEND = args.includes("--send");
@@ -63,7 +64,9 @@ async function main() {
   // Most overdue first, so a backlog drains oldest-first within the cap.
   due.sort((a, b) => (nextDueAt(a.lead)?.getTime() || 0) - (nextDueAt(b.lead)?.getTime() || 0));
 
-  const cap = SEND.dailyCap > 0 ? SEND.dailyCap : due.length;
+  // Cap = the warmup-ramped daily TOTAL still left today (shared with the step-1 sender via the log).
+  // Follow-ups run first in daily-send.sh, so they get first claim on the day's budget.
+  const cap = SEND.dailyCap > 0 ? remainingToday() : due.length;
   const toSend = due.slice(0, cap);
 
   console.log(

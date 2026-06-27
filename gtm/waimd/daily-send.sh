@@ -9,16 +9,15 @@ echo "=== Waimd daily send $(date -u +%FT%TZ) ===" | tee -a "$LOG"
 # Source next batch of 200
 node pipeline.mjs --commit --batch 200 >> "$LOG" 2>&1
 
-# Pick newest batch
-BATCH=$(ls -1t data/batches/*.json 2>/dev/null | head -1)
-if [ -z "$BATCH" ]; then echo "No batch found" | tee -a "$LOG"; exit 0; fi
-
-echo "Sending batch: $BATCH" | tee -a "$LOG"
-node --env-file=../../.env send-scheduled.mjs --batch "$BATCH" --send --i-approve >> "$LOG" 2>&1
-
-# Send any due drip follow-ups (steps 2 & 3). Same rails as the step-1 sender; reads the store directly,
-# drops anyone who clicked the roadmap link or unsubscribed. No-op until leads come due.
+# Drip follow-ups FIRST (Day 4 / Day 8 are time-sensitive) — first claim on the day's ramped budget.
+# Same rails as the step-1 sender; reads the store directly, drops anyone who clicked or unsubscribed.
 echo "Running drip follow-ups" | tee -a "$LOG"
 node --env-file=../../.env sequence-send.mjs --send --i-approve >> "$LOG" 2>&1
+
+# Then Email 1 to fresh leads, using whatever warmup budget remains for today.
+BATCH=$(ls -1t data/batches/*.json 2>/dev/null | head -1)
+if [ -z "$BATCH" ]; then echo "No batch found" | tee -a "$LOG"; exit 0; fi
+echo "Sending batch: $BATCH" | tee -a "$LOG"
+node --env-file=../../.env send-scheduled.mjs --batch "$BATCH" --send --i-approve >> "$LOG" 2>&1
 
 echo "=== Done $(date -u +%FT%TZ) ===" | tee -a "$LOG"
