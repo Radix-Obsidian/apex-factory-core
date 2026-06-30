@@ -30,6 +30,16 @@ _Assets tracked: 2._
 
 _Campaigns tracked: 2._
 
-## Coming in later slices
-- **Finance + experiments** (Slice 4) — burn vs revenue, SKU theses / hypotheses.
-- **Google Drive mirror** (Slice 5) — this page + asset folders, phone-readable.
+## Finance (Stripe revenue is the only scoreboard)
+
+| Period | Stripe revenue | Anthropic spend (proxy) | Higgsfield credits | Net | Notes |
+|--------|----------------|-------------------------|--------------------|-----|-------|
+| 2026-06 | $0 | — | — | — | Pre-gate: Stripe in TEST mode, no live charge possible (gate sealed). Spend proxies are read live by usage.mjs — record them here each heartbeat. |
+
+## Experiments (SKU theses / hypotheses)
+
+| Experiment | Status | SKU | Hypothesis | Metric | Candidate |
+|------------|--------|-----|------------|--------|-----------|
+| `exp-sku001` | PROPOSED | sku_001 | A status-driven, ultra-niche digital MEP can secure the first Stripe dollar by Day 29. | first Stripe dollar (Day 29 survival wall) | — |
+
+_Experiments tracked: 1._

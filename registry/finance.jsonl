@@ -1,0 +1,1 @@
+{"snapshot_id":"2026-06","period":"2026-06","stripe_revenue_usd":0,"anthropic_spend_proxy_usd":null,"higgsfield_credits":null,"net_usd":null,"notes":"Pre-gate: Stripe in TEST mode, no live charge possible (gate sealed). Spend proxies are read live by usage.mjs — record them here each heartbeat."}

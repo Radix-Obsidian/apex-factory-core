@@ -17,6 +17,10 @@ const SCHEMA_DIR = path.join(HERE, 'schemas');
 export const REPOS_FILE = path.join(HERE, 'repos.jsonl');
 export const ASSETS_FILE = path.join(HERE, 'assets.jsonl');
 export const CAMPAIGNS_FILE = path.join(HERE, 'campaigns.jsonl');
+export const FINANCE_FILE = path.join(HERE, 'finance.jsonl');
+export const EXPERIMENTS_FILE = path.join(HERE, 'experiments.jsonl');
+// The salvage queue lives at the control-plane root (written by recycled/recycled-scan.mjs).
+export const RECYCLED_CANDIDATES_FILE = path.join(HERE, '..', 'recycled-candidates.jsonl');
 export const ORG_FILE = path.join(HERE, '..', 'ORG.md');
 
 // ── JSONL + JSON helpers (mirrors recycled/recycled-scan.mjs) ──
@@ -87,11 +91,13 @@ function checkUniqueKey(records, label, idField) {
   });
   return errors;
 }
-// Referential integrity: a record's `repo`, when set, must be a known repo key (no dangling refs).
-function checkRepoRefs(records, label, repoKeys) {
-  const known = new Set(repoKeys), errors = [];
+// Referential integrity (generic): a record's `field`, when set, must be a known key — else a
+// dangling reference. Reused for repo FKs and the experiment→recycled-candidate link.
+function checkForeignKey(records, label, field, knownKeys, targetName) {
+  const known = new Set(knownKeys), errors = [];
   records.forEach((r, i) => {
-    if (r && r.repo != null && !known.has(r.repo)) errors.push(`${label}[${i}].repo: dangling reference "${r.repo}" — not a repo in repos.jsonl`);
+    const v = r && r[field];
+    if (v != null && !known.has(v)) errors.push(`${label}[${i}].${field}: dangling reference "${v}" — not found in ${targetName}`);
   });
   return errors;
 }
@@ -103,20 +109,33 @@ export function validateRepos(records, schema) {
 // ── Assets domain: schema + unique `asset_id` + repo foreign-key ──
 export function validateAssets(records, schema, repoKeys = []) {
   return [...checkSchema(records, schema, 'assets'), ...checkUniqueKey(records, 'assets', 'asset_id'),
-    ...checkRepoRefs(records, 'assets', repoKeys)];
+    ...checkForeignKey(records, 'assets', 'repo', repoKeys, 'repos.jsonl')];
 }
 // ── Campaigns domain: schema + unique `campaign_id` + repo foreign-key ──
 export function validateCampaigns(records, schema, repoKeys = []) {
   return [...checkSchema(records, schema, 'campaigns'), ...checkUniqueKey(records, 'campaigns', 'campaign_id'),
-    ...checkRepoRefs(records, 'campaigns', repoKeys)];
+    ...checkForeignKey(records, 'campaigns', 'repo', repoKeys, 'repos.jsonl')];
+}
+// ── Finance domain: schema + unique `snapshot_id` (company-level; no FK) ──
+export function validateFinance(records, schema) {
+  return [...checkSchema(records, schema, 'finance'), ...checkUniqueKey(records, 'finance', 'snapshot_id')];
+}
+// ── Experiments domain: schema + unique `experiment_id` + repo FK + candidate_ref FK into the
+// existing recycled-candidates queue (ties the org index to the salvage harness). ──
+export function validateExperiments(records, schema, repoKeys = [], candidateIds = []) {
+  return [...checkSchema(records, schema, 'experiments'), ...checkUniqueKey(records, 'experiments', 'experiment_id'),
+    ...checkForeignKey(records, 'experiments', 'repo', repoKeys, 'repos.jsonl'),
+    ...checkForeignKey(records, 'experiments', 'candidate_ref', candidateIds, 'recycled-candidates.jsonl')];
 }
 
 // ── Whole-registry validation: each domain against its schema + cross-domain references. Pure. ──
-export function validateAll({ repos = [], assets = [], campaigns = [] } = {}, schemas = {}) {
+export function validateAll({ repos = [], assets = [], campaigns = [], finance = [], experiments = [] } = {}, schemas = {}, candidateIds = []) {
   const errors = [], repoKeys = repos.map(r => r.repo);
   if (schemas.repo) errors.push(...validateRepos(repos, schemas.repo));
   if (schemas.asset) errors.push(...validateAssets(assets, schemas.asset, repoKeys));
   if (schemas.campaign) errors.push(...validateCampaigns(campaigns, schemas.campaign, repoKeys));
+  if (schemas.finance) errors.push(...validateFinance(finance, schemas.finance));
+  if (schemas.experiment) errors.push(...validateExperiments(experiments, schemas.experiment, repoKeys, candidateIds));
   return errors;
 }
 
@@ -124,10 +143,15 @@ export function validateAll({ repos = [], assets = [], campaigns = [] } = {}, sc
 const byRepo = (a, b) => (a.repo < b.repo ? -1 : a.repo > b.repo ? 1 : 0);
 const byAssetId = (a, b) => (a.asset_id < b.asset_id ? -1 : a.asset_id > b.asset_id ? 1 : 0);
 const byCampaignId = (a, b) => (a.campaign_id < b.campaign_id ? -1 : a.campaign_id > b.campaign_id ? 1 : 0);
-export function renderOrg({ repos = [], assets = [], campaigns = [] } = {}) {
+const bySnapshotId = (a, b) => (a.snapshot_id < b.snapshot_id ? -1 : a.snapshot_id > b.snapshot_id ? 1 : 0);
+const byExperimentId = (a, b) => (a.experiment_id < b.experiment_id ? -1 : a.experiment_id > b.experiment_id ? 1 : 0);
+const usd = (n) => (n == null ? '—' : `$${Number(n).toLocaleString('en-US')}`);
+export function renderOrg({ repos = [], assets = [], campaigns = [], finance = [], experiments = [] } = {}) {
   const repoRows = [...repos].sort(byRepo);
   const assetRows = [...assets].sort(byAssetId);
   const campaignRows = [...campaigns].sort(byCampaignId);
+  const financeRows = [...finance].sort(bySnapshotId);
+  const experimentRows = [...experiments].sort(byExperimentId);
   const L = [];
   L.push('# ORG.md — Apex company map (generated)');
   L.push('');
@@ -164,36 +188,57 @@ export function renderOrg({ repos = [], assets = [], campaigns = [] } = {}) {
   L.push('');
   L.push(`_Campaigns tracked: ${campaignRows.length}._`);
   L.push('');
-  L.push('## Coming in later slices');
-  L.push('- **Finance + experiments** (Slice 4) — burn vs revenue, SKU theses / hypotheses.');
-  L.push('- **Google Drive mirror** (Slice 5) — this page + asset folders, phone-readable.');
+  L.push('## Finance (Stripe revenue is the only scoreboard)');
+  L.push('');
+  L.push('| Period | Stripe revenue | Anthropic spend (proxy) | Higgsfield credits | Net | Notes |');
+  L.push('|--------|----------------|-------------------------|--------------------|-----|-------|');
+  for (const f of financeRows) {
+    L.push(`| ${f.period} | ${usd(f.stripe_revenue_usd)} | ${usd(f.anthropic_spend_proxy_usd)} | ${f.higgsfield_credits == null ? '—' : f.higgsfield_credits} | ${usd(f.net_usd)} | ${f.notes || '—'} |`);
+  }
+  L.push('');
+  L.push('## Experiments (SKU theses / hypotheses)');
+  L.push('');
+  L.push('| Experiment | Status | SKU | Hypothesis | Metric | Candidate |');
+  L.push('|------------|--------|-----|------------|--------|-----------|');
+  for (const e of experimentRows) {
+    L.push(`| \`${e.experiment_id}\` | ${e.status} | ${e.sku || '—'} | ${e.hypothesis} | ${e.metric || '—'} | ${e.candidate_ref || '—'} |`);
+  }
+  L.push('');
+  L.push(`_Experiments tracked: ${experimentRows.length}._`);
   return L.join('\n') + '\n';
 }
 
 // ── CLI ──
 function loadAll() {
   return {
-    data: { repos: readJsonl(REPOS_FILE), assets: readJsonl(ASSETS_FILE), campaigns: readJsonl(CAMPAIGNS_FILE) },
+    data: {
+      repos: readJsonl(REPOS_FILE), assets: readJsonl(ASSETS_FILE), campaigns: readJsonl(CAMPAIGNS_FILE),
+      finance: readJsonl(FINANCE_FILE), experiments: readJsonl(EXPERIMENTS_FILE),
+    },
     schemas: {
       repo: loadSchema('repo-record.schema.json'),
       asset: loadSchema('asset-record.schema.json'),
       campaign: loadSchema('campaign-record.schema.json'),
+      finance: loadSchema('finance-snapshot.schema.json'),
+      experiment: loadSchema('experiment-record.schema.json'),
     },
+    candidateIds: readJsonl(RECYCLED_CANDIDATES_FILE).map(c => c.spec_id).filter(Boolean),
   };
 }
 function cmdValidate() {
-  const { data, schemas } = loadAll();
-  const errors = validateAll(data, schemas);
+  const { data, schemas, candidateIds } = loadAll();
+  const errors = validateAll(data, schemas, candidateIds);
   if (errors.length) {
     console.error(`✗ registry invalid (${errors.length} error(s)):`);
     for (const e of errors) console.error('  - ' + e);
     process.exit(1);
   }
-  console.log(`✓ registry valid — ${data.repos.length} repo(s), ${data.assets.length} asset(s), ${data.campaigns.length} campaign(s); schema + integrity + refs OK`);
+  const d = data;
+  console.log(`✓ registry valid — ${d.repos.length} repo(s), ${d.assets.length} asset(s), ${d.campaigns.length} campaign(s), ${d.finance.length} finance, ${d.experiments.length} experiment(s); schema + integrity + refs OK`);
 }
 function cmdRender(check) {
-  const { data, schemas } = loadAll();
-  const errors = validateAll(data, schemas);
+  const { data, schemas, candidateIds } = loadAll();
+  const errors = validateAll(data, schemas, candidateIds);
   if (errors.length) { console.error('✗ refusing to render — registry invalid. Run `validate` first.'); process.exit(1); }
   const out = renderOrg(data);
   if (check) {
@@ -202,7 +247,7 @@ function cmdRender(check) {
     console.log('✓ ORG.md up to date'); return;
   }
   fs.writeFileSync(ORG_FILE, out);
-  console.log(`✓ rendered ORG.md (${data.repos.length} repos, ${data.assets.length} assets, ${data.campaigns.length} campaigns) → ${ORG_FILE}`);
+  console.log(`✓ rendered ORG.md (${data.repos.length} repos, ${data.assets.length} assets, ${data.campaigns.length} campaigns, ${data.finance.length} finance, ${data.experiments.length} experiments) → ${ORG_FILE}`);
 }
 function main() {
   const [, , cmd, ...rest] = process.argv;

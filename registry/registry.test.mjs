@@ -3,12 +3,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { validateAgainstSchema, validateRepos, validateAssets, validateCampaigns, validateAll, renderOrg,
-  loadSchema, readJsonl, REPOS_FILE, ASSETS_FILE, CAMPAIGNS_FILE, ORG_FILE } from './registry.mjs';
+import { validateAgainstSchema, validateRepos, validateAssets, validateCampaigns, validateFinance,
+  validateExperiments, validateAll, renderOrg, loadSchema, readJsonl,
+  REPOS_FILE, ASSETS_FILE, CAMPAIGNS_FILE, FINANCE_FILE, EXPERIMENTS_FILE, ORG_FILE } from './registry.mjs';
 
 const repoSchema = loadSchema('repo-record.schema.json');
 const assetSchema = loadSchema('asset-record.schema.json');
 const campaignSchema = loadSchema('campaign-record.schema.json');
+const financeSchema = loadSchema('finance-snapshot.schema.json');
+const experimentSchema = loadSchema('experiment-record.schema.json');
+const allSchemas = { repo: repoSchema, asset: assetSchema, campaign: campaignSchema, finance: financeSchema, experiment: experimentSchema };
 const validRepo = {
   repo: 'Acme/widget', role: 'sku', status: 'LIVE',
   url: 'https://github.com/Acme/widget', stripe_mode: 'test', sku: 'sku_009',
@@ -100,6 +104,40 @@ test('validateAll covers campaigns too', () => {
   assert.ok(errs.some(e => /dangling reference/.test(e)));
 });
 
+// ── Finance domain: schema + unique key ──
+const validFinance = { snapshot_id: '2026-06', period: '2026-06', stripe_revenue_usd: 0, anthropic_spend_proxy_usd: null, higgsfield_credits: null, net_usd: null };
+test('valid finance snapshot produces zero errors', () => {
+  assert.deepEqual(validateFinance([validFinance], financeSchema), []);
+});
+test('finance with non-number revenue is caught', () => {
+  const errs = validateFinance([{ ...validFinance, stripe_revenue_usd: 'lots' }], financeSchema);
+  assert.ok(errs.some(e => /stripe_revenue_usd: expected type/.test(e)));
+});
+test('duplicate snapshot_id is flagged', () => {
+  const errs = validateFinance([validFinance, { ...validFinance }], financeSchema);
+  assert.ok(errs.some(e => /duplicate key "2026-06"/.test(e)));
+});
+
+// ── Experiments domain: schema + repo FK + candidate_ref FK into recycled-candidates ──
+const validExperiment = {
+  experiment_id: 'exp-x', hypothesis: 'X sells.', status: 'PROPOSED', sku: 'sku_009',
+  repo: 'Acme/widget', source: 'trend-discovery', candidate_ref: null, metric: 'first dollar',
+};
+test('valid experiment produces zero errors', () => {
+  assert.deepEqual(validateExperiments([validExperiment], experimentSchema, ['Acme/widget'], []), []);
+});
+test('experiment.repo dangling reference is caught', () => {
+  const errs = validateExperiments([validExperiment], experimentSchema, ['Acme/other'], []);
+  assert.ok(errs.some(e => /repo: dangling reference "Acme\/widget"/.test(e)));
+});
+test('experiment.candidate_ref must exist in recycled-candidates when set', () => {
+  const withRef = { ...validExperiment, candidate_ref: 'spec-123' };
+  // unknown candidate → dangling
+  assert.ok(validateExperiments([withRef], experimentSchema, ['Acme/widget'], []).some(e => /candidate_ref: dangling reference "spec-123"/.test(e)));
+  // known candidate → clean
+  assert.deepEqual(validateExperiments([withRef], experimentSchema, ['Acme/widget'], ['spec-123']), []);
+});
+
 // ── Render determinism ──
 test('renderOrg is deterministic + order-independent (sorted by repo)', () => {
   const a = renderOrg({ repos: [validRepo, { ...validRepo, repo: 'Acme/other' }] });
@@ -113,12 +151,17 @@ test('renderOrg has no timestamp (re-render must be a no-op diff)', () => {
 });
 
 // ── ORG.md is reproducible from committed data (criterion: render is a no-op diff) ──
+function committedData() {
+  return {
+    repos: readJsonl(REPOS_FILE), assets: readJsonl(ASSETS_FILE), campaigns: readJsonl(CAMPAIGNS_FILE),
+    finance: readJsonl(FINANCE_FILE), experiments: readJsonl(EXPERIMENTS_FILE),
+  };
+}
 test('committed ORG.md exactly matches render(registry/*.jsonl)', () => {
-  const expected = renderOrg({ repos: readJsonl(REPOS_FILE), assets: readJsonl(ASSETS_FILE), campaigns: readJsonl(CAMPAIGNS_FILE) });
+  const expected = renderOrg(committedData());
   const actual = fs.readFileSync(ORG_FILE, 'utf8');
   assert.equal(actual, expected, 'ORG.md is stale — run `make org-render` and commit.');
 });
 test('committed registry is fully valid (schema + integrity + cross-refs)', () => {
-  const data = { repos: readJsonl(REPOS_FILE), assets: readJsonl(ASSETS_FILE), campaigns: readJsonl(CAMPAIGNS_FILE) };
-  assert.deepEqual(validateAll(data, { repo: repoSchema, asset: assetSchema, campaign: campaignSchema }), []);
+  assert.deepEqual(validateAll(committedData(), allSchemas), []);
 });

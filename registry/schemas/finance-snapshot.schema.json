@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "registry/finance-snapshot",
+  "title": "FinanceSnapshot",
+  "description": "A point-in-time P&L reading. Revenue is the only valid scoreboard (Stripe net). Spend proxies are read live by usage.mjs and recorded here per heartbeat. `snapshot_id` is the unique key.",
+  "type": "object",
+  "required": ["snapshot_id", "period", "stripe_revenue_usd"],
+  "additionalProperties": false,
+  "properties": {
+    "snapshot_id": { "type": "string", "description": "stable key, e.g. a period label" },
+    "period": { "type": "string", "description": "the window this snapshot covers, e.g. 2026-06 or day-29" },
+    "stripe_revenue_usd": { "type": "number", "description": "net Stripe revenue in USD (0 while the gate is sealed / test mode)" },
+    "anthropic_spend_proxy_usd": { "type": ["number", "null"], "description": "API-equivalent $ proxy from usage.mjs; null if not read" },
+    "higgsfield_credits": { "type": ["number", "null"], "description": "remaining Higgsfield generation credits; null if not read" },
+    "net_usd": { "type": ["number", "null"], "description": "revenue minus spend proxy; null if incomputable" },
+    "notes": { "type": "string" }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "registry/experiment-record",
+  "title": "ExperimentRecord",
+  "description": "A company-level hypothesis: a SKU thesis the factory is (or might be) building. `experiment_id` is the unique key; `repo` must exist in repos.jsonl; `candidate_ref`, when set, must be a spec_id in recycled-candidates.jsonl (the salvage queue).",
+  "type": "object",
+  "required": ["experiment_id", "hypothesis", "status"],
+  "additionalProperties": false,
+  "properties": {
+    "experiment_id": { "type": "string", "description": "stable slug — the unique key" },
+    "hypothesis": { "type": "string", "description": "the falsifiable bet, in one line" },
+    "status": { "type": "string", "enum": ["PROPOSED", "BUILDING", "LIVE", "KILLED", "PARKED"] },
+    "sku": { "type": ["string", "null"], "description": "linked SKU id, e.g. sku_001" },
+    "repo": { "type": ["string", "null"], "description": "the SKU repo (owner/name) — must exist in repos.jsonl" },
+    "source": { "type": "string", "enum": ["trend-discovery", "recycled-salvage", "founder"] },
+    "candidate_ref": { "type": ["string", "null"], "description": "spec_id in recycled-candidates.jsonl, if salvaged" },
+    "metric": { "type": "string", "description": "what validates or kills it (the revenue/signal bar)" },
+    "notes": { "type": "string" }
+  }
+}
