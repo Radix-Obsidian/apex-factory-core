@@ -34,6 +34,12 @@ recycled-verify: ## Recycled — deterministic guardrail tests (R1/R2/R4/R7), $0
 recycled-scan: ## Recycled — Stage 0: enumerate own dormant/dead repos (metadata only, $0)
 	@node recycled/recycled-scan.mjs
 
+org-verify: ## Org map — validate registry (schema + integrity) + ORG.md reproducibility, $0 LLM
+	@node --test registry/registry.test.mjs && node registry/registry.mjs render --check && echo "── org-verify GREEN ──"
+
+org-render: ## Org map — regenerate ORG.md from registry/*.jsonl (source of truth)
+	@node registry/registry.mjs render
+
 verify: preflight guard-test gate ## run mechanical acceptance checks (fast)
 	@echo "── verify GREEN ──"
 
@@ -73,4 +79,4 @@ worktree-status: ## show all worktrees + the loop branch
 worktree-remove: ## tear down the loop worktree (keeps the loop/auto branch + history)
 	@bash scripts/worktree.sh remove
 
-.PHONY: help preflight copytest guard-test gate dryrun heartbeat usage recycled-verify recycled-scan verify launch cron-enable cron-disable crashcron-install crashcron-uninstall hooks-install worktree-setup worktree-status worktree-remove
+.PHONY: help preflight copytest guard-test gate dryrun heartbeat usage recycled-verify recycled-scan org-verify org-render verify launch cron-enable cron-disable crashcron-install crashcron-uninstall hooks-install worktree-setup worktree-status worktree-remove

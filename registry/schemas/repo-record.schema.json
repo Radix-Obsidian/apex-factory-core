@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "registry/repo-record",
+  "title": "RepoRecord",
+  "description": "One repository the company owns or plans. The registry MAPS repos; it never copies them — `url` points at the source of truth on GitHub. `repo` (owner/name) is the unique key.",
+  "type": "object",
+  "required": ["repo", "role", "status", "url"],
+  "additionalProperties": false,
+  "properties": {
+    "repo": { "type": "string", "description": "owner/name — the stable unique key across the registry" },
+    "role": { "type": "string", "enum": ["control-plane", "sku", "library", "infra"] },
+    "status": { "type": "string", "enum": ["LIVE", "DORMANT", "DEAD", "PLANNED"] },
+    "url": { "type": "string", "description": "canonical GitHub URL" },
+    "default_branch": { "type": "string" },
+    "deploy_target": { "type": "string", "enum": ["railway", "vercel", "none"] },
+    "stripe_mode": { "type": "string", "enum": ["none", "test", "live"], "description": "billing surface; the publish+charge gate guards any flip to live" },
+    "sku": { "type": ["string", "null"], "description": "linked SKU id (e.g. sku_001); null for non-product repos" },
+    "private": { "type": "boolean" },
+    "notes": { "type": "string" }
+  }
+}
