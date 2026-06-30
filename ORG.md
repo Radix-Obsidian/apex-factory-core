@@ -12,8 +12,16 @@
 
 _Repos tracked: 2._
 
+## Assets
+
+| Asset | Kind | Status | Repo | SKU | Location |
+|-------|------|--------|------|-----|----------|
+| Build-in-public dev log (0001–0011) | content | LIVE | `Radix-Obsidian/apex-factory-core` | — | build-in-public/ |
+| SKU #1 visual identity (logo + background loop + asset skins) | brand-kit | PLANNED | `Radix-Obsidian/The-Native-Factory` | sku_001 | (Higgsfield CLI — generated at build time) |
+
+_Assets tracked: 2._
+
 ## Coming in later slices
-- **Assets** (Slice 2) — media / brand / screenshots.
 - **Marketing campaigns** (Slice 3) — channels, copy, Apollo sequences, Gamma decks.
 - **Finance + experiments** (Slice 4) — burn vs revenue, SKU theses / hypotheses.
 - **Google Drive mirror** (Slice 5) — this page + asset folders, phone-readable.

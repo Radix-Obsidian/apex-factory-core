@@ -15,6 +15,7 @@ import { fileURLToPath } from 'node:url';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const SCHEMA_DIR = path.join(HERE, 'schemas');
 export const REPOS_FILE = path.join(HERE, 'repos.jsonl');
+export const ASSETS_FILE = path.join(HERE, 'assets.jsonl');
 export const ORG_FILE = path.join(HERE, '..', 'ORG.md');
 
 // ── JSONL + JSON helpers (mirrors recycled/recycled-scan.mjs) ──
@@ -83,10 +84,40 @@ export function validateRepos(records, schema) {
   return errors;
 }
 
+// ── Assets domain: schema validation + integrity (unique `asset_id`) + referential integrity
+// (`repo`, when set, must be a known repo key — the first cross-file "no dangling refs" guard). ──
+export function validateAssets(records, schema, repoKeys = []) {
+  const known = new Set(repoKeys);
+  const errors = [];
+  records.forEach((r, i) => errors.push(...validateAgainstSchema(r, schema, `assets[${i}]`)));
+  const seen = new Map();
+  records.forEach((r, i) => {
+    const key = r && r.asset_id;
+    if (key != null) {
+      if (seen.has(key)) errors.push(`assets[${i}].asset_id: duplicate key "${key}" (first seen at assets[${seen.get(key)}])`);
+      else seen.set(key, i);
+    }
+    if (r && r.repo != null && !known.has(r.repo)) {
+      errors.push(`assets[${i}].repo: dangling reference "${r.repo}" — not a repo in repos.jsonl`);
+    }
+  });
+  return errors;
+}
+
+// ── Whole-registry validation: each domain against its schema + cross-domain references. Pure. ──
+export function validateAll({ repos = [], assets = [] } = {}, schemas = {}) {
+  const errors = [];
+  if (schemas.repo) errors.push(...validateRepos(repos, schemas.repo));
+  if (schemas.asset) errors.push(...validateAssets(assets, schemas.asset, repos.map(r => r.repo)));
+  return errors;
+}
+
 // ── ORG.md renderer (pure + deterministic — NO timestamps, so re-render is a no-op diff). ──
 const byRepo = (a, b) => (a.repo < b.repo ? -1 : a.repo > b.repo ? 1 : 0);
-export function renderOrg({ repos = [] } = {}) {
-  const rows = [...repos].sort(byRepo);
+const byAssetId = (a, b) => (a.asset_id < b.asset_id ? -1 : a.asset_id > b.asset_id ? 1 : 0);
+export function renderOrg({ repos = [], assets = [] } = {}) {
+  const repoRows = [...repos].sort(byRepo);
+  const assetRows = [...assets].sort(byAssetId);
   const L = [];
   L.push('# ORG.md — Apex company map (generated)');
   L.push('');
@@ -97,14 +128,23 @@ export function renderOrg({ repos = [] } = {}) {
   L.push('');
   L.push('| Repo | Role | Status | Stripe | Deploy | SKU | URL |');
   L.push('|------|------|--------|--------|--------|-----|-----|');
-  for (const r of rows) {
+  for (const r of repoRows) {
     L.push(`| \`${r.repo}\` | ${r.role} | ${r.status} | ${r.stripe_mode || 'none'} | ${r.deploy_target || 'none'} | ${r.sku || '—'} | ${r.url} |`);
   }
   L.push('');
-  L.push(`_Repos tracked: ${rows.length}._`);
+  L.push(`_Repos tracked: ${repoRows.length}._`);
+  L.push('');
+  L.push('## Assets');
+  L.push('');
+  L.push('| Asset | Kind | Status | Repo | SKU | Location |');
+  L.push('|-------|------|--------|------|-----|----------|');
+  for (const a of assetRows) {
+    L.push(`| ${a.name} | ${a.kind} | ${a.status} | ${a.repo ? '`' + a.repo + '`' : '—'} | ${a.sku || '—'} | ${a.location} |`);
+  }
+  L.push('');
+  L.push(`_Assets tracked: ${assetRows.length}._`);
   L.push('');
   L.push('## Coming in later slices');
-  L.push('- **Assets** (Slice 2) — media / brand / screenshots.');
   L.push('- **Marketing campaigns** (Slice 3) — channels, copy, Apollo sequences, Gamma decks.');
   L.push('- **Finance + experiments** (Slice 4) — burn vs revenue, SKU theses / hypotheses.');
   L.push('- **Google Drive mirror** (Slice 5) — this page + asset folders, phone-readable.');
@@ -112,28 +152,34 @@ export function renderOrg({ repos = [] } = {}) {
 }
 
 // ── CLI ──
+function loadAll() {
+  return {
+    data: { repos: readJsonl(REPOS_FILE), assets: readJsonl(ASSETS_FILE) },
+    schemas: { repo: loadSchema('repo-record.schema.json'), asset: loadSchema('asset-record.schema.json') },
+  };
+}
 function cmdValidate() {
-  const repos = readJsonl(REPOS_FILE);
-  const errors = validateRepos(repos, loadSchema('repo-record.schema.json'));
+  const { data, schemas } = loadAll();
+  const errors = validateAll(data, schemas);
   if (errors.length) {
     console.error(`✗ registry invalid (${errors.length} error(s)):`);
     for (const e of errors) console.error('  - ' + e);
     process.exit(1);
   }
-  console.log(`✓ registry valid — ${repos.length} repo record(s); schema + integrity OK`);
+  console.log(`✓ registry valid — ${data.repos.length} repo(s), ${data.assets.length} asset(s); schema + integrity + refs OK`);
 }
 function cmdRender(check) {
-  const repos = readJsonl(REPOS_FILE);
-  const errors = validateRepos(repos, loadSchema('repo-record.schema.json'));
+  const { data, schemas } = loadAll();
+  const errors = validateAll(data, schemas);
   if (errors.length) { console.error('✗ refusing to render — registry invalid. Run `validate` first.'); process.exit(1); }
-  const out = renderOrg({ repos });
+  const out = renderOrg(data);
   if (check) {
     const cur = fs.existsSync(ORG_FILE) ? fs.readFileSync(ORG_FILE, 'utf8') : '';
     if (cur !== out) { console.error('✗ ORG.md is stale — run `make org-render` and commit the result.'); process.exit(1); }
     console.log('✓ ORG.md up to date'); return;
   }
   fs.writeFileSync(ORG_FILE, out);
-  console.log(`✓ rendered ORG.md (${repos.length} repos) → ${ORG_FILE}`);
+  console.log(`✓ rendered ORG.md (${data.repos.length} repos, ${data.assets.length} assets) → ${ORG_FILE}`);
 }
 function main() {
   const [, , cmd, ...rest] = process.argv;

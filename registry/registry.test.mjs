@@ -3,13 +3,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { validateAgainstSchema, validateRepos, renderOrg, loadSchema, readJsonl, REPOS_FILE, ORG_FILE }
-  from './registry.mjs';
+import { validateAgainstSchema, validateRepos, validateAssets, validateAll, renderOrg, loadSchema,
+  readJsonl, REPOS_FILE, ASSETS_FILE, ORG_FILE } from './registry.mjs';
 
 const repoSchema = loadSchema('repo-record.schema.json');
+const assetSchema = loadSchema('asset-record.schema.json');
 const validRepo = {
   repo: 'Acme/widget', role: 'sku', status: 'LIVE',
   url: 'https://github.com/Acme/widget', stripe_mode: 'test', sku: 'sku_009',
+};
+const validAsset = {
+  asset_id: 'acme-logo', name: 'Acme logo', kind: 'logo', status: 'LIVE',
+  location: 'assets/logo.svg', repo: 'Acme/widget', sku: 'sku_009', source: 'higgsfield',
 };
 
 // ── Generic validator ──
@@ -48,6 +53,29 @@ test('distinct repos pass integrity', () => {
   assert.deepEqual(errs, []);
 });
 
+// ── Assets domain: schema + integrity + referential (FK) ──
+test('valid asset produces zero errors', () => {
+  assert.deepEqual(validateAssets([validAsset], assetSchema, ['Acme/widget']), []);
+});
+test('asset.repo pointing at an unknown repo is a dangling reference', () => {
+  const errs = validateAssets([validAsset], assetSchema, ['Acme/other']);
+  assert.ok(errs.some(e => /dangling reference "Acme\/widget"/.test(e)), errs.join('; '));
+});
+test('asset.repo = null is allowed (not repo-bound)', () => {
+  assert.deepEqual(validateAssets([{ ...validAsset, repo: null }], assetSchema, []), []);
+});
+test('duplicate asset_id is flagged', () => {
+  const errs = validateAssets([validAsset, { ...validAsset }], assetSchema, ['Acme/widget']);
+  assert.ok(errs.some(e => /duplicate key "acme-logo"/.test(e)));
+});
+test('validateAll wires repo keys into the asset FK check', () => {
+  // asset references Acme/widget, which IS in repos → clean
+  assert.deepEqual(validateAll({ repos: [validRepo], assets: [validAsset] }, { repo: repoSchema, asset: assetSchema }), []);
+  // remove the repo → the asset ref dangles
+  const errs = validateAll({ repos: [], assets: [validAsset] }, { repo: repoSchema, asset: assetSchema });
+  assert.ok(errs.some(e => /dangling reference/.test(e)));
+});
+
 // ── Render determinism ──
 test('renderOrg is deterministic + order-independent (sorted by repo)', () => {
   const a = renderOrg({ repos: [validRepo, { ...validRepo, repo: 'Acme/other' }] });
@@ -61,11 +89,12 @@ test('renderOrg has no timestamp (re-render must be a no-op diff)', () => {
 });
 
 // ── ORG.md is reproducible from committed data (criterion: render is a no-op diff) ──
-test('committed ORG.md exactly matches render(repos.jsonl)', () => {
-  const expected = renderOrg({ repos: readJsonl(REPOS_FILE) });
+test('committed ORG.md exactly matches render(registry/*.jsonl)', () => {
+  const expected = renderOrg({ repos: readJsonl(REPOS_FILE), assets: readJsonl(ASSETS_FILE) });
   const actual = fs.readFileSync(ORG_FILE, 'utf8');
   assert.equal(actual, expected, 'ORG.md is stale — run `make org-render` and commit.');
 });
-test('committed repos.jsonl is schema-valid', () => {
-  assert.deepEqual(validateRepos(readJsonl(REPOS_FILE), repoSchema), []);
+test('committed registry is fully valid (schema + integrity + cross-refs)', () => {
+  const data = { repos: readJsonl(REPOS_FILE), assets: readJsonl(ASSETS_FILE) };
+  assert.deepEqual(validateAll(data, { repo: repoSchema, asset: assetSchema }), []);
 });

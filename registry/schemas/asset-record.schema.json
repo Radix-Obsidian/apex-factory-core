@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "registry/asset-record",
+  "title": "AssetRecord",
+  "description": "One reusable asset the company owns: media, brand, content, screenshots. The registry POINTS to where it lives (`location` = repo path, Drive URL, or tool ref); it never copies the bytes. `asset_id` is the unique key; `repo`, when set, must exist in repos.jsonl.",
+  "type": "object",
+  "required": ["asset_id", "name", "kind", "status", "location"],
+  "additionalProperties": false,
+  "properties": {
+    "asset_id": { "type": "string", "description": "stable slug — the unique key" },
+    "name": { "type": "string" },
+    "kind": { "type": "string", "enum": ["logo", "media-loop", "image", "brand-kit", "content", "screenshot", "deck", "other"] },
+    "status": { "type": "string", "enum": ["LIVE", "PLANNED", "ARCHIVED"] },
+    "location": { "type": "string", "description": "where the asset actually lives: repo path, Drive/URL, or tool ref" },
+    "repo": { "type": ["string", "null"], "description": "owning repo (owner/name) — must exist in repos.jsonl; null if not repo-bound" },
+    "sku": { "type": ["string", "null"], "description": "linked SKU id, e.g. sku_001; null if none" },
+    "source": { "type": "string", "enum": ["higgsfield", "gamma", "manual", "claude", "other"] },
+    "notes": { "type": "string" }
+  }
+}
