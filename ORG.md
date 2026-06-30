@@ -21,7 +21,15 @@ _Repos tracked: 2._
 
 _Assets tracked: 2._
 
+## Marketing campaigns
+
+| Campaign | Channel | Status | SKU | Repo | Result |
+|----------|---------|--------|-----|------|--------|
+| Build-in-public distribution | social | PLANNED | — | `Radix-Obsidian/apex-factory-core` | — |
+| SKU #1 launch | content | PLANNED | sku_001 | `Radix-Obsidian/The-Native-Factory` | — |
+
+_Campaigns tracked: 2._
+
 ## Coming in later slices
-- **Marketing campaigns** (Slice 3) — channels, copy, Apollo sequences, Gamma decks.
 - **Finance + experiments** (Slice 4) — burn vs revenue, SKU theses / hypotheses.
 - **Google Drive mirror** (Slice 5) — this page + asset folders, phone-readable.

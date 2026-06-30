@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "registry/campaign-record",
+  "title": "CampaignRecord",
+  "description": "One marketing campaign. The registry tracks its state + where its artifacts live (copy, Apollo sequence, Gamma deck); the tools own the execution. `campaign_id` is the unique key; `repo`, when set, must exist in repos.jsonl.",
+  "type": "object",
+  "required": ["campaign_id", "name", "channel", "status"],
+  "additionalProperties": false,
+  "properties": {
+    "campaign_id": { "type": "string", "description": "stable slug — the unique key" },
+    "name": { "type": "string" },
+    "channel": { "type": "string", "enum": ["email", "social", "seo", "ads", "content", "other"] },
+    "status": { "type": "string", "enum": ["PLANNED", "ACTIVE", "PAUSED", "DONE"] },
+    "sku": { "type": ["string", "null"], "description": "linked SKU id, e.g. sku_001; null if company-level" },
+    "repo": { "type": ["string", "null"], "description": "promoted repo (owner/name) — must exist in repos.jsonl; null if none" },
+    "copy_ref": { "type": ["string", "null"], "description": "where the campaign copy lives (path/URL)" },
+    "apollo_sequence_id": { "type": ["string", "null"], "description": "Apollo emailer sequence id, if any" },
+    "gamma_deck_url": { "type": ["string", "null"], "description": "Gamma deck URL, if any" },
+    "result": { "type": "string", "description": "outcome / metric once it runs" },
+    "notes": { "type": "string" }
+  }
+}

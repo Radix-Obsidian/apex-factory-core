@@ -3,11 +3,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { validateAgainstSchema, validateRepos, validateAssets, validateAll, renderOrg, loadSchema,
-  readJsonl, REPOS_FILE, ASSETS_FILE, ORG_FILE } from './registry.mjs';
+import { validateAgainstSchema, validateRepos, validateAssets, validateCampaigns, validateAll, renderOrg,
+  loadSchema, readJsonl, REPOS_FILE, ASSETS_FILE, CAMPAIGNS_FILE, ORG_FILE } from './registry.mjs';
 
 const repoSchema = loadSchema('repo-record.schema.json');
 const assetSchema = loadSchema('asset-record.schema.json');
+const campaignSchema = loadSchema('campaign-record.schema.json');
 const validRepo = {
   repo: 'Acme/widget', role: 'sku', status: 'LIVE',
   url: 'https://github.com/Acme/widget', stripe_mode: 'test', sku: 'sku_009',
@@ -76,6 +77,29 @@ test('validateAll wires repo keys into the asset FK check', () => {
   assert.ok(errs.some(e => /dangling reference/.test(e)));
 });
 
+// ── Campaigns domain: schema + integrity + repo FK ──
+const validCampaign = {
+  campaign_id: 'acme-launch', name: 'Acme launch', channel: 'content', status: 'PLANNED',
+  sku: 'sku_009', repo: 'Acme/widget', copy_ref: null, apollo_sequence_id: null, gamma_deck_url: null,
+};
+test('valid campaign produces zero errors', () => {
+  assert.deepEqual(validateCampaigns([validCampaign], campaignSchema, ['Acme/widget']), []);
+});
+test('campaign with a bad channel enum is caught', () => {
+  const errs = validateCampaigns([{ ...validCampaign, channel: 'billboard' }], campaignSchema, ['Acme/widget']);
+  assert.ok(errs.some(e => /channel: "billboard" not in enum/.test(e)));
+});
+test('campaign.repo dangling reference is caught', () => {
+  const errs = validateCampaigns([validCampaign], campaignSchema, ['Acme/other']);
+  assert.ok(errs.some(e => /dangling reference "Acme\/widget"/.test(e)));
+});
+test('validateAll covers campaigns too', () => {
+  const schemas = { repo: repoSchema, asset: assetSchema, campaign: campaignSchema };
+  assert.deepEqual(validateAll({ repos: [validRepo], campaigns: [validCampaign] }, schemas), []);
+  const errs = validateAll({ repos: [], campaigns: [validCampaign] }, schemas);
+  assert.ok(errs.some(e => /dangling reference/.test(e)));
+});
+
 // ── Render determinism ──
 test('renderOrg is deterministic + order-independent (sorted by repo)', () => {
   const a = renderOrg({ repos: [validRepo, { ...validRepo, repo: 'Acme/other' }] });
@@ -90,11 +114,11 @@ test('renderOrg has no timestamp (re-render must be a no-op diff)', () => {
 
 // ── ORG.md is reproducible from committed data (criterion: render is a no-op diff) ──
 test('committed ORG.md exactly matches render(registry/*.jsonl)', () => {
-  const expected = renderOrg({ repos: readJsonl(REPOS_FILE), assets: readJsonl(ASSETS_FILE) });
+  const expected = renderOrg({ repos: readJsonl(REPOS_FILE), assets: readJsonl(ASSETS_FILE), campaigns: readJsonl(CAMPAIGNS_FILE) });
   const actual = fs.readFileSync(ORG_FILE, 'utf8');
   assert.equal(actual, expected, 'ORG.md is stale — run `make org-render` and commit.');
 });
 test('committed registry is fully valid (schema + integrity + cross-refs)', () => {
-  const data = { repos: readJsonl(REPOS_FILE), assets: readJsonl(ASSETS_FILE) };
-  assert.deepEqual(validateAll(data, { repo: repoSchema, asset: assetSchema }), []);
+  const data = { repos: readJsonl(REPOS_FILE), assets: readJsonl(ASSETS_FILE), campaigns: readJsonl(CAMPAIGNS_FILE) };
+  assert.deepEqual(validateAll(data, { repo: repoSchema, asset: assetSchema, campaign: campaignSchema }), []);
 });
