@@ -471,10 +471,17 @@ watchers, un-pinned workflow `agent()` calls).
 - **Session & watcher tier (MODELS.md):** interactive code sessions = Opus/Sonnet; writing/brainstorm/watch = Sonnet/
   Haiku; watchers/pollers/digests NEVER run in an Opus session — they are Haiku/OpenRouter-free crons. This closes the
   actual leak: the biggest burn was Opus *chat + a 90-min PR-status poll*, not the tiered agents.
-- **Pins:** `gtm/demand-probe.workflow.js` copy calls → Sonnet; heartbeat narration guarded to fail loudly on any
-  `claude-*` id (closes the D3-vs-D7 gap where OpenClaw's external default could silently hit Opus).
-- **Enforcement:** `usage.mjs` ships a default weekly-Opus gate so `--claude-gate` fails-closed instead of no-op.
+- **Pins:** `gtm/demand-probe.workflow.js` copy calls → Sonnet; the OpenClaw heartbeat cron recipe (README §4) repinned
+  `anthropic/claude-haiku-4-5` → `openrouter/free` ($0, off the Max allowance), with a defensive `heartbeat.sh` warning if
+  `HEARTBEAT_MODEL` is a `claude-*` id (closes the D3-vs-D7 gap; the authoritative pin is the cron recipe + models.json).
+- **Enforcement is the spawn-time hook, NOT a loop gate.** `usage.mjs` adds an Opus-runaway *advisory* (always on, so the
+  99% is visible in the heartbeat) plus an **opt-in** loop throttle (`CLAUDE_OPUS_GATE=1`, measured on the recent 5h
+  window). It is **off by default on purpose** — the 5h proxy is GLOBAL (every `~/.claude` session incl. the interactive
+  Opus that D23 permits), so a default-on gate would silently starve the cheap Sonnet loop on unrelated Opus. Adversarial
+  review caught this; the fix keeps fail-closed enforcement where it belongs (`hooks/model-guard.mjs`) and makes `loop.sh`
+  **alert + bound** any cooldown (`MAX_COOLDOWNS`, distinct exit) so a throttled run can never masquerade as success.
 
-Tests: `make router-test` + `make model-guard-test` (folded into `make verify`). Supersedes the "policy-only" posture of
-D7/D10. **Still founder-side (outside this repo):** the global `~/.claude/agents/planner.md` Opus default (D10-deferred)
-and OpenClaw's own model config — the in-repo guard fails loudly, but the root fix is a founder action.
+Tests: `make router-test` + `make model-guard-test` (folded into `make verify`); `usage.mjs --claude-gate` passes by
+default and throttles only when armed. Supersedes the "policy-only" posture of D7/D10. **Still founder-side (outside this
+repo):** demote the global `~/.claude/agents/planner.md` Opus→Sonnet (`sed -i 's/claude-opus/claude-sonnet/'`) and add the
+free model to OpenClaw's `models.json` — the in-repo guards fail loud/visible, but the root fix is a founder action.

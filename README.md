@@ -46,10 +46,10 @@ into ECC's `hooks/hooks.json` after step 1, OR add it to project settings:
 # merge its "PreToolUse" entry into ~/factory-core/.claude/settings.json (create the file)
 ```
 
-**4. Heartbeat cron** (self-restarting persistence — disabled by default). Run when ready:
+**4. Heartbeat cron** (self-restarting persistence — disabled by default). **D23:** narration runs on `openrouter/free` ($0, off the Max allowance) — NOT a Claude model. This needs the free model present in OpenClaw's `models.json` first (see "Known follow-ups" below). Run when ready:
 ```bash
 openclaw cron add --name factory-heartbeat --every 6h --disabled \
-  --agent main --model anthropic/claude-haiku-4-5 --thinking low \
+  --agent main --model openrouter/free --thinking low \
   --announce --channel telegram --to <YOUR_TELEGRAM_CHAT_ID> \
   --description "Apex P&L + agent health. Never flips the publish+charge gate." \
   --message "Execute ~/factory-core/HEARTBEAT.md: P&L across the SHARED Anthropic+Higgsfield pools + Stripe net; market telemetry; restart dead loop-operator tmux loops; verify higgsfield headless token. Report shipped/failed/scaling WITH numbers. NEVER flip live Stripe."

@@ -55,21 +55,32 @@ run_loop() {
     fi
   fi
 
-  local i=0 ec=0 fails=0
+  local i=0 ec=0 fails=0 cools=0
+  local MAX_COOLDOWNS="${MAX_COOLDOWNS:-3}"
   while [ "$i" -lt "$MAX_ITERS" ]; do
     i=$((i+1))
     echo "=== Ralph iteration $i / $MAX_ITERS ($(date -u +%FT%TZ)) ===" | tee -a "$log"
 
-    # In-loop allowance gate (no-op unless CLAUDE_*_BUDGET set in .env) — stops burst-through a rate limit.
+    # In-loop allowance gate (no-op unless CLAUDE_*_BUDGET or CLAUDE_OPUS_GATE armed in .env; see usage.mjs) —
+    # stops burst-through a rate limit. A trip is ALERTED (never silent) and BOUNDED: after MAX_COOLDOWNS
+    # consecutive cooldowns the loop stops with a distinct code so a starved run can't masquerade as success.
     if ! node "$HERE/usage.mjs" --claude-gate >>"$log" 2>&1; then
-      echo "ALLOWANCE gate tripped — cooling down 300s" | tee -a "$log"; sleep 300; continue
+      cools=$((cools+1))
+      echo "ALLOWANCE gate tripped — cooling 300s (cooldown $cools/$MAX_COOLDOWNS)" | tee -a "$log"
+      alert "⏸ factory loop allowance gate tripped (cooldown $cools/$MAX_COOLDOWNS) — see runs/loop.log"
+      if [ "$cools" -ge "$MAX_COOLDOWNS" ]; then
+        alert "🔴 factory loop STOPPED — allowance gate tripped ${cools}× in a row, 0 work done. Raise CLAUDE_OPUS_PCT / unset CLAUDE_OPUS_GATE, or wait for the 5h window to roll. See runs/loop.log"
+        echo "ALLOWANCE_GATE_STALL after $cools consecutive cooldowns" | tee -a "$log"; ec=75; break
+      fi
+      sleep 300; continue
     fi
+    cools=0
 
     ec=0
     if [ -n "${LOOP_CMD:-}" ]; then
       runto "$ITER_TIMEOUT" bash -c "$LOOP_CMD" >>"$log" 2>&1 || ec=$?
     else
-      runto "$ITER_TIMEOUT" claude -p "Act as the ECC loop-operator. Execute the next incomplete step in $PRD_FILE using TDD. Delegate each task to the right factory-* agent so it runs on its pinned model (factory-scout=reads, factory-builder=code, factory-reviewer=review, factory-planner=decomposition, factory-architect=novel architecture/Fable, factory-copy=customer copy). Use the lightest model that achieves the outcome; escalate up the ladder (MODELS.md) only when a better decision changes what ships. Obey .cursorrules, SOUL.md, HEARTBEAT.md. HARD STOP at the publish+charge gate — never flip live Stripe. When every PRD checkbox is complete, run: echo ALL_DONE > $HERE/runs/done.flag — then stop." \
+      runto "$ITER_TIMEOUT" claude -p "Act as the ECC loop-operator. Execute the next incomplete step in $PRD_FILE using TDD. Delegate each task to the right factory-* agent so it runs on its pinned model (factory-scout=reads, factory-builder=code, factory-reviewer=review, factory-planner=decomposition, factory-architect=novel architecture/Fable, factory-copy=customer copy). Use the lightest model that achieves the outcome; the canonical task→model map is ops/model-router.mjs (escalate up the ladder in MODELS.md only when a better decision changes what ships), and hooks/model-guard.mjs will BLOCK Opus/Fable on non-code work (copy/docs/reports/watchers) — keep those on Sonnet/Haiku. Obey .cursorrules, SOUL.md, HEARTBEAT.md. HARD STOP at the publish+charge gate — never flip live Stripe. When every PRD checkbox is complete, run: echo ALL_DONE > $HERE/runs/done.flag — then stop." \
         --model "$LOOP_MODEL" \
         --dangerously-skip-permissions >>"$log" 2>&1 || ec=$?
     fi
