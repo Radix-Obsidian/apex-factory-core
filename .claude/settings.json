@@ -21,6 +21,10 @@
           {
             "type": "command",
             "command": "node /Users/the-hive/factory-core/hooks/fable-budget.mjs"
+          },
+          {
+            "type": "command",
+            "command": "node /Users/the-hive/factory-core/hooks/model-guard.mjs"
           }
         ]
       }

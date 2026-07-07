@@ -50,6 +50,21 @@ Eval tier-2 judges + the 6h heartbeat narration run on **OpenRouter free** ($0, 
 - **Allowance gate:** `usage.mjs --claude-gate` runs each loop iteration; if a `CLAUDE_*_BUDGET` (set in `.env`) is exceeded, the loop cools down instead of burst-firing. `usage.mjs` flags when Opus exceeds 80% of weekly consumption.
 - **Demotion watch:** Opus 4.8 is kept for speed/throughput and as a warm hedge while Fable (released 2026-06-09) proves its failure modes. If per-rung instrumentation later shows Fable unconstrained overnight, collapse Opus out of the ladder.
 
+## Session & watcher tier (D23)
+The ladder above governs *autonomous* work. Interactive **sessions** and **watchers** are where allowance actually
+leaked (a single Opus chat + a 90-min PR-status poll dwarfed the tiered agents). The rule:
+- **Code session** (writing/refactoring/debugging shipping code) → Opus/Sonnet. `make code` / `make launch`.
+- **Writing / brainstorm / research / watch session** → **Sonnet or Haiku, never Opus.** `make chat` (Sonnet).
+- **Watchers, pollers, status checks, digests** → **never run in an Opus session.** They are Haiku / OpenRouter-free
+  crons (`make watch`). Self-scheduling a poll into an Opus session (the old PR-watch pattern) is banned — it is the
+  single most wasteful anti-pattern and cost the most.
+
+## Routing is enforced, not just documented (D23)
+Policy is now **code**. `ops/model-router.mjs` is the single `task → rung → model` source of truth (default **Sonnet,
+never Opus**), and `hooks/model-guard.mjs` (PreToolUse:Task) **blocks (exit 2)** any Opus/Fable spend on non-code work —
+copy, docs, reports, PDFs, watchers, pollers, status, digests. Only explicit model overrides are enforced by the hook;
+the session tier above governs the rest. Tests: `make router-test`, `make model-guard-test`.
+
 ## How it's wired
 - `loop.sh` runs `claude -p --model "${LOOP_MODEL:-claude-sonnet-4-6}"` and instructs the operator to delegate to the `factory-*` agents (each runs on its pinned model). Escalate a whole run with `LOOP_MODEL=claude-opus-4-8 make launch` (or `claude-fable-5` for the hardest).
 - Hardening: pre-flight auth ping, per-iteration `timeout`, failure backoff + circuit breaker, crash marker + immediate Telegram alert, log rotation, anchored `ALL_DONE` sentinel.

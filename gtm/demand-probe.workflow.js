@@ -108,7 +108,7 @@ const drafts = (await parallel(CHANNELS.map(ch => () =>
     `You are a top-tier build-in-public copywriter drafting a demand-probe post for ${ch.label}.\n\n`
     + `${SHARED}\n\nCHANNEL BRIEF — ${ch.label}:\n${ch.brief}\n\n`
     + `Write the single best version you can. Return the DraftPost.`,
-    { label: `draft:${ch.key}`, phase: 'Draft', schema: DRAFT_SCHEMA })
+    { label: `draft:${ch.key}`, phase: 'Draft', schema: DRAFT_SCHEMA, model: 'sonnet' })
     .then(d => ({ ...d, channel: d.channel || ch.label, _key: ch.key }))
     .catch(() => null)
 ))).filter(Boolean);
@@ -128,7 +128,7 @@ const critique = await agent(
   + `For EACH channel return verdict ship|revise + concrete fixes + a traction_risk read. List any honesty_flags `
   + `across the whole set. Give cross-channel voice_notes. Default to "revise" if anything is even slightly off — `
   + `the bar is: would a skeptical indie hacker trust this and not roll their eyes? Return the Critique.`,
-  { label: 'critique:all', phase: 'Critique', schema: CRITIQUE_SCHEMA, agentType: 'code-reviewer' });
+  { label: 'critique:all', phase: 'Critique', schema: CRITIQUE_SCHEMA, agentType: 'code-reviewer', model: 'sonnet' });
 
 const fixesByChannel = new Map((critique.per_channel || []).map(c => [c.channel, c]));
 
@@ -146,7 +146,7 @@ const finals = (await parallel(drafts.map(d => () => {
     + `ISSUES TO RESOLVE:\n${JSON.stringify(crit.issues || [], null, 2)}\n`
     + `TRACTION RISK TO ADDRESS:\n${crit.traction_risk || '(none)'}\n\n`
     + `Apply every fix that improves it without breaking the honesty constraints. Return the final DraftPost.`,
-    { label: `revise:${d._key}`, phase: 'Revise', schema: DRAFT_SCHEMA })
+    { label: `revise:${d._key}`, phase: 'Revise', schema: DRAFT_SCHEMA, model: 'sonnet' })
     .then(f => ({ ...f, channel: f.channel || ch?.label || d.channel, _key: d._key }))
     .catch(() => d); // fall back to the reviewed draft if revise fails
 }))).filter(Boolean);
