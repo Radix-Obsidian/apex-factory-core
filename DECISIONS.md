@@ -454,3 +454,27 @@ auto-inherit the chassis wrapper. (4) The detector is a **structural** scan (reg
 requires Anthropic context (so Twilio's `.messages.create` and system-less health pings are correctly ignored) and a
 visible `system:` block, and deliberately does NOT flag spread-param wrappers whose caching transform isn't visible
 in-file — high-precision over high-recall, by design.
+
+## D23 — model orchestration layer: route by task, enforce fail-closed (2026-07-06)
+**Problem.** Opus reached ~99% of weekly allowance. The tier POLICY (D7/D10, MODELS.md) was already sound — the agent
+roster is correctly pinned (copy/operator/support = Sonnet/Haiku, none default to Opus) — but the policy was **prose, not
+code**: nothing *blocked* Opus, so it became the lazy default for work outside the tiered agents (interactive chat,
+watchers, un-pinned workflow `agent()` calls).
+
+**Decision — make routing executable and fail-closed.**
+- **`ops/model-router.mjs`** = single source of truth: a `task-type → rung → model` table + `modelFor`/`rungFor`/
+  `isCodeTask`/`isHeavyModel` + the code/non-code agent sets. Default is **Sonnet, never Opus** — unknown work can't climb.
+- **`hooks/model-guard.mjs`** (PreToolUse:Task, registered in `.claude/settings.json` beside `fable-budget.mjs`) **blocks
+  (exit 2)** any Opus/Fable spend on non-code work: non-code agents (copy/scout/support/operator) may never be overridden
+  onto Opus/Fable; a generic agent may use Opus/Fable only for a declared code `task_type`. Only explicit overrides are
+  enforced here — the interactive **session** model is governed by the session/watcher convention.
+- **Session & watcher tier (MODELS.md):** interactive code sessions = Opus/Sonnet; writing/brainstorm/watch = Sonnet/
+  Haiku; watchers/pollers/digests NEVER run in an Opus session — they are Haiku/OpenRouter-free crons. This closes the
+  actual leak: the biggest burn was Opus *chat + a 90-min PR-status poll*, not the tiered agents.
+- **Pins:** `gtm/demand-probe.workflow.js` copy calls → Sonnet; heartbeat narration guarded to fail loudly on any
+  `claude-*` id (closes the D3-vs-D7 gap where OpenClaw's external default could silently hit Opus).
+- **Enforcement:** `usage.mjs` ships a default weekly-Opus gate so `--claude-gate` fails-closed instead of no-op.
+
+Tests: `make router-test` + `make model-guard-test` (folded into `make verify`). Supersedes the "policy-only" posture of
+D7/D10. **Still founder-side (outside this repo):** the global `~/.claude/agents/planner.md` Opus default (D10-deferred)
+and OpenClaw's own model config — the in-repo guard fails loudly, but the root fix is a founder action.

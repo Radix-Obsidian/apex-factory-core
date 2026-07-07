@@ -16,6 +16,18 @@ guard-test: ## AC3+AC4 — deploy-guard + auth-guard acceptance (fixture-based)
 	@bash tests/guard.test.sh
 	@bash tests/auth-guard.test.sh
 
+router-test: ## D23 — model router assertions (task→model), $0 pure logic
+	@node ops/model-router.mjs test
+
+model-guard-test: ## D23 — fail-closed model-guard: Opus/Fable blocked on non-code work
+	@bash tests/model-guard.test.sh
+
+chat: ## D23 — launch a Sonnet interactive session (writing/brainstorm/research; NOT code)
+	@claude --model claude-sonnet-4-6
+
+watch: ## D23 — launch a Haiku session for polling/status/digests (never an Opus session)
+	@claude --model claude-haiku-4-5-20251001
+
 gate: ## AC4 — show the live .env gate status (must refuse publish while sealed)
 	@if bash deploy-guard.sh publish >/dev/null 2>&1; then echo "✗ GATE FAILED — publish was allowed!"; exit 1; else echo "✓ gate sealed — publish refused (real .env)"; fi
 
@@ -81,7 +93,7 @@ operate: ## Ops — ONE post-launch tick (health + revenue + support) over all l
 ops-verify: ## Ops — deterministic tests for the operations layer ($0 LLM)
 	@node --test ops/ops.test.mjs && echo "── ops-verify GREEN ──"
 
-verify: preflight guard-test gate auth-guard ops-verify caching-verify ## run mechanical acceptance checks (fast)
+verify: preflight guard-test router-test model-guard-test gate auth-guard ops-verify caching-verify ## run mechanical acceptance checks (fast)
 	@echo "── verify GREEN ──"
 
 launch: ## fire the REAL gated cycle (⚠ spends shared Anthropic + Higgsfield pools)
@@ -120,4 +132,4 @@ worktree-status: ## show all worktrees + the loop branch
 worktree-remove: ## tear down the loop worktree (keeps the loop/auto branch + history)
 	@bash scripts/worktree.sh remove
 
-.PHONY: help preflight copytest guard-test gate auth-guard dryrun heartbeat usage recycled-verify recycled-scan recycled-metrics recycled-ideate design-check closed-loop-check caching-check caching-verify cachingtest verify launch cron-enable cron-disable crashcron-install crashcron-uninstall hooks-install worktree-setup worktree-status worktree-remove
+.PHONY: help preflight copytest guard-test router-test model-guard-test chat watch gate auth-guard dryrun heartbeat usage recycled-verify recycled-scan recycled-metrics recycled-ideate design-check closed-loop-check caching-check caching-verify cachingtest verify launch cron-enable cron-disable crashcron-install crashcron-uninstall hooks-install worktree-setup worktree-status worktree-remove
