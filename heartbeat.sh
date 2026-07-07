@@ -10,6 +10,14 @@ SOCK="$HOME/.tmux/sock"; SESSION="${SESSION:-factory}"
 . "$HERE/scripts/worktree.sh" 2>/dev/null || true
 LOOP_RUNS="${LOOP_WORKTREE:-$HERE}/runs"
 
+# D23 — narration must be $0 OpenRouter-free, never a Claude model (that burns the Max allowance).
+# heartbeat.sh makes no model call itself (OpenClaw narrates), but if the cron passes its model via
+# HEARTBEAT_MODEL we catch a misconfig here — LOUD, not fatal (a heartbeat must never die mid-check).
+case "${HEARTBEAT_MODEL:-openrouter/free}" in
+  *claude*|*anthropic*|*opus*|*sonnet*|*haiku*)
+    echo "⚠️  NARRATION MODEL MISCONFIG — '${HEARTBEAT_MODEL:-}' is a Claude model; D23 requires openrouter/free (\$0). Fix the OpenClaw cron: --model openrouter/free (README §4, HEARTBEAT.md).";;
+esac
+
 echo "🏭 Apex HEARTBEAT — $(date -u +%FT%TZ)"
 
 # 1. Agent health — restart a dead loop (HEARTBEAT.md §3)
