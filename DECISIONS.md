@@ -112,3 +112,23 @@ sibling/external checkout). Layering: ownership **zones** (D11) stop cross-subpr
 Surfaces: `scripts/worktree.sh [ensure|path|status|remove]`; `make worktree-setup|worktree-status|worktree-remove`.
 The 7-agent expert research panel for D11/D12 was rate-limited (Max session limit) — resolution synthesized
 directly and proven by test rather than citation. See [[concurrent-agent-git-hygiene]].
+
+## D13 — org operating system: one registry maps the whole company (2026-07-07)
+Problem: chaos/drift — everything lived in GitHub + Cursor with no single index across *many* repos +
+assets + marketing + finance + experiments, so work got lost. Resolution: an org-level **registry** in
+`registry/` (built as vertical slices, mirroring the `recycled/` idioms — pure Node built-ins, $0, no deps).
+- **Source of truth = `registry/*.jsonl`** (repos, assets, campaigns, finance, experiments), each governed
+  by a JSON-Schema contract in `registry/schemas/`. **`ORG.md` is GENERATED** (`make org-render`) and never
+  hand-edited — deterministic (no timestamps) so re-render is a no-op diff.
+- **`registry.mjs`** is the deterministic floor: a JSON-Schema-subset validator + per-domain integrity
+  (unique keys) + cross-domain foreign keys (asset/campaign/experiment `repo` → `repos.jsonl`; experiment
+  `candidate_ref` → the existing `recycled-candidates.jsonl` salvage queue). `make org-verify` +
+  `registry/registry.test.mjs` (node --test) are the guardrail floor.
+- **Anti-drift:** `heartbeat.sh` §5 runs `registry.mjs render --check` each 6h ($0, no model) → OK / DRIFT.
+- **Layering (company ⟂ storage):** GitHub = truth for code + structured state; **Google Drive = a
+  human/phone-readable MIRROR only** (folder `Apex Factory — Org Map`, `ORG.md` as a Google Doc, domain
+  drop-zone subfolders). Links recorded in `registry/drive.json` and surfaced in `ORG.md`. Node can't reach
+  MCP, so the Drive sync is an **agent action** (`.claude/commands/org-sync.md`), not a `make` target.
+- Adds `CLAUDE.md` — the previously-missing canonical front door (read-chain + org map pointer).
+Seeded honestly with only what exists or is explicitly planned (2 repos, the build-in-public series, planned
+campaigns, the SKU-1 thesis, a $0 pre-gate finance snapshot). Zero fabricated revenue/repos.

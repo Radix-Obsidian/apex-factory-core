@@ -4,8 +4,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { validateAgainstSchema, validateRepos, validateAssets, validateCampaigns, validateFinance,
-  validateExperiments, validateAll, renderOrg, loadSchema, readJsonl,
-  REPOS_FILE, ASSETS_FILE, CAMPAIGNS_FILE, FINANCE_FILE, EXPERIMENTS_FILE, ORG_FILE } from './registry.mjs';
+  validateExperiments, validateAll, renderOrg, loadSchema, readJsonl, readJson,
+  REPOS_FILE, ASSETS_FILE, CAMPAIGNS_FILE, FINANCE_FILE, EXPERIMENTS_FILE, DRIVE_FILE, ORG_FILE } from './registry.mjs';
 
 const repoSchema = loadSchema('repo-record.schema.json');
 const assetSchema = loadSchema('asset-record.schema.json');
@@ -149,12 +149,17 @@ test('renderOrg has no timestamp (re-render must be a no-op diff)', () => {
   const out = renderOrg({ repos: [validRepo] });
   assert.doesNotMatch(out, /\d{4}-\d{2}-\d{2}T/); // no ISO timestamps that would churn the file
 });
+test('renderOrg links the Drive mirror when drive.json is present, omits it otherwise', () => {
+  const drive = { org_doc_url: 'https://docs.google.com/document/d/abc/edit', folder_url: 'https://drive.google.com/drive/folders/xyz' };
+  assert.match(renderOrg({ repos: [validRepo], drive }), /Phone-readable Google Drive mirror.*abc/);
+  assert.doesNotMatch(renderOrg({ repos: [validRepo] }), /Google Drive mirror/);
+});
 
 // ── ORG.md is reproducible from committed data (criterion: render is a no-op diff) ──
 function committedData() {
   return {
     repos: readJsonl(REPOS_FILE), assets: readJsonl(ASSETS_FILE), campaigns: readJsonl(CAMPAIGNS_FILE),
-    finance: readJsonl(FINANCE_FILE), experiments: readJsonl(EXPERIMENTS_FILE),
+    finance: readJsonl(FINANCE_FILE), experiments: readJsonl(EXPERIMENTS_FILE), drive: readJson(DRIVE_FILE),
   };
 }
 test('committed ORG.md exactly matches render(registry/*.jsonl)', () => {
