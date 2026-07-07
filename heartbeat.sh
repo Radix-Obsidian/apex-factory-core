@@ -40,3 +40,11 @@ node "$HERE/usage.mjs" || echo "• usage analyzer unavailable (node?) — skipp
 # 4. Treasury + gate
 if [ -n "${STRIPE_SECRET_KEY:-}" ]; then echo "• stripe: configured (net read at gate-time)"; else echo "• stripe: n/a (test phase — no charging)"; fi
 if [ -n "${PUBLISH_APPROVAL_TOKEN:-}" ]; then echo "• gate: ARMED (token set)"; else echo "• gate: SEALED (no token — cannot charge)"; fi
+
+# 5. Org map integrity — the registry self-audit (anti-drift, $0, no model).
+#    `render --check` = registry schema-valid + refs resolve + ORG.md not stale, all in one exit code.
+if node "$HERE/registry/registry.mjs" render --check >/dev/null 2>&1; then
+  echo "• org map: OK (registry valid, ORG.md in sync)"
+else
+  echo "• org map: ⚠ DRIFT — registry invalid or ORG.md stale → run \`make org-verify\` then \`make org-render\`"
+fi
