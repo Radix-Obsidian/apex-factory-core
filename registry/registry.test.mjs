@@ -3,16 +3,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { validateAgainstSchema, validateRepos, validateAssets, validateCampaigns, validateFinance,
+import { validateAgainstSchema, validateSkus, validateRepos, validateAssets, validateCampaigns, validateFinance,
   validateExperiments, validateAll, renderOrg, loadSchema, readJsonl, readJson,
-  REPOS_FILE, ASSETS_FILE, CAMPAIGNS_FILE, FINANCE_FILE, EXPERIMENTS_FILE, DRIVE_FILE, ORG_FILE } from './registry.mjs';
+  SKUS_FILE, REPOS_FILE, ASSETS_FILE, CAMPAIGNS_FILE, FINANCE_FILE, EXPERIMENTS_FILE, DRIVE_FILE, ORG_FILE } from './registry.mjs';
 
+const skuSchema = loadSchema('sku-record.schema.json');
 const repoSchema = loadSchema('repo-record.schema.json');
 const assetSchema = loadSchema('asset-record.schema.json');
 const campaignSchema = loadSchema('campaign-record.schema.json');
 const financeSchema = loadSchema('finance-snapshot.schema.json');
 const experimentSchema = loadSchema('experiment-record.schema.json');
-const allSchemas = { repo: repoSchema, asset: assetSchema, campaign: campaignSchema, finance: financeSchema, experiment: experimentSchema };
+const allSchemas = { sku: skuSchema, repo: repoSchema, asset: assetSchema, campaign: campaignSchema, finance: financeSchema, experiment: experimentSchema };
+const validSku = { sku_id: 'sku_009', name: 'Widget SKU', status: 'PROPOSED', repo: 'Acme/widget', stripe_mode: 'test' };
 const validRepo = {
   repo: 'Acme/widget', role: 'sku', status: 'LIVE',
   url: 'https://github.com/Acme/widget', stripe_mode: 'test', sku: 'sku_009',
@@ -50,34 +52,49 @@ test('nullable field accepts null (sku: ["string","null"])', () => {
 
 // ── Integrity ──
 test('duplicate repo key is flagged', () => {
-  const errs = validateRepos([validRepo, { ...validRepo }], repoSchema);
+  const errs = validateRepos([validRepo, { ...validRepo }], repoSchema, ['sku_009']);
   assert.ok(errs.some(e => /duplicate key "Acme\/widget"/.test(e)));
 });
 test('distinct repos pass integrity', () => {
-  const errs = validateRepos([validRepo, { ...validRepo, repo: 'Acme/other' }], repoSchema);
+  const errs = validateRepos([validRepo, { ...validRepo, repo: 'Acme/other' }], repoSchema, ['sku_009']);
   assert.deepEqual(errs, []);
+});
+test('repo.sku pointing at an unknown SKU is a dangling reference', () => {
+  const errs = validateRepos([validRepo], repoSchema, []); // sku_009 not in the known SKU set
+  assert.ok(errs.some(e => /sku: dangling reference "sku_009" — not found in skus.jsonl/.test(e)));
+});
+
+// ── SKUs domain (the spine): schema + unique key + repo FK ──
+test('valid SKU produces zero errors', () => {
+  assert.deepEqual(validateSkus([validSku], skuSchema, ['Acme/widget']), []);
+});
+test('SKU.repo dangling reference is caught', () => {
+  assert.ok(validateSkus([validSku], skuSchema, ['Acme/other']).some(e => /repo: dangling reference "Acme\/widget"/.test(e)));
+});
+test('duplicate sku_id is flagged', () => {
+  assert.ok(validateSkus([validSku, { ...validSku }], skuSchema, ['Acme/widget']).some(e => /duplicate key "sku_009"/.test(e)));
 });
 
 // ── Assets domain: schema + integrity + referential (FK) ──
 test('valid asset produces zero errors', () => {
-  assert.deepEqual(validateAssets([validAsset], assetSchema, ['Acme/widget']), []);
+  assert.deepEqual(validateAssets([validAsset], assetSchema, ['Acme/widget'], ['sku_009']), []);
 });
 test('asset.repo pointing at an unknown repo is a dangling reference', () => {
-  const errs = validateAssets([validAsset], assetSchema, ['Acme/other']);
+  const errs = validateAssets([validAsset], assetSchema, ['Acme/other'], ['sku_009']);
   assert.ok(errs.some(e => /dangling reference "Acme\/widget"/.test(e)), errs.join('; '));
 });
 test('asset.repo = null is allowed (not repo-bound)', () => {
-  assert.deepEqual(validateAssets([{ ...validAsset, repo: null }], assetSchema, []), []);
+  assert.deepEqual(validateAssets([{ ...validAsset, repo: null }], assetSchema, [], ['sku_009']), []);
 });
 test('duplicate asset_id is flagged', () => {
-  const errs = validateAssets([validAsset, { ...validAsset }], assetSchema, ['Acme/widget']);
+  const errs = validateAssets([validAsset, { ...validAsset }], assetSchema, ['Acme/widget'], ['sku_009']);
   assert.ok(errs.some(e => /duplicate key "acme-logo"/.test(e)));
 });
-test('validateAll wires repo keys into the asset FK check', () => {
-  // asset references Acme/widget, which IS in repos → clean
-  assert.deepEqual(validateAll({ repos: [validRepo], assets: [validAsset] }, { repo: repoSchema, asset: assetSchema }), []);
-  // remove the repo → the asset ref dangles
-  const errs = validateAll({ repos: [], assets: [validAsset] }, { repo: repoSchema, asset: assetSchema });
+test('validateAll wires repo + sku keys into the asset FK checks', () => {
+  // asset references Acme/widget + sku_009, both present → clean
+  assert.deepEqual(validateAll({ skus: [validSku], repos: [validRepo], assets: [validAsset] }, allSchemas), []);
+  // remove the repo → the asset repo ref dangles
+  const errs = validateAll({ skus: [validSku], repos: [], assets: [validAsset] }, allSchemas);
   assert.ok(errs.some(e => /dangling reference/.test(e)));
 });
 
@@ -87,20 +104,19 @@ const validCampaign = {
   sku: 'sku_009', repo: 'Acme/widget', copy_ref: null, apollo_sequence_id: null, gamma_deck_url: null,
 };
 test('valid campaign produces zero errors', () => {
-  assert.deepEqual(validateCampaigns([validCampaign], campaignSchema, ['Acme/widget']), []);
+  assert.deepEqual(validateCampaigns([validCampaign], campaignSchema, ['Acme/widget'], ['sku_009']), []);
 });
 test('campaign with a bad channel enum is caught', () => {
-  const errs = validateCampaigns([{ ...validCampaign, channel: 'billboard' }], campaignSchema, ['Acme/widget']);
+  const errs = validateCampaigns([{ ...validCampaign, channel: 'billboard' }], campaignSchema, ['Acme/widget'], ['sku_009']);
   assert.ok(errs.some(e => /channel: "billboard" not in enum/.test(e)));
 });
 test('campaign.repo dangling reference is caught', () => {
-  const errs = validateCampaigns([validCampaign], campaignSchema, ['Acme/other']);
+  const errs = validateCampaigns([validCampaign], campaignSchema, ['Acme/other'], ['sku_009']);
   assert.ok(errs.some(e => /dangling reference "Acme\/widget"/.test(e)));
 });
 test('validateAll covers campaigns too', () => {
-  const schemas = { repo: repoSchema, asset: assetSchema, campaign: campaignSchema };
-  assert.deepEqual(validateAll({ repos: [validRepo], campaigns: [validCampaign] }, schemas), []);
-  const errs = validateAll({ repos: [], campaigns: [validCampaign] }, schemas);
+  assert.deepEqual(validateAll({ skus: [validSku], repos: [validRepo], campaigns: [validCampaign] }, allSchemas), []);
+  const errs = validateAll({ skus: [validSku], repos: [], campaigns: [validCampaign] }, allSchemas);
   assert.ok(errs.some(e => /dangling reference/.test(e)));
 });
 
@@ -124,18 +140,18 @@ const validExperiment = {
   repo: 'Acme/widget', source: 'trend-discovery', candidate_ref: null, metric: 'first dollar',
 };
 test('valid experiment produces zero errors', () => {
-  assert.deepEqual(validateExperiments([validExperiment], experimentSchema, ['Acme/widget'], []), []);
+  assert.deepEqual(validateExperiments([validExperiment], experimentSchema, ['Acme/widget'], ['sku_009'], []), []);
 });
 test('experiment.repo dangling reference is caught', () => {
-  const errs = validateExperiments([validExperiment], experimentSchema, ['Acme/other'], []);
+  const errs = validateExperiments([validExperiment], experimentSchema, ['Acme/other'], ['sku_009'], []);
   assert.ok(errs.some(e => /repo: dangling reference "Acme\/widget"/.test(e)));
 });
 test('experiment.candidate_ref must exist in recycled-candidates when set', () => {
   const withRef = { ...validExperiment, candidate_ref: 'spec-123' };
   // unknown candidate → dangling
-  assert.ok(validateExperiments([withRef], experimentSchema, ['Acme/widget'], []).some(e => /candidate_ref: dangling reference "spec-123"/.test(e)));
+  assert.ok(validateExperiments([withRef], experimentSchema, ['Acme/widget'], ['sku_009'], []).some(e => /candidate_ref: dangling reference "spec-123"/.test(e)));
   // known candidate → clean
-  assert.deepEqual(validateExperiments([withRef], experimentSchema, ['Acme/widget'], ['spec-123']), []);
+  assert.deepEqual(validateExperiments([withRef], experimentSchema, ['Acme/widget'], ['sku_009'], ['spec-123']), []);
 });
 
 // ── Render determinism ──
@@ -158,6 +174,7 @@ test('renderOrg links the Drive mirror when drive.json is present, omits it othe
 // ── ORG.md is reproducible from committed data (criterion: render is a no-op diff) ──
 function committedData() {
   return {
+    skus: readJsonl(SKUS_FILE),
     repos: readJsonl(REPOS_FILE), assets: readJsonl(ASSETS_FILE), campaigns: readJsonl(CAMPAIGNS_FILE),
     finance: readJsonl(FINANCE_FILE), experiments: readJsonl(EXPERIMENTS_FILE), drive: readJson(DRIVE_FILE),
   };

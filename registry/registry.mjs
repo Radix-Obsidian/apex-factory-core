@@ -14,6 +14,7 @@ import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const SCHEMA_DIR = path.join(HERE, 'schemas');
+export const SKUS_FILE = path.join(HERE, 'skus.jsonl');
 export const REPOS_FILE = path.join(HERE, 'repos.jsonl');
 export const ASSETS_FILE = path.join(HERE, 'assets.jsonl');
 export const CAMPAIGNS_FILE = path.join(HERE, 'campaigns.jsonl');
@@ -105,40 +106,51 @@ function checkForeignKey(records, label, field, knownKeys, targetName) {
   return errors;
 }
 
-// ── Repos domain: schema + unique `repo` key ──
-export function validateRepos(records, schema) {
-  return [...checkSchema(records, schema, 'repos'), ...checkUniqueKey(records, 'repos', 'repo')];
+// ── SKUs domain (the product spine): schema + unique `sku_id` + repo FK ──
+export function validateSkus(records, schema, repoKeys = []) {
+  return [...checkSchema(records, schema, 'skus'), ...checkUniqueKey(records, 'skus', 'sku_id'),
+    ...checkForeignKey(records, 'skus', 'repo', repoKeys, 'repos.jsonl')];
 }
-// ── Assets domain: schema + unique `asset_id` + repo foreign-key ──
-export function validateAssets(records, schema, repoKeys = []) {
+// ── Repos domain: schema + unique `repo` key + sku FK ──
+export function validateRepos(records, schema, skuIds = []) {
+  return [...checkSchema(records, schema, 'repos'), ...checkUniqueKey(records, 'repos', 'repo'),
+    ...checkForeignKey(records, 'repos', 'sku', skuIds, 'skus.jsonl')];
+}
+// ── Assets domain: schema + unique `asset_id` + repo FK + sku FK ──
+export function validateAssets(records, schema, repoKeys = [], skuIds = []) {
   return [...checkSchema(records, schema, 'assets'), ...checkUniqueKey(records, 'assets', 'asset_id'),
-    ...checkForeignKey(records, 'assets', 'repo', repoKeys, 'repos.jsonl')];
+    ...checkForeignKey(records, 'assets', 'repo', repoKeys, 'repos.jsonl'),
+    ...checkForeignKey(records, 'assets', 'sku', skuIds, 'skus.jsonl')];
 }
-// ── Campaigns domain: schema + unique `campaign_id` + repo foreign-key ──
-export function validateCampaigns(records, schema, repoKeys = []) {
+// ── Campaigns domain: schema + unique `campaign_id` + repo FK + sku FK ──
+export function validateCampaigns(records, schema, repoKeys = [], skuIds = []) {
   return [...checkSchema(records, schema, 'campaigns'), ...checkUniqueKey(records, 'campaigns', 'campaign_id'),
-    ...checkForeignKey(records, 'campaigns', 'repo', repoKeys, 'repos.jsonl')];
+    ...checkForeignKey(records, 'campaigns', 'repo', repoKeys, 'repos.jsonl'),
+    ...checkForeignKey(records, 'campaigns', 'sku', skuIds, 'skus.jsonl')];
 }
 // ── Finance domain: schema + unique `snapshot_id` (company-level; no FK) ──
 export function validateFinance(records, schema) {
   return [...checkSchema(records, schema, 'finance'), ...checkUniqueKey(records, 'finance', 'snapshot_id')];
 }
-// ── Experiments domain: schema + unique `experiment_id` + repo FK + candidate_ref FK into the
-// existing recycled-candidates queue (ties the org index to the salvage harness). ──
-export function validateExperiments(records, schema, repoKeys = [], candidateIds = []) {
+// ── Experiments domain: schema + unique `experiment_id` + repo FK + sku FK + candidate_ref FK into
+// the existing recycled-candidates queue (ties the org index to the salvage harness). ──
+export function validateExperiments(records, schema, repoKeys = [], skuIds = [], candidateIds = []) {
   return [...checkSchema(records, schema, 'experiments'), ...checkUniqueKey(records, 'experiments', 'experiment_id'),
     ...checkForeignKey(records, 'experiments', 'repo', repoKeys, 'repos.jsonl'),
+    ...checkForeignKey(records, 'experiments', 'sku', skuIds, 'skus.jsonl'),
     ...checkForeignKey(records, 'experiments', 'candidate_ref', candidateIds, 'recycled-candidates.jsonl')];
 }
 
-// ── Whole-registry validation: each domain against its schema + cross-domain references. Pure. ──
-export function validateAll({ repos = [], assets = [], campaigns = [], finance = [], experiments = [] } = {}, schemas = {}, candidateIds = []) {
-  const errors = [], repoKeys = repos.map(r => r.repo);
-  if (schemas.repo) errors.push(...validateRepos(repos, schemas.repo));
-  if (schemas.asset) errors.push(...validateAssets(assets, schemas.asset, repoKeys));
-  if (schemas.campaign) errors.push(...validateCampaigns(campaigns, schemas.campaign, repoKeys));
+// ── Whole-registry validation: each domain against its schema + cross-domain references. Pure.
+// SKUs are the spine: every domain's `sku` must resolve to a known sku_id (no orphan products). ──
+export function validateAll({ repos = [], assets = [], campaigns = [], finance = [], experiments = [], skus = [] } = {}, schemas = {}, candidateIds = []) {
+  const errors = [], repoKeys = repos.map(r => r.repo), skuIds = skus.map(s => s.sku_id);
+  if (schemas.sku) errors.push(...validateSkus(skus, schemas.sku, repoKeys));
+  if (schemas.repo) errors.push(...validateRepos(repos, schemas.repo, skuIds));
+  if (schemas.asset) errors.push(...validateAssets(assets, schemas.asset, repoKeys, skuIds));
+  if (schemas.campaign) errors.push(...validateCampaigns(campaigns, schemas.campaign, repoKeys, skuIds));
   if (schemas.finance) errors.push(...validateFinance(finance, schemas.finance));
-  if (schemas.experiment) errors.push(...validateExperiments(experiments, schemas.experiment, repoKeys, candidateIds));
+  if (schemas.experiment) errors.push(...validateExperiments(experiments, schemas.experiment, repoKeys, skuIds, candidateIds));
   return errors;
 }
 
@@ -149,12 +161,14 @@ const byCampaignId = (a, b) => (a.campaign_id < b.campaign_id ? -1 : a.campaign_
 const bySnapshotId = (a, b) => (a.snapshot_id < b.snapshot_id ? -1 : a.snapshot_id > b.snapshot_id ? 1 : 0);
 const byExperimentId = (a, b) => (a.experiment_id < b.experiment_id ? -1 : a.experiment_id > b.experiment_id ? 1 : 0);
 const usd = (n) => (n == null ? '—' : `$${Number(n).toLocaleString('en-US')}`);
-export function renderOrg({ repos = [], assets = [], campaigns = [], finance = [], experiments = [], drive = null } = {}) {
+const bySkuId = (a, b) => (a.sku_id < b.sku_id ? -1 : a.sku_id > b.sku_id ? 1 : 0);
+export function renderOrg({ repos = [], assets = [], campaigns = [], finance = [], experiments = [], skus = [], drive = null } = {}) {
   const repoRows = [...repos].sort(byRepo);
   const assetRows = [...assets].sort(byAssetId);
   const campaignRows = [...campaigns].sort(byCampaignId);
   const financeRows = [...finance].sort(bySnapshotId);
   const experimentRows = [...experiments].sort(byExperimentId);
+  const skuRows = [...skus].sort(bySkuId);
   const L = [];
   L.push('# ORG.md — Apex company map (generated)');
   L.push('');
@@ -163,6 +177,16 @@ export function renderOrg({ repos = [], assets = [], campaigns = [], finance = [
   if (drive && drive.org_doc_url) {
     L.push(`> 📁 **Phone-readable Google Drive mirror:** [ORG doc](${drive.org_doc_url}) · [folder](${drive.folder_url})`);
   }
+  L.push('');
+  L.push('## SKUs (the product spine)');
+  L.push('');
+  L.push('| SKU | Name | Status | Repo | Stripe | Launch target |');
+  L.push('|-----|------|--------|------|--------|---------------|');
+  for (const s of skuRows) {
+    L.push(`| \`${s.sku_id}\` | ${s.name} | ${s.status} | ${s.repo ? '`' + s.repo + '`' : '—'} | ${s.stripe_mode || 'none'} | ${s.launch_target || '—'} |`);
+  }
+  L.push('');
+  L.push(`_SKUs tracked: ${skuRows.length}._`);
   L.push('');
   L.push('## Repos');
   L.push('');
@@ -211,6 +235,20 @@ export function renderOrg({ repos = [], assets = [], campaigns = [], finance = [
   }
   L.push('');
   L.push(`_Experiments tracked: ${experimentRows.length}._`);
+  // Per-SKU rollup: everything belonging to each product, in one glance. The spine in action.
+  L.push('');
+  L.push('## Per-SKU view');
+  const named = (xs, f) => xs.map(f).join(', ') || '—';
+  for (const s of skuRows) {
+    L.push('');
+    L.push(`### \`${s.sku_id}\` — ${s.name} · ${s.status}`);
+    if (s.thesis) L.push(`_${s.thesis}_`);
+    L.push(`- **Repo:** ${named(repoRows.filter(r => r.sku === s.sku_id), r => '`' + r.repo + '`')}`);
+    L.push(`- **Assets:** ${named(assetRows.filter(a => a.sku === s.sku_id), a => a.name)}`);
+    L.push(`- **Campaigns:** ${named(campaignRows.filter(c => c.sku === s.sku_id), c => c.name)}`);
+    L.push(`- **Experiments:** ${named(experimentRows.filter(e => e.sku === s.sku_id), e => '`' + e.experiment_id + '`')}`);
+    if (s.drive_folder) L.push(`- **Drive:** [folder](${s.drive_folder})`);
+  }
   return L.join('\n') + '\n';
 }
 
@@ -218,10 +256,12 @@ export function renderOrg({ repos = [], assets = [], campaigns = [], finance = [
 function loadAll() {
   return {
     data: {
+      skus: readJsonl(SKUS_FILE),
       repos: readJsonl(REPOS_FILE), assets: readJsonl(ASSETS_FILE), campaigns: readJsonl(CAMPAIGNS_FILE),
       finance: readJsonl(FINANCE_FILE), experiments: readJsonl(EXPERIMENTS_FILE), drive: readJson(DRIVE_FILE),
     },
     schemas: {
+      sku: loadSchema('sku-record.schema.json'),
       repo: loadSchema('repo-record.schema.json'),
       asset: loadSchema('asset-record.schema.json'),
       campaign: loadSchema('campaign-record.schema.json'),
@@ -240,7 +280,7 @@ function cmdValidate() {
     process.exit(1);
   }
   const d = data;
-  console.log(`✓ registry valid — ${d.repos.length} repo(s), ${d.assets.length} asset(s), ${d.campaigns.length} campaign(s), ${d.finance.length} finance, ${d.experiments.length} experiment(s); schema + integrity + refs OK`);
+  console.log(`✓ registry valid — ${d.skus.length} SKU(s), ${d.repos.length} repo(s), ${d.assets.length} asset(s), ${d.campaigns.length} campaign(s), ${d.finance.length} finance, ${d.experiments.length} experiment(s); schema + integrity + refs OK`);
 }
 function cmdRender(check) {
   const { data, schemas, candidateIds } = loadAll();
@@ -253,7 +293,7 @@ function cmdRender(check) {
     console.log('✓ ORG.md up to date'); return;
   }
   fs.writeFileSync(ORG_FILE, out);
-  console.log(`✓ rendered ORG.md (${data.repos.length} repos, ${data.assets.length} assets, ${data.campaigns.length} campaigns, ${data.finance.length} finance, ${data.experiments.length} experiments) → ${ORG_FILE}`);
+  console.log(`✓ rendered ORG.md (${data.skus.length} SKUs, ${data.repos.length} repos, ${data.assets.length} assets, ${data.campaigns.length} campaigns, ${data.finance.length} finance, ${data.experiments.length} experiments) → ${ORG_FILE}`);
 }
 function main() {
   const [, , cmd, ...rest] = process.argv;

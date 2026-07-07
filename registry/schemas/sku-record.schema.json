@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "registry/sku-record",
+  "title": "SkuRecord",
+  "description": "A SKU — one product the factory manufactures. This is the ORGANIZING SPINE: repos, assets, campaigns, and experiments reference a SKU by `sku_id`. `sku_id` is the unique key; `repo`, when set, must exist in repos.jsonl. One factory, many SKUs (DECISIONS.md D4).",
+  "type": "object",
+  "required": ["sku_id", "name", "status"],
+  "additionalProperties": false,
+  "properties": {
+    "sku_id": { "type": "string", "description": "stable id, e.g. sku_001 — the spine key every other domain references" },
+    "name": { "type": "string", "description": "product name / working title" },
+    "status": { "type": "string", "enum": ["PROPOSED", "BUILDING", "LIVE", "KILLED", "PARKED"] },
+    "thesis": { "type": "string", "description": "the one-line hypothesis this SKU is testing" },
+    "repo": { "type": ["string", "null"], "description": "the SKU's product repo (owner/name) — must exist in repos.jsonl" },
+    "stripe_mode": { "type": "string", "enum": ["none", "test", "live"] },
+    "launch_target": { "type": "string", "description": "the bar that decides it, e.g. 'Day 29 first Stripe dollar'" },
+    "drive_folder": { "type": ["string", "null"], "description": "per-SKU Google Drive folder URL, if mirrored" },
+    "notes": { "type": "string" }
+  }
+}

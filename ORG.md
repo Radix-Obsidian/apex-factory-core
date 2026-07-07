@@ -4,6 +4,14 @@
 > Source of truth = the JSONL files in `registry/`. Edit those, then `make org-render`.
 > 📁 **Phone-readable Google Drive mirror:** [ORG doc](https://docs.google.com/document/d/1baKeH9YBwUjSMcqffsvWERYyUo7a_jH7btumJ1FBLio/edit) · [folder](https://drive.google.com/drive/folders/1d3YP0v0lZnKjZoNljeLtPJpk3nF-JflE)
 
+## SKUs (the product spine)
+
+| SKU | Name | Status | Repo | Stripe | Launch target |
+|-----|------|--------|------|--------|---------------|
+| `sku_001` | SKU #1 — The Native Factory | PROPOSED | `Radix-Obsidian/The-Native-Factory` | test | Day 29 — first Stripe dollar |
+
+_SKUs tracked: 1._
+
 ## Repos
 
 | Repo | Role | Status | Stripe | Deploy | SKU | URL |
@@ -44,3 +52,12 @@ _Campaigns tracked: 2._
 | `exp-sku001` | PROPOSED | sku_001 | A status-driven, ultra-niche digital MEP can secure the first Stripe dollar by Day 29. | first Stripe dollar (Day 29 survival wall) | — |
 
 _Experiments tracked: 1._
+
+## Per-SKU view
+
+### `sku_001` — SKU #1 — The Native Factory · PROPOSED
+_A status-driven, ultra-niche digital MEP can secure the first Stripe dollar by Day 29._
+- **Repo:** `Radix-Obsidian/The-Native-Factory`
+- **Assets:** SKU #1 visual identity (logo + background loop + asset skins)
+- **Campaigns:** SKU #1 launch
+- **Experiments:** `exp-sku001`
