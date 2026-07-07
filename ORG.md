@@ -16,10 +16,65 @@ _SKUs tracked: 1._
 
 | Repo | Role | Status | Stripe | Deploy | SKU | URL |
 |------|------|--------|--------|--------|-----|-----|
-| `Radix-Obsidian/The-Native-Factory` | sku | PLANNED | test | railway | sku_001 | https://github.com/Radix-Obsidian/The-Native-Factory |
+| `Radix-Obsidian/6am-in-the-6` | unknown | DORMANT | none | none | — | https://github.com/Radix-Obsidian/6am-in-the-6 |
+| `Radix-Obsidian/BillyClaw` | unknown | LIVE | none | none | — | https://github.com/Radix-Obsidian/BillyClaw |
+| `Radix-Obsidian/CAI` | unknown | DORMANT | none | none | — | https://github.com/Radix-Obsidian/CAI |
+| `Radix-Obsidian/CHIEF` | unknown | LIVE | none | none | — | https://github.com/Radix-Obsidian/CHIEF |
+| `Radix-Obsidian/Creative-Agentcy-inc` | unknown | LIVE | none | none | — | https://github.com/Radix-Obsidian/Creative-Agentcy-inc |
+| `Radix-Obsidian/Doorman` | unknown | LIVE | none | none | — | https://github.com/Radix-Obsidian/Doorman |
+| `Radix-Obsidian/Dot` | unknown | LIVE | none | none | — | https://github.com/Radix-Obsidian/Dot |
+| `Radix-Obsidian/Esiwolf` | unknown | LIVE | none | none | — | https://github.com/Radix-Obsidian/Esiwolf |
+| `Radix-Obsidian/Herday-AI` | unknown | DORMANT | none | none | — | https://github.com/Radix-Obsidian/Herday-AI |
+| `Radix-Obsidian/HueyclawMD` | unknown | LIVE | none | none | — | https://github.com/Radix-Obsidian/HueyclawMD |
+| `Radix-Obsidian/Jos` | unknown | LIVE | none | none | — | https://github.com/Radix-Obsidian/Jos |
+| `Radix-Obsidian/Outcome-AI-Waiesl-` | unknown | DORMANT | none | none | — | https://github.com/Radix-Obsidian/Outcome-AI-Waiesl- |
+| `Radix-Obsidian/QUOVO` | unknown | LIVE | none | none | — | https://github.com/Radix-Obsidian/QUOVO |
+| `Radix-Obsidian/Referem-ai` | unknown | LIVE | none | none | — | https://github.com/Radix-Obsidian/Referem-ai |
+| `Radix-Obsidian/Sage` | unknown | LIVE | none | none | — | https://github.com/Radix-Obsidian/Sage |
+| `Radix-Obsidian/Sarah.-AI` | unknown | LIVE | none | none | — | https://github.com/Radix-Obsidian/Sarah.-AI |
+| `Radix-Obsidian/ShepGate` | unknown | LIVE | none | none | — | https://github.com/Radix-Obsidian/ShepGate |
+| `Radix-Obsidian/ShepLight` | unknown | LIVE | none | none | — | https://github.com/Radix-Obsidian/ShepLight |
+| `Radix-Obsidian/ShepScan` | unknown | LIVE | none | none | — | https://github.com/Radix-Obsidian/ShepScan |
+| `Radix-Obsidian/ShepVerify` | unknown | LIVE | none | none | — | https://github.com/Radix-Obsidian/ShepVerify |
+| `Radix-Obsidian/Sheplang` | unknown | LIVE | none | none | — | https://github.com/Radix-Obsidian/Sheplang |
+| `Radix-Obsidian/Sheplang.` | unknown | LIVE | none | none | — | https://github.com/Radix-Obsidian/Sheplang. |
+| `Radix-Obsidian/Star-Office-UI` | unknown | LIVE | none | none | — | https://github.com/Radix-Obsidian/Star-Office-UI |
+| `Radix-Obsidian/The-Disclosure-VOCO` | unknown | LIVE | none | none | — | https://github.com/Radix-Obsidian/The-Disclosure-VOCO |
+| `Radix-Obsidian/The-Hive` | unknown | LIVE | none | none | — | https://github.com/Radix-Obsidian/The-Hive |
+| `Radix-Obsidian/The-Native-Factory` | sku | PLANNED | none | none | sku_001 | https://github.com/Radix-Obsidian/The-Native-Factory |
+| `Radix-Obsidian/TrailNote` | unknown | LIVE | none | none | — | https://github.com/Radix-Obsidian/TrailNote |
+| `Radix-Obsidian/Vhive-` | unknown | LIVE | none | none | — | https://github.com/Radix-Obsidian/Vhive- |
+| `Radix-Obsidian/Voco-ai` | unknown | LIVE | none | none | — | https://github.com/Radix-Obsidian/Voco-ai |
+| `Radix-Obsidian/Waiesl` | unknown | DORMANT | none | none | — | https://github.com/Radix-Obsidian/Waiesl |
+| `Radix-Obsidian/YouGotThis-AI` | unknown | LIVE | none | none | — | https://github.com/Radix-Obsidian/YouGotThis-AI |
+| `Radix-Obsidian/agentarcade` | unknown | LIVE | none | none | — | https://github.com/Radix-Obsidian/agentarcade |
+| `Radix-Obsidian/antidote-by-proof` | unknown | LIVE | none | none | — | https://github.com/Radix-Obsidian/antidote-by-proof |
 | `Radix-Obsidian/apex-factory-core` | control-plane | LIVE | none | none | — | https://github.com/Radix-Obsidian/apex-factory-core |
+| `Radix-Obsidian/build-in-public` | unknown | LIVE | none | none | — | https://github.com/Radix-Obsidian/build-in-public |
+| `Radix-Obsidian/chassis` | unknown | LIVE | none | none | — | https://github.com/Radix-Obsidian/chassis |
+| `Radix-Obsidian/cli` | unknown | LIVE | none | none | — | https://github.com/Radix-Obsidian/cli |
+| `Radix-Obsidian/cold-case-crawler` | unknown | LIVE | none | none | — | https://github.com/Radix-Obsidian/cold-case-crawler |
+| `Radix-Obsidian/comply-v2` | unknown | LIVE | none | none | — | https://github.com/Radix-Obsidian/comply-v2 |
+| `Radix-Obsidian/context-weaver` | unknown | DORMANT | none | none | — | https://github.com/Radix-Obsidian/context-weaver |
+| `Radix-Obsidian/crimewavenc` | unknown | DORMANT | none | none | — | https://github.com/Radix-Obsidian/crimewavenc |
+| `Radix-Obsidian/domuschef` | unknown | LIVE | none | none | — | https://github.com/Radix-Obsidian/domuschef |
+| `Radix-Obsidian/domuschef-app` | unknown | LIVE | none | none | — | https://github.com/Radix-Obsidian/domuschef-app |
+| `Radix-Obsidian/dot-navigator` | unknown | LIVE | none | none | — | https://github.com/Radix-Obsidian/dot-navigator |
+| `Radix-Obsidian/gstack-artifacts-the-hive` | unknown | LIVE | none | none | — | https://github.com/Radix-Obsidian/gstack-artifacts-the-hive |
+| `Radix-Obsidian/harness` | unknown | LIVE | none | none | — | https://github.com/Radix-Obsidian/harness |
+| `Radix-Obsidian/heatlog` | unknown | LIVE | none | none | — | https://github.com/Radix-Obsidian/heatlog |
+| `Radix-Obsidian/krausefx.com` | unknown | LIVE | none | none | — | https://github.com/Radix-Obsidian/krausefx.com |
+| `Radix-Obsidian/lending-Force-` | unknown | LIVE | none | none | — | https://github.com/Radix-Obsidian/lending-Force- |
+| `Radix-Obsidian/life-para` | unknown | LIVE | none | none | — | https://github.com/Radix-Obsidian/life-para |
+| `Radix-Obsidian/lovable-small-cto` | unknown | LIVE | none | none | — | https://github.com/Radix-Obsidian/lovable-small-cto |
+| `Radix-Obsidian/mach` | unknown | LIVE | none | none | — | https://github.com/Radix-Obsidian/mach |
+| `Radix-Obsidian/notion-free` | unknown | LIVE | none | none | — | https://github.com/Radix-Obsidian/notion-free |
+| `Radix-Obsidian/renewalai` | unknown | LIVE | none | none | — | https://github.com/Radix-Obsidian/renewalai |
+| `Radix-Obsidian/voco-core` | unknown | LIVE | none | none | — | https://github.com/Radix-Obsidian/voco-core |
+| `Radix-Obsidian/vocoyc26` | unknown | LIVE | none | none | — | https://github.com/Radix-Obsidian/vocoyc26 |
+| `Radix-Obsidian/waimd` | unknown | DORMANT | none | none | — | https://github.com/Radix-Obsidian/waimd |
 
-_Repos tracked: 2._
+_Repos tracked: 57._
 
 ## Assets
 
