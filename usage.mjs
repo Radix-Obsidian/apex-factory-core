@@ -20,14 +20,16 @@ const num = (v, d) => { const n = Number(v); return Number.isFinite(n) ? n : d; 
 const envNum = k => (process.env[k] != null && process.env[k] !== '') ? Number(process.env[k]) : null;
 const CLAUDE_5H_BUDGET   = envNum('CLAUDE_5H_BUDGET');    // null = report only
 const CLAUDE_WEEK_BUDGET = envNum('CLAUDE_WEEK_BUDGET');  // null = report only
-// D23 — default fail-closed Opus ceiling (no budget env required). Gates on the RECENT 5h window (active
-// burst), NOT 7d: a rolling-weekly gate would let stale interactive-Opus history permanently cool-down the
-// (cheap, Sonnet) loop — the exact infra deadlock to avoid. Trips only on an ACTIVE runaway: Opus over
-// CLAUDE_OPUS_PCT of the 5h proxy AND real volume past CLAUDE_OPUS_MIN_PROXY (the floor stops a single early
-// call pinning share at 100%). Self-corrects as the 5h window rolls / cheaper calls dilute the share.
-// Disable entirely with CLAUDE_OPUS_PCT>=1.
+// D23 — Opus-runaway detection. ALWAYS reported (advisory/action + heartbeat) for visibility; ENFORCED by
+// --claude-gate only when CLAUDE_OPUS_GATE is truthy (opt-in). It measures the RECENT 5h window, not 7d, and
+// that 5h proxy is GLOBAL (every ~/.claude session incl. interactive Opus, which D23 permits) — so enforcing
+// it by default would let unrelated interactive Opus starve the cheap Sonnet loop (a real deadlock the review
+// caught). Runaway = Opus over CLAUDE_OPUS_PCT of the 5h proxy AND volume past CLAUDE_OPUS_MIN_PROXY (the floor
+// stops a single early call pinning share at 100%). The fail-closed ENFORCEMENT of Opus lives in
+// hooks/model-guard.mjs (spawn-time); this is only an optional loop throttle. Disable with CLAUDE_OPUS_PCT>=1.
 const CLAUDE_OPUS_PCT = num(process.env.CLAUDE_OPUS_PCT, 0.90);
 const CLAUDE_OPUS_MIN = num(process.env.CLAUDE_OPUS_MIN_PROXY, 5);
+const CLAUDE_OPUS_GATE = /^(1|true|yes|on)$/i.test(process.env.CLAUDE_OPUS_GATE || '');
 const HIGGS_MIN_CREDITS  = num(process.env.HIGGSFIELD_MIN_CREDITS, 5);
 
 // Official rates per MTok (audited live from platform.claude.com 2026-06-11). Opus 4.8 is $5/$25 —
@@ -115,7 +117,7 @@ const opusRunaway = rc.proxy>=CLAUDE_OPUS_MIN && opusShare5h>CLAUDE_OPUS_PCT;
 if(wk.proxy>0 && opusShare>0.8)
   advisories.push(`Opus = ${Math.round(opusShare*100)}% of weekly plan consumption — route cheap steps (heartbeats, trend scans, tests) to Sonnet/Haiku to stretch the Max allowance.`);
 if(opusRunaway)
-  actions.push(`Opus RUNAWAY (recent) — ${Math.round(opusShare5h*100)}% of last-5h consumption (> ${Math.round(CLAUDE_OPUS_PCT*100)}% ceiling, $${rc.proxy.toFixed(0)} vol). --claude-gate fails closed; route non-code to Sonnet/Haiku (D23) or raise CLAUDE_OPUS_PCT.`);
+  actions.push(`Opus RUNAWAY (recent) — ${Math.round(opusShare5h*100)}% of last-5h consumption (> ${Math.round(CLAUDE_OPUS_PCT*100)}% ceiling, $${rc.proxy.toFixed(0)} vol). Route non-code to Sonnet/Haiku (D23; enforced by hooks/model-guard.mjs). ${CLAUDE_OPUS_GATE?'--claude-gate will throttle the loop.':'Set CLAUDE_OPUS_GATE=1 to auto-throttle the loop, or raise CLAUDE_OPUS_PCT.'}`);
 const verdict = actions.length ? 'ACTION NEEDED' : 'HEALTHY';
 
 // --claude-gate: exit non-zero when a SET budget is exceeded OR (D23) on a default Opus runaway. Ignores
@@ -123,12 +125,12 @@ const verdict = actions.length ? 'ACTION NEEDED' : 'HEALTHY';
 if(process.argv.includes('--claude-gate')){
   const over = (CLAUDE_5H_BUDGET!=null && claude['5h'].proxy > CLAUDE_5H_BUDGET)
             || (CLAUDE_WEEK_BUDGET!=null && claude['7d'].proxy > CLAUDE_WEEK_BUDGET)
-            || opusRunaway;  // D23: default fail-closed on an Opus runaway, no budget env required
+            || (CLAUDE_OPUS_GATE && opusRunaway);  // D23: opt-in Opus-runaway throttle (CLAUDE_OPUS_GATE=1) — off by default (global 5h scope)
   if(over) console.error(`CLAUDE allowance gate tripped — 5h $${claude['5h'].proxy.toFixed(0)} (Opus ${Math.round(opusShare5h*100)}%), 7d $${claude['7d'].proxy.toFixed(0)} (Opus ${Math.round(opusShare*100)}%)${opusRunaway?' — Opus RUNAWAY ceiling (D23)':''}`);
   process.exit(over ? 1 : 0);
 }
 
-if(JSON_OUT){ console.log(JSON.stringify({claude,higgs,verdict,actions,advisories,opusShare,opusShare5h,opusRunaway,thresholds:{CLAUDE_5H_BUDGET,CLAUDE_WEEK_BUDGET,CLAUDE_OPUS_PCT,CLAUDE_OPUS_MIN,HIGGS_MIN_CREDITS}},null,2)); process.exit(0); }
+if(JSON_OUT){ console.log(JSON.stringify({claude,higgs,verdict,actions,advisories,opusShare,opusShare5h,opusRunaway,thresholds:{CLAUDE_5H_BUDGET,CLAUDE_WEEK_BUDGET,CLAUDE_OPUS_PCT,CLAUDE_OPUS_MIN,CLAUDE_OPUS_GATE,HIGGS_MIN_CREDITS}},null,2)); process.exit(0); }
 
 const D=n=>'$'+n.toFixed(2); const M=n=>(n/1e6).toFixed(1)+'M'; const pct=(a,b)=>b?Math.round(a/b*100)+'%':'—';
 console.log('— RESOURCE ANALYSIS (both pools) —');

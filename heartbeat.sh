@@ -11,8 +11,9 @@ SOCK="$HOME/.tmux/sock"; SESSION="${SESSION:-factory}"
 LOOP_RUNS="${LOOP_WORKTREE:-$HERE}/runs"
 
 # D23 — narration must be $0 OpenRouter-free, never a Claude model (that burns the Max allowance).
-# heartbeat.sh makes no model call itself (OpenClaw narrates), but if the cron passes its model via
-# HEARTBEAT_MODEL we catch a misconfig here — LOUD, not fatal (a heartbeat must never die mid-check).
+# The AUTHORITATIVE pin is the OpenClaw cron recipe (--model openrouter/free, README §4) + models.json;
+# heartbeat.sh makes no model call itself. This is a DEFENSIVE catch that only fires when a caller exports
+# HEARTBEAT_MODEL (e.g. a cron wrapper surfacing its model) — LOUD, not fatal (a heartbeat must never die).
 case "${HEARTBEAT_MODEL:-openrouter/free}" in
   *claude*|*anthropic*|*opus*|*sonnet*|*haiku*)
     echo "⚠️  NARRATION MODEL MISCONFIG — '${HEARTBEAT_MODEL:-}' is a Claude model; D23 requires openrouter/free (\$0). Fix the OpenClaw cron: --model openrouter/free (README §4, HEARTBEAT.md).";;
