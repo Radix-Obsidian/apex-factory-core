@@ -134,9 +134,9 @@ export function formatVerdictMessage(math: RealMathResult): string {
 
   if (math.verdict === "RATE_PARITY") {
     return (
-      "Your current rate is already close to today's market. The numbers do not show " +
+      "Your current rate is already close to today s market. The numbers do not show " +
       "a compelling savings case on a straight rate reduction. If you have equity to " +
-      "access or high interest debt to consolidate, the conversation changes. " +
+      "access or interest debt to consolidate, the conversation changes. " +
       "A 15 minute call with a specialist would clarify the right move."
     );
   }
