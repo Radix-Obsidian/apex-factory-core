@@ -61,30 +61,35 @@ export function buildFingerprintKey(entry) {
  * Only sets Estimated Value when the field is present and non-null.
  */
 export function buildNotionProperties(entry) {
-  const props = {
+    const props = {
     Address: {
-      title: [{ text: { content: entry.address ?? "" } }],
+      title: [{ text: { content: `[Fidelity Score ${entry.fidelityScore ?? 0} | ${entry.fidelityScore >= 8 ? "SAME_DAY" : (entry.fidelityScore >= 5 ? "WITHIN_24H" : "NURTURE")}] — ${entry.address ?? ""}` } }],
     },
     Date: {
       date: { start: entry.ts },
     },
-    Result: {
-      select: { name: entry.result ?? "no_data" },
+    "Net Monthly Cash Flow Gain": {
+      number: entry.monthlySavings ?? 0,
+    },
+    "Blended Rate Reduction": {
+      rich_text: [{ text: { content: entry.rateReduction ?? "" } }],
+    },
+    "Accelerated Payoff Timeline": {
+      rich_text: [{ text: { content: entry.timeSaved ?? "" } }],
+    },
+    "Cash-Out Cleared": {
+      number: entry.cashOutAvailable ?? 0,
+    },
+    "Equity Verdict": {
+      select: { name: entry.equityVerdict ?? "NONE" },
+    },
+    "Break-even Period": {
+      rich_text: [{ text: { content: entry.breakEvenMonths ? Math.ceil(entry.breakEvenMonths) + " Months" : "" } }],
     },
     Source: {
       select: { name: entry.source ?? "ATTOM" },
     },
-    "Session ID": {
-      rich_text: [{ text: { content: entry.sessionId ?? "" } }],
-    },
-    "Error Reason": {
-      rich_text: [{ text: { content: entry.errorReason ?? "" } }],
-    },
   };
-
-  if (entry.estimatedValue != null) {
-    props["Estimated Value"] = { number: entry.estimatedValue };
-  }
 
   return props;
 }
