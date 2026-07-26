@@ -57,6 +57,9 @@ export interface RealMathResult {
   breakEvenMonths: number;
   fidelityScore: number;
   verdict: "STRONG_YES" | "MARGINAL" | "NO_EQUITY" | "RATE_PARITY";
+  rateReduction: string;
+  timeSaved: string;
+  equityVerdict: "STRONG" | "MARGINAL" | "NONE";
 }
 
 export interface SalesforceLead {
