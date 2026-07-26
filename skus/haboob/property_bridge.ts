@@ -1,86 +1,151 @@
-import type { PropertyData } from "./types.js";
+import type { PropertyData, AuditLogEntry } from "./types.js";
+import { appendFileSync, mkdirSync } from "node:fs";
+import { join } from "node:path";
 
 const ATTOM_BASE = "https://api.gateway.attomdata.com/propertyapi/v1.0.0";
-const PROPERTYRADAR_BASE = "https://api.propertyradar.com/v1";
 
-async function fetchFromAttom(address: string): Promise<PropertyData | null> {
-  const apiKey = process.env["HABOOB_ATTOM_API_KEY"];
-  if (!apiKey) return null;
+const AUDIT_LOG_DIR = join(process.cwd(), "ops");
+const AUDIT_LOG_PATH = join(AUDIT_LOG_DIR, "api_audit.log");
 
-  const params = new URLSearchParams({ address1: address, address2: "" });
-  const avm = await fetch(
-    `${ATTOM_BASE}/avm/detail?${params.toString()}`,
-    { headers: { apikey: apiKey, Accept: "application/json" } }
-  ).catch(() => null);
-
-  if (!avm || !avm.ok) return null;
-
-  const json = await avm.json().catch(() => null);
-  const prop = json?.property?.[0];
-  if (!prop) return null;
-
-  const estimatedValue =
-    prop?.avm?.amount?.value ?? prop?.assessment?.market?.mktttlvalue ?? 0;
-
-  if (!estimatedValue) return null;
-
-  return {
-    estimatedValue,
-    assessedValue: prop?.assessment?.assessed?.assdttlvalue ?? estimatedValue,
-    lastSalePrice: prop?.sale?.amount?.saleamt ?? 0,
-    lastSaleDate: prop?.sale?.amount?.salerecdate ?? "",
-    street: prop?.address?.line1 ?? "",
-    city: prop?.address?.city ?? "",
-    state: prop?.address?.state ?? "",
-    postalCode: prop?.address?.postal1 ?? "",
-    source: "ATTOM",
-  };
+function writeAuditLog(entry: AuditLogEntry): void {
+  try {
+    mkdirSync(AUDIT_LOG_DIR, { recursive: true });
+    appendFileSync(AUDIT_LOG_PATH, JSON.stringify(entry) + "\n", "utf-8");
+  } catch {
+    // Audit log write failure must never crash the primary pipeline.
+  }
 }
 
-async function fetchFromPropertyRadar(
-  address: string
+export function validateAddress(address: string): {
+  valid: boolean;
+  reason: string;
+} {
+  if (!address || address.trim().length < 5) {
+    return {
+      valid: false,
+      reason:
+        "Address is empty or too short to be a valid US street address.",
+    };
+  }
+
+  const normalized = address.trim();
+
+  const hasStreetNumber = /\d/.test(normalized);
+  const hasStreetName = /[a-zA-Z]{2,}/.test(normalized);
+
+  if (!hasStreetNumber || !hasStreetName) {
+    return {
+      valid: false,
+      reason:
+        `Address does not contain a street number and street name. Received: "${normalized}"`,
+    };
+  }
+
+  return { valid: true, reason: "passed" };
+}
+
+async function fetchFromAttom(
+  address: string,
+  sessionId: string
 ): Promise<PropertyData | null> {
-  const apiKey = process.env["HABOOB_PROPERTYRADAR_API_KEY"];
-  if (!apiKey) return null;
+  const apiKey = process.env["HABOOB_ATTOM_API_KEY"];
 
-  const resp = await fetch(
-    `${PROPERTYRADAR_BASE}/properties?address=${encodeURIComponent(address)}&purchase=EstimatedValue,AssessedValue,OwnerName&limit=1`,
-    { headers: { Authorization: `Bearer ${apiKey}`, Accept: "application/json" } }
-  ).catch(() => null);
-  if (!resp || !resp.ok) return null;
+  if (!apiKey) {
+    writeAuditLog({
+      ts: new Date().toISOString(),
+      sessionId,
+      purpose: "property_lookup",
+      address,
+      source: "ATTOM",
+      result: "blocked_by_circuit_breaker",
+      errorReason: "HABOOB_ATTOM_API_KEY environment variable is not set",
+    });
+    return null;
+  }
 
-  const json = await resp.json().catch(() => null);
-  const item = json?.results?.[0];
-  if (!item) return null;
+  const params = new URLSearchParams({ address1: address, address2: "" });
+  let propertyResult: PropertyData | null = null;
+  let errorReason: string | undefined;
 
-  const estimatedValue = item?.EstimatedValue ?? 0;
-  if (!estimatedValue) return null;
+  try {
+    const avm = await fetch(
+      `${ATTOM_BASE}/avm/detail?${params.toString()}`,
+      { headers: { apikey: apiKey, Accept: "application/json" } }
+    );
 
-  const addressParts = address.split(",").map((p: string) => p.trim());
+    if (!avm.ok) {
+      errorReason = `HTTP ${avm.status} response from ATTOM`;
+    } else {
+      const json = await avm.json().catch(() => null);
+      const prop = json?.property?.[0];
 
-  return {
-    estimatedValue,
-    assessedValue: item?.AssessedValue ?? estimatedValue,
-    lastSalePrice: item?.LastSaleAmount ?? 0,
-    lastSaleDate: item?.LastSaleDate ?? "",
-    street: addressParts[0] ?? "",
-    city: addressParts[1] ?? "",
-    state: addressParts[2]?.split(" ")[0] ?? "CA",
-    postalCode: addressParts[2]?.split(" ")[1] ?? "",
-    source: "PropertyRadar",
-  };
+      if (prop) {
+        const estimatedValue =
+          prop?.avm?.amount?.value ??
+          prop?.assessment?.market?.mktttlvalue ??
+          0;
+
+        if (estimatedValue) {
+          propertyResult = {
+            estimatedValue,
+            assessedValue:
+              prop?.assessment?.assessed?.assdttlvalue ?? estimatedValue,
+            lastSalePrice: prop?.sale?.amount?.saleamt ?? 0,
+            lastSaleDate: prop?.sale?.amount?.salerecdate ?? "",
+            street: prop?.address?.line1 ?? "",
+            city: prop?.address?.city ?? "",
+            state: prop?.address?.state ?? "",
+            postalCode: prop?.address?.postal1 ?? "",
+            source: "ATTOM",
+          };
+        } else {
+          errorReason =
+            "ATTOM returned a property record but estimated value was zero or absent";
+        }
+      } else {
+        errorReason =
+          "ATTOM response contained no property record for this address";
+      }
+    }
+  } catch (err) {
+    errorReason =
+      err instanceof Error ? err.message : "Unknown network error contacting ATTOM";
+  }
+
+  writeAuditLog({
+    ts: new Date().toISOString(),
+    sessionId,
+    purpose: "property_lookup",
+    address,
+    source: "ATTOM",
+    result: propertyResult ? "success" : "no_data",
+    errorReason,
+    estimatedValue: propertyResult?.estimatedValue,
+  });
+
+  return propertyResult;
 }
 
 export async function getPropertyData(
-  address: string
+  address: string,
+  sessionId = "unknown"
 ): Promise<PropertyData | null> {
-  const attomResult = await fetchFromAttom(address);
-  if (attomResult) return attomResult;
+  const check = validateAddress(address);
 
-  const radarResult = await fetchFromPropertyRadar(address);
-  if (radarResult) return radarResult;
+  if (!check.valid) {
+    writeAuditLog({
+      ts: new Date().toISOString(),
+      sessionId,
+      purpose: "property_lookup",
+      address,
+      source: "ATTOM",
+      result: "blocked_by_circuit_breaker",
+      errorReason: check.reason,
+    });
+    return null;
+  }
 
-  return null;
+  return fetchFromAttom(address, sessionId);
 }
 
 export function parseAddressFromString(raw: string): {

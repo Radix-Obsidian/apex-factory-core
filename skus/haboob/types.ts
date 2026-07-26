@@ -86,3 +86,14 @@ export interface AgentTurn {
   nextState: AgentState;
   sessionUpdates: Partial<ConversationSession>;
 }
+
+export interface AuditLogEntry {
+  ts: string;
+  sessionId: string;
+  purpose: string;
+  address: string;
+  source: "ATTOM" | "PropertyRadar";
+  result: "success" | "no_data" | "error" | "blocked_by_circuit_breaker";
+  errorReason?: string;
+  estimatedValue?: number;
+}
