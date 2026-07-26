@@ -1,4 +1,4 @@
-import type { PropertyData, AuditLogEntry } from "./types.js";
+import type { AgentState, AgentTurn, ConversationSession, BorrowerProfile, PropertyData } from "./types.js";
 import { appendFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 
@@ -7,7 +7,7 @@ const ATTOM_BASE = "https://api.gateway.attomdata.com/propertyapi/v1.0.0";
 const AUDIT_LOG_DIR = join(process.cwd(), "ops");
 const AUDIT_LOG_PATH = join(AUDIT_LOG_DIR, "api_audit.log");
 
-function writeAuditLog(entry: AuditLogEntry): void {
+function writeAuditLog(entry: any): void {
   try {
     mkdirSync(AUDIT_LOG_DIR, { recursive: true });
     appendFileSync(AUDIT_LOG_PATH, JSON.stringify(entry) + "\n", "utf-8");
