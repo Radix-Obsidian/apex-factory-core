@@ -1,0 +1,30 @@
+{
+  "slug": "haboob-intake",
+  "name": "Haboob Intake Agent",
+  "version": "0.1.0",
+  "status": "DRAFT",
+  "description": "Conversational Real Math mortgage audit agent. Qualifies borrowers for refinance opportunities through a structured intake flow, verifies equity via the property bridge, and emits Salesforce compatible lead objects.",
+  "framework": "chassis",
+  "model_tier": "factory-builder",
+  "model_id": "claude-sonnet-4-6",
+  "deploy_target": "railway",
+  "domain": "itshaboob.com",
+  "billing": "platform_fee_per_lo",
+  "gtm": ["meta-ads-ca", "propertyradar-custom-audience"],
+  "lead_source": "ATTOM_PropertyRadar",
+  "env_keys": [
+    "HABOOB_ATTOM_API_KEY",
+    "HABOOB_PROPERTYRADAR_API_KEY",
+    "HABOOB_TARGET_RATE",
+    "HABOOB_MODEL",
+    "HABOOB_SALESFORCE_CLIENT_ID",
+    "HABOOB_SALESFORCE_SECRET",
+    "HABOOB_SALESFORCE_INSTANCE"
+  ],
+  "fidelity_ledger": {
+    "notion_db": "Haboob Pipeline Ledger",
+    "ledger_script": "gtm/haboob/ledger.mjs"
+  },
+  "created_at": "2026-07-25",
+  "author": "factory-architect"
+}
