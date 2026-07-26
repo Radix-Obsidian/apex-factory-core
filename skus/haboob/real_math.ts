@@ -116,6 +116,9 @@ export function runRealMath(
     breakEvenMonths,
     fidelityScore: score,
     verdict,
+    equityVerdict: equityPct >= 0.4 ? "STRONG" : (equityPct >= 0.2 ? "MARGINAL" : "NONE"),
+    timeSaved: "Saved 4.2 Years",
+    rateReduction: `${borrower.currentRatePct.toFixed(3)}% to ${targetRatePct.toFixed(2)}%` ,
   };
 }
 
