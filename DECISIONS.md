@@ -498,13 +498,19 @@ archive**), killing ≠ deleting.
 - **Closed two status blind spots the scout found** (killed SKUs leaked through non-status-gated selectors):
   `ops/registry.mjs billableSkus` and `ops/support.mjs`'s standalone filter both now exclude `killed`, so
   `revenue.mjs`/`support.mjs` stop touching a dead SKU (the `liveSkus`-driven operate/digest/heartbeat already did).
-- **Froze the outreach engine:** `gtm/waimd/send.mjs` refuses to send while the SKU is `killed` (fail-closed — a
-  registry read error also refuses), so a stray cron/env can't fire outreach for a dead product.
+- **Froze the outreach engine — at the chokepoint, every entrypoint.** A shared `gtm/waimd/kill-guard.mjs`
+  (fail-closed: killed OR missing OR unreadable) is enforced in `transport.mjs sendOne()` — the one point every
+  sender funnels through — so the `daily-send.sh` cron (`send-scheduled.mjs`, `sequence-send.mjs`) is frozen too,
+  not just interactive `send.mjs`. (Two review bots caught the first pass: it guarded only send.mjs and failed
+  closed only on exceptions, not a missing/renamed entry.)
+- **Teardown stays visible.** Killing the SKU drops it from `liveSkus`, which would hide the live Stripe/deploy/
+  cron teardown from the operator digest. `ops/digest.mjs` now also surfaces killed SKUs' `pending_founder_actions`
+  as `[slug · TEARDOWN]` until the founder sets `teardown_complete:true` in the registry.
 - **Salvage queued** in `recycled/BACKLOG.md §5` (own repo → Tier-1 lift-freely): FMCSA calendar engine, MCS-150
   prefill, idempotent reminder scheduler, the FMCSA DomainPack — captured as parts-bin/BuildSpec lifts when
   `../dot-navigator` is added and the `workflow.js` deep-dive runs. Repo stays **label-only/frozen** (never gh-archive/delete).
-- **Test added:** `tests/usage-gate.test.sh` (`make usage-gate-test`, in `make verify`) — the D23 spend gate had ZERO
-  coverage and it's the control that can most hurt (answers the report's "test the controls that can hurt you").
+- **Tests added:** `tests/usage-gate.test.sh` (the D23 spend gate had ZERO coverage) and `tests/waimd-freeze.test.sh`
+  (the chokepoint freeze covers every sender entrypoint + teardown stays surfaced) — both folded into `make verify`.
 
 **Founder-gated (live/outward-facing, NOT automated):** stop live Stripe billing / archive prices / handle active subs;
 take down or freeze the waimd.org Railway deploy; unset `DOTNAV_STRIPE_RO_KEY` + `WAIMD_*` on the sender host; stop

@@ -11,6 +11,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { parseSender, preflight, sendOne } from "./transport.mjs";
 import { enroll } from "./sequence.mjs";
+import { SKU_FROZEN, FREEZE_REASON } from "./kill-guard.mjs";
 
 // US state → IANA timezone (simplified: uses most-common tz per state)
 const STATE_TZ = {
@@ -65,6 +66,7 @@ function groupByTimezone(items) {
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function main() {
+  if (SKU_FROZEN) { console.log(FREEZE_REASON + " — nothing sent."); return; } // D24 kill freeze (cron entrypoint)
   const args = process.argv.slice(2);
   const bi = args.indexOf("--batch");
   const BATCH_FILE = bi >= 0 ? args[bi + 1] : "";

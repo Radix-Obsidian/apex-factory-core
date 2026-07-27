@@ -7,6 +7,7 @@
 // live in our code (sequence.mjs), not in Brevo.
 
 import { SENDER, SEND } from "./config.mjs";
+import { assertNotFrozen } from "./kill-guard.mjs";
 
 export const BREVO_ENDPOINT = "https://api.brevo.com/v3/smtp/email";
 
@@ -34,6 +35,7 @@ export function preflight(sender) {
 // we attach the one-click List-Unsubscribe headers. Returns the Brevo messageId (or "sent"). Throws on
 // any non-2xx so the caller can count failures and keep going.
 export async function sendOne(sender, { to, subject, html, text, unsubscribeUrl }) {
+  assertNotFrozen(); // D24 — the one chokepoint every sender funnels through; killed/absent SKU → refuse (fail-closed)
   const listUnsub = `<mailto:${SENDER.replyTo}?subject=unsubscribe>, <${unsubscribeUrl}>`;
   const res = await fetch(BREVO_ENDPOINT, {
     method: "POST",

@@ -47,6 +47,10 @@ function compose(report, gtm) {
   const actions = [];
   const reg = loadRegistry();
   for (const s of liveSkus(reg)) for (const a of s.pending_founder_actions || []) actions.push(`[${s.slug}] ${a}`);
+  // D24 — killed SKUs leave liveSkus, but their TEARDOWN (live Stripe/deploy/env/cron) must stay visible until
+  // done. Surface killed SKUs' pending actions here until the founder sets teardown_complete:true in the registry.
+  for (const s of reg.skus.filter(x => x.status === 'killed' && !x.teardown_complete))
+    for (const a of s.pending_founder_actions || []) actions.push(`[${s.slug} · TEARDOWN] ${a}`);
 
   if (escalations.length) {
     lines.push("");
