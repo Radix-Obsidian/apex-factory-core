@@ -1,0 +1,30 @@
+{
+  "slug": "waimd-housing",
+  "name": "WAIMD — Work Assignment. Instant Move Decision.",
+  "version": "0.1.0",
+  "status": "staged",
+  "description": "Travel-nurse housing DECISION engine. A confirmed assignment in → 3 evidence-backed housing choices out. Deterministic hard gates + 100-pt scoring over candidates, a LISTED/CHECKED/CONFIRMED evidence model (fail-closed), $29 per decision charged only when 3 viable options are found. The trust wedge: it never fabricates proof, inventory, or certainty.",
+  "framework": "chassis",
+  "model_tier": "factory-builder",
+  "deploy_target": "railway",
+  "deploy_service": "waimd-housing-app",
+  "domain": "waimd.org",
+  "domain_note": "Repurposed from the killed dot-navigator (D24, FMCSA). waimd.org must be detached from dot-navigator-app and that deploy torn down BEFORE this SKU goes live on the domain (founder-gated).",
+  "billing": "one-time ($29 per decision, TEST until D5 publish gate)",
+  "gtm": ["meta-ads"],
+  "gtm_engine": "gtm/waimd-housing",
+  "gtm_note": "NOT gtm/waimd — that is the frozen FMCSA cold-email engine (D24).",
+  "lead_source": "Meta ads (Housing Special Ad Category, required)",
+  "env_keys": [
+    "WAIMD_HOUSING_STRIPE_RO_KEY",
+    "WAIMD_HOUSING_SUPABASE_URL",
+    "WAIMD_HOUSING_SUPABASE_KEY",
+    "WAIMD_HOUSING_MODEL",
+    "WAIMD_HOUSING_META_PIXEL_ID"
+  ],
+  "spec": "skus/waimd-housing/PRD.md",
+  "build_checklist": "skus/waimd-housing/BUILD-CHECKLIST.md",
+  "success_gate": "$70 spend ($10/day x 7) -> >=10 qualified missions -> >=3 paid decisions",
+  "created_at": "2026-07-27",
+  "author": "factory (D25)"
+}

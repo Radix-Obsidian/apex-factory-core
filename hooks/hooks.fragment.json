@@ -7,6 +7,10 @@
           {
             "type": "command",
             "command": "node /Users/the-hive/factory-core/hooks/copywriter-auditor.mjs"
+          },
+          {
+            "type": "command",
+            "command": "node /Users/the-hive/factory-core/hooks/honesty-auditor.mjs"
           }
         ]
       }

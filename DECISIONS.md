@@ -515,3 +515,42 @@ archive**), killing ≠ deleting.
 **Founder-gated (live/outward-facing, NOT automated):** stop live Stripe billing / archive prices / handle active subs;
 take down or freeze the waimd.org Railway deploy; unset `DOTNAV_STRIPE_RO_KEY` + `WAIMD_*` on the sender host; stop
 `gtm/waimd/daily-send.sh` cron. **Still open:** the single new focus ("Haboob") — awaiting a founder brief.
+
+## D25 — repurpose the WAIMD brand for a travel-nurse housing decision engine (new SKU `waimd-housing`) (2026-07-27)
+**Decision.** The founder is reusing the **WAIMD brand + waimd.org** — freed by the D24 kill of the FMCSA
+`dot-navigator` — for a **different** product: a **travel-nurse housing decision engine** ("Work Assignment. Instant
+Move Decision."). A *confirmed* assignment in → **3 evidence-backed housing choices** out, **$29 per decision** (charged
+only when 3 viable options are found), **Meta-ads** acquisition, Next.js + Supabase + Stripe on the chassis spine. This
+is a **new SKU on the same brand shell, not a revival** — `dot-navigator` stays `killed`.
+
+- **Scope lock (METHOD.md).** One ICP (a nurse who *just accepted* an assignment), one painful moment (solving housing
+  on a clock), one outcome (a *decision*, not a search page). Falsifiable gate: **$70 spend ($10/day × 7) → ≥10
+  qualified missions → ≥3 paid decisions**; else isolate/pivot/kill. Honest 0 is a valid result.
+- **Collision handling (scout-confirmed).** Reuse only the brand + domain. New slug **`waimd-housing`** (the registry
+  rejects duplicate slugs) with its **own** `gtm/waimd-housing` engine — **not** `gtm/waimd`, which is the **frozen**
+  FMCSA cold-email engine (D24 kill-guard) and the wrong channel for a Meta-ads product. `gtm/waimd/` stays frozen.
+- **Registry (`skus/registry.json`).** Added `waimd-housing` (`status:staged`, Stripe **test** $29 one-time,
+  `WAIMD_HOUSING_STRIPE_RO_KEY`, support inbox, `railway/waimd-housing-app`) with `pending_founder_actions` for the four
+  off-repo steps. `live_url` is intentionally **omitted** while staged — waimd.org still points at the dead FMCSA deploy,
+  which must be torn down first. `make sku-validate` green (2 SKUs).
+- **The one real gap the scout found — honesty is now enforced in code.** `copywriter-auditor` grades *persuasion*, not
+  *truth*. A product whose entire wedge is "we never fabricate" needs a *truth* gate, so added **`hooks/honesty-core.mjs`
+  + `hooks/honesty-auditor.mjs`** (PreToolUse sibling of the copywriter gate): blocks, on customer-facing copy,
+  **fabricated social proof** (invented customer/review counts, star ratings), **fake scarcity/inventory** ("only N
+  left", "N viewing"), and **un-timestamped availability certainty** ("availability confirmed" with no evidence marker).
+  Deliberately narrow so it never trips the money-back **guarantee** the copywriter gate *requires*, nor the product's
+  own honest "3 choices" language; an auditable `<!-- honesty-ok: … -->` escape hatch covers genuinely backed claims.
+  Registered in `.claude/settings.json` + `hooks/hooks.fragment.json`; documented in `.cursorrules`; codifies METHOD.md §5.
+- **Spec committed** under `skus/waimd-housing/`: `PRD.md` (product brief — a reconstruction of the founder's brief, not
+  a verbatim copy), `BUILD-CHECKLIST.md` (the loop's phased acceptance list + the deterministic **5-gate / 100-pt**
+  engine + the **LISTED→CHECKED→CONFIRMED** fail-closed evidence model), and `registry_entry.json`. Seeded
+  `ops/inbox/waimd-housing.jsonl` so the generic D20 operate/support loop picks the SKU up once live.
+- **Tests.** `tests/honesty-auditor.test.sh` (11 cases: blocks the three fabrication classes, passes evidenced copy /
+  the money-back guarantee / the product's "3 choices" wording / non-copy files / the override) — folded into
+  `make verify` as `honesty-auditor-test`.
+
+**Founder-gated (off-repo, NOT automated):** create the private product repo from the chassis template (D21); detach
+waimd.org from `dot-navigator-app` and tear down that FMCSA deploy before attaching it to `waimd-housing-app`; set the
+Meta ad account to the **Housing Special Ad Category** and authorize the **$70** validation cap; flip Stripe test→live
+with `PUBLISH_APPROVAL_TOKEN` only after the vertical slice passes (D5). Supersedes the D24 "still open — awaiting a
+founder brief": the brief arrived, and it's WAIMD 2.0.

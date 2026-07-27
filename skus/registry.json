@@ -1,6 +1,7 @@
 {
   "version": 1,
   "updated": "2026-07-27",
+  "_note_waimd_housing": "D25 — the WAIMD brand + waimd.org are repurposed from the killed dot-navigator (D24, FMCSA) to a NEW product: a travel-nurse housing DECISION engine. It is a fresh SKU (waimd-housing), not a revival. dot-navigator stays killed; its waimd.org Railway deploy must be torn down before waimd-housing goes live on the same domain.",
   "note": "The SKU portfolio — the object the post-launch operate loop iterates (D20). One entry per shipped SKU. secret_env fields hold the NAME of an env var (a read-only restricted key), never the key itself.",
   "framework": {
     "name": "chassis",
@@ -51,6 +52,45 @@
       "kill_reason": "refocus — cut from scope (D24). Reversible archive: billing/support/gtm fields retained for audit; reusable code salvage queued (recycled/BACKLOG.md).",
       "salvage": "queued",
       "teardown_complete": false
+    },
+    {
+      "slug": "waimd-housing",
+      "name": "WAIMD — Work Assignment. Instant Move Decision.",
+      "domain": "Travel-nurse housing decisions (a confirmed assignment → 3 evidence-backed housing choices)",
+      "status": "staged",
+      "repo": "https://github.com/Radix-Obsidian/waimd-housing",
+      "local_path": "../waimd-housing",
+      "spec": "skus/waimd-housing/PRD.md",
+      "build_checklist": "skus/waimd-housing/BUILD-CHECKLIST.md",
+      "deploy": { "target": "railway", "service": "waimd-housing-app" },
+      "health": { "path": "/", "slow_ms": 3000 },
+      "billing": {
+        "provider": "stripe",
+        "mode": "test",
+        "model": "one-time ($29 per decision — charged only when 3 viable options are found)",
+        "price_usd": 29,
+        "note": "TEST mode until the D5 publish+charge gate. Refund/no-charge if fewer than 3 viable options. Flip test→live only with PUBLISH_APPROVAL_TOKEN.",
+        "secret_env": "WAIMD_HOUSING_STRIPE_RO_KEY"
+      },
+      "support": {
+        "source": "inbox-file",
+        "inbox": "ops/inbox/waimd-housing.jsonl",
+        "from": "hello@itsvoco.com"
+      },
+      "gtm": {
+        "engine": "gtm/waimd-housing",
+        "channels": ["meta-ads"],
+        "lead_source": "Meta ads (Housing Special Ad Category — required, no targeting workarounds)",
+        "note": "NOT gtm/waimd — that is the FROZEN FMCSA cold-email engine (D24). This product is Meta-ads acquisition; its own engine dir is gtm/waimd-housing."
+      },
+      "owning_agents": ["factory-operator", "factory-support"],
+      "pending_founder_actions": [
+        "Create the product repo (D21, founder-gated): gh repo create Radix-Obsidian/waimd-housing --private --template Radix-Obsidian/chassis, then implement the DomainPack per skus/waimd-housing/BUILD-CHECKLIST.md.",
+        "Domain repoint: detach waimd.org from dot-navigator-app and tear down that FMCSA deploy FIRST (dot-navigator teardown), then attach waimd.org to waimd-housing-app.",
+        "Meta: select the Housing Special Ad Category; authorize the $70 validation cap ($10/day x 7) — the next decision gate.",
+        "Publish+charge (D5): flip Stripe test→live with PUBLISH_APPROVAL_TOKEN only after the vertical slice passes end-to-end."
+      ],
+      "created": "2026-07-27"
     }
   ]
 }
