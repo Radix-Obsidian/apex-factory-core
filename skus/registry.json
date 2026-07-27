@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated": "2026-07-06",
+  "updated": "2026-07-27",
   "note": "The SKU portfolio — the object the post-launch operate loop iterates (D20). One entry per shipped SKU. secret_env fields hold the NAME of an env var (a read-only restricted key), never the key itself.",
   "framework": {
     "name": "chassis",
@@ -14,7 +14,7 @@
       "slug": "dot-navigator",
       "name": "Waimd — New Entrant DOT Navigator",
       "domain": "FMCSA new-entrant compliance (first-year motor carriers)",
-      "status": "live",
+      "status": "killed",
       "repo": "https://github.com/Radix-Obsidian/dot-navigator",
       "local_path": "../dot-navigator",
       "live_url": "https://waimd.org",
@@ -43,12 +43,14 @@
       },
       "owning_agents": ["factory-operator", "factory-support"],
       "pending_founder_actions": [
-        "Reprice in the product/chassis repos to the freemium pay-per-doc model (see billing.note): retire the $49.99 subscription price; create one-time Stripe prices $9 (per-doc) and $39 (Audit-Ready Packet); gate free=roadmap+MCS-150, wall on additional docs, packet unlocks all + audit-window reminders; add the 'audit-ready or money back' refund path. Requires dot-navigator + chassis added to a session.",
-        "Real test-purchase end-to-end on waimd.org ($9 doc AND $39 packet → webhook → entitlement unlock) before announcing.",
-        "Stand up outreach.waimd.org sending domain in Brevo (SPF/DKIM/DMARC p=none→ramp), build /unsubscribe, then warm 3-4 weeks before first real cold-email batch (gtm/waimd send.mjs refuses until ramped).",
-        "Set GTM env on the sender host: WAIMD_DAILY_CAP, BREVO_API_KEY, WAIMD_POSTAL_ADDRESS, WAIMD_OUTREACH_FROM."
+        "KILL TEARDOWN (D24): stop live Stripe billing / archive prices / handle any active subscriptions; take down or freeze the waimd.org Railway deploy; unset DOTNAV_STRIPE_RO_KEY + WAIMD_* on the sender host; stop gtm/waimd/daily-send.sh if cron-scheduled. Do NOT delete or gh-archive the dot-navigator repo — label-only/frozen per R7.",
+        "(obsolete — SKU killed) Reprice, test-purchase, warm outreach.waimd.org, set GTM env — retained for audit history only."
       ],
-      "created": "2026-06-21"
+      "created": "2026-06-21",
+      "killed_at": "2026-07-27",
+      "kill_reason": "refocus — cut from scope (D24). Reversible archive: billing/support/gtm fields retained for audit; reusable code salvage queued (recycled/BACKLOG.md).",
+      "salvage": "queued",
+      "teardown_complete": false
     }
   ]
 }

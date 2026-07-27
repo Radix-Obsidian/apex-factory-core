@@ -44,3 +44,13 @@ PartsBinEntry projections (self_containedness ≥ 4, non-side-effecting) → `fa
 - **Cost discipline:** deep-dive ≈ 2M tokens/repo. Always gate with cheaper tiers first; never deep-dive un-triaged.
 - **Workflow `args` don't propagate** in this environment → use embedded fallback lists / edit the script default to re-point.
 - **Path format:** agents sometimes emit repo-prefixed or leading-slash paths; `normalizeRepoPath()` in the floor handles it — keep it.
+
+## 5. Salvage target — dot-navigator (Waimd) · KILLED 2026-07-27 (D24)
+Own SKU → Tier 1 (`licenseGate` auto-`OWN`, lift freely). Queued here per the never-delete / reversible-archive
+rule; captured when `../dot-navigator` is added to a session and the `workflow.js` deep-dive runs (there's no
+"salvage one SKU on demand" CLI — this is the intent record the deep-dive adopts). Reusable parts to extract:
+- **FMCSA calendar engine** — `lib/calendar-engine.ts` (dated new-entrant deadlines from the authority date). Parts-bin candidate (self-contained → pinned-SHA lift).
+- **MCS-150 prefill** — highest-value form generator (company / USDOT / operation-type prefill). Parts-bin.
+- **Idempotent reminder scheduler** — chassis sweep that claims each carrier-deadline slot before sending (dedupe). Parts-bin / chassis-shared.
+- **FMCSA DomainPack** — `domain/fmcsa/{brand,pack}.ts` (profile fields, reminder cadence, rules engine, artifact registry). BuildSpec `extract_list` if a future compliance SKU reuses the domain shape.
+Do NOT copy now — the deep-dive emits the pinned-SHA lift commands + `wrap_plan`. Repo stays label-only/frozen (R7): never `gh repo archive`/delete.

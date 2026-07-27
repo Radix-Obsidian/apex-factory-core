@@ -18,6 +18,7 @@ import { loadLeads, saveLeads, loadSuppression, isSuppressed, normEmail } from "
 import { syncSuppression } from "./sync-suppression.mjs";
 import { syncEngagement, applyEngagement } from "./sync-engagement.mjs";
 import { nextDue, nextDueAt, recordSent, isActive } from "./sequence.mjs";
+import { SKU_FROZEN, FREEZE_REASON } from "./kill-guard.mjs";
 import { STEP_DRAFTERS } from "./personalize.mjs";
 import { parseSender, preflight, sendOne } from "./transport.mjs";
 
@@ -32,6 +33,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const normDot = (d) => String(d ?? "").replace(/[^0-9]/g, "");
 
 async function main() {
+  if (SKU_FROZEN) { console.log(FREEZE_REASON + " — nothing sent."); return; } // D24 kill freeze (cron entrypoint)
   const sender = parseSender(SENDER.from);
   const blocking = preflight(sender);
 

@@ -22,6 +22,12 @@ router-test: ## D23 — model router assertions (task→model), $0 pure logic
 model-guard-test: ## D23 — fail-closed model-guard: Opus/Fable blocked on non-code work
 	@bash tests/model-guard.test.sh
 
+usage-gate-test: ## D24 — spend gate: usage.mjs --claude-gate (opt-in Opus throttle + budget gate)
+	@bash tests/usage-gate.test.sh
+
+waimd-freeze-test: ## D24 — killed-SKU outreach freeze covers every sender entrypoint (sendOne chokepoint)
+	@bash tests/waimd-freeze.test.sh
+
 chat: ## D23 — launch a Sonnet interactive session (writing/brainstorm/research; NOT code)
 	@claude --model claude-sonnet-4-6
 
@@ -93,7 +99,7 @@ operate: ## Ops — ONE post-launch tick (health + revenue + support) over all l
 ops-verify: ## Ops — deterministic tests for the operations layer ($0 LLM)
 	@node --test ops/ops.test.mjs && echo "── ops-verify GREEN ──"
 
-verify: preflight guard-test router-test model-guard-test gate auth-guard ops-verify caching-verify ## run mechanical acceptance checks (fast)
+verify: preflight guard-test router-test model-guard-test usage-gate-test waimd-freeze-test gate auth-guard ops-verify caching-verify ## run mechanical acceptance checks (fast)
 	@echo "── verify GREEN ──"
 
 launch: ## fire the REAL gated cycle (⚠ spends shared Anthropic + Higgsfield pools)
@@ -132,4 +138,4 @@ worktree-status: ## show all worktrees + the loop branch
 worktree-remove: ## tear down the loop worktree (keeps the loop/auto branch + history)
 	@bash scripts/worktree.sh remove
 
-.PHONY: help preflight copytest guard-test router-test model-guard-test chat watch gate auth-guard dryrun heartbeat usage recycled-verify recycled-scan recycled-metrics recycled-ideate design-check closed-loop-check caching-check caching-verify cachingtest verify launch cron-enable cron-disable crashcron-install crashcron-uninstall hooks-install worktree-setup worktree-status worktree-remove
+.PHONY: help preflight copytest guard-test router-test model-guard-test usage-gate-test waimd-freeze-test chat watch gate auth-guard dryrun heartbeat usage recycled-verify recycled-scan recycled-metrics recycled-ideate design-check closed-loop-check caching-check caching-verify cachingtest verify launch cron-enable cron-disable crashcron-install crashcron-uninstall hooks-install worktree-setup worktree-status worktree-remove

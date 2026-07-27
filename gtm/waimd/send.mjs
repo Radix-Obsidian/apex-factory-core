@@ -21,6 +21,7 @@ import { SENDER, SEND } from "./config.mjs";
 import { loadLeads, saveLeads, loadSuppression, isSuppressed, normEmail } from "./store.mjs";
 import { enroll } from "./sequence.mjs";
 import { parseSender, preflight, sendOne } from "./transport.mjs";
+import { SKU_FROZEN, FREEZE_REASON } from "./kill-guard.mjs";
 
 const args = process.argv.slice(2);
 const i = args.indexOf("--batch");
@@ -33,7 +34,11 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function main() {
   const sender = parseSender(SENDER.from);
-  const blocking = [...(BATCH_FILE ? [] : ["no --batch <file>"]), ...preflight(sender)];
+  const blocking = [
+    ...(SKU_FROZEN ? [FREEZE_REASON] : []),
+    ...(BATCH_FILE ? [] : ["no --batch <file>"]),
+    ...preflight(sender),
+  ];
 
   const batch = JSON.parse(fs.readFileSync(BATCH_FILE, "utf8"));
   const suppression = loadSuppression();
