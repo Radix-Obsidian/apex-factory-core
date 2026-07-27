@@ -46,7 +46,7 @@ export function validateRegistry(reg) {
 
 // Selectors used across the ops modules.
 export const liveSkus = reg => reg.skus.filter(s => s.status === 'live' || s.status === 'staged');
-export const billableSkus = reg => reg.skus.filter(s => s.billing && s.billing.secret_env);
+export const billableSkus = reg => reg.skus.filter(s => s.billing && s.billing.secret_env && s.status !== 'killed');
 export const findSku = (reg, slug) => reg.skus.find(s => s.slug === slug) || null;
 
 // ---- CLI ----

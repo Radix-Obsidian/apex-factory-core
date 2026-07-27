@@ -485,3 +485,27 @@ Tests: `make router-test` + `make model-guard-test` (folded into `make verify`);
 default and throttles only when armed. Supersedes the "policy-only" posture of D7/D10. **Still founder-side (outside this
 repo):** demote the global `~/.claude/agents/planner.md` Opus→Sonnet (`sed -i 's/claude-opus/claude-sonnet/'`) and add the
 free model to OpenClaw's `models.json` — the in-repo guards fail loud/visible, but the root fix is a founder action.
+
+## D24 — kill Waimd (dot-navigator), reversible-archive + queue salvage (2026-07-27)
+**Decision.** Retire the Waimd SKU to refocus on one product. Finish condition: **cut from scope** (the growth-area
+report flagged decision-tracking with 0/15 positive outcomes → every redirect now gets an explicit finish condition,
+and a deletion-ratio of 0.01 → pruning is now a shipping habit). Per METHOD.md muda + R7 (**never delete — reversible
+archive**), killing ≠ deleting.
+
+- **Registry (`skus/registry.json`):** `dot-navigator.status: live → killed` + `killed_at`, `kill_reason`,
+  `salvage:"queued"`. Billing/support/gtm fields **retained for audit history** (reversible), not stripped. The
+  `pending_founder_actions` now lead with the KILL TEARDOWN.
+- **Closed two status blind spots the scout found** (killed SKUs leaked through non-status-gated selectors):
+  `ops/registry.mjs billableSkus` and `ops/support.mjs`'s standalone filter both now exclude `killed`, so
+  `revenue.mjs`/`support.mjs` stop touching a dead SKU (the `liveSkus`-driven operate/digest/heartbeat already did).
+- **Froze the outreach engine:** `gtm/waimd/send.mjs` refuses to send while the SKU is `killed` (fail-closed — a
+  registry read error also refuses), so a stray cron/env can't fire outreach for a dead product.
+- **Salvage queued** in `recycled/BACKLOG.md §5` (own repo → Tier-1 lift-freely): FMCSA calendar engine, MCS-150
+  prefill, idempotent reminder scheduler, the FMCSA DomainPack — captured as parts-bin/BuildSpec lifts when
+  `../dot-navigator` is added and the `workflow.js` deep-dive runs. Repo stays **label-only/frozen** (never gh-archive/delete).
+- **Test added:** `tests/usage-gate.test.sh` (`make usage-gate-test`, in `make verify`) — the D23 spend gate had ZERO
+  coverage and it's the control that can most hurt (answers the report's "test the controls that can hurt you").
+
+**Founder-gated (live/outward-facing, NOT automated):** stop live Stripe billing / archive prices / handle active subs;
+take down or freeze the waimd.org Railway deploy; unset `DOTNAV_STRIPE_RO_KEY` + `WAIMD_*` on the sender host; stop
+`gtm/waimd/daily-send.sh` cron. **Still open:** the single new focus ("Haboob") — awaiting a founder brief.

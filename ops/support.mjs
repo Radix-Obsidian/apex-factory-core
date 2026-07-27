@@ -69,7 +69,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const reg = loadRegistry();
   const skus = slug
     ? [findSku(reg, slug)].filter(Boolean)
-    : reg.skus.filter(s => s.support && s.support.source && s.support.source !== 'none');
+    : reg.skus.filter(s => s.support && s.support.source && s.support.source !== 'none' && s.status !== 'killed');
   const out = skus.map(triageInbox);
   if (json) { console.log(JSON.stringify(out, null, 2)); process.exit(0); }
   console.log('— SUPPORT TRIAGE (drafts are never auto-sent; irreversible → founder) —');

@@ -21,6 +21,11 @@ import { SENDER, SEND } from "./config.mjs";
 import { loadLeads, saveLeads, loadSuppression, isSuppressed, normEmail } from "./store.mjs";
 import { enroll } from "./sequence.mjs";
 import { parseSender, preflight, sendOne } from "./transport.mjs";
+import { loadRegistry, findSku } from "../../ops/registry.mjs";
+
+// D24 — this engine serves the dot-navigator (Waimd) SKU, which is KILLED. Outreach is frozen: refuse to send
+// while the registry marks it killed. Fail-closed — if the registry can't be read, assume killed (don't send).
+const SKU_KILLED = (() => { try { return findSku(loadRegistry(), "dot-navigator")?.status === "killed"; } catch { return true; } })();
 
 const args = process.argv.slice(2);
 const i = args.indexOf("--batch");
@@ -33,7 +38,11 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function main() {
   const sender = parseSender(SENDER.from);
-  const blocking = [...(BATCH_FILE ? [] : ["no --batch <file>"]), ...preflight(sender)];
+  const blocking = [
+    ...(SKU_KILLED ? ["SKU dot-navigator is KILLED — outreach frozen (D24)"] : []),
+    ...(BATCH_FILE ? [] : ["no --batch <file>"]),
+    ...preflight(sender),
+  ];
 
   const batch = JSON.parse(fs.readFileSync(BATCH_FILE, "utf8"));
   const suppression = loadSuppression();
