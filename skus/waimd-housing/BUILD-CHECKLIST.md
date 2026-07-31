@@ -11,6 +11,29 @@ The phase spine is the PRD's own **7-day plan (§32)**, not an invented one.
 
 ---
 
+## Stack deviations from the PRD (founder overrides, D27)
+
+The PRD is the constitution, but the founder has overridden three implementation choices since v0.1 was
+written. **These win over the PRD text where they conflict**; everything else in the PRD stands.
+
+| PRD says | We do | Why |
+|---|---|---|
+| Stripe Checkout (§15, §26) | **Polar** | Stripe was compromised and declined to remediate an issue that occurred on their end. Polar is the paywall gateway for this SKU and the portfolio going forward. |
+| Supabase free tier from day one (§26) | **Prisma this stage → scale into Supabase Postgres** | A datasource swap, not a rewrite. *(Assumption: "Prism" = Prisma ORM — correct this if Stoplight Prism was meant.)* |
+| Meta launch at Day 7 (§20, §32) | **Meta deferred until the beta is built and fully tested** | The $70 is withheld until `make waimd-ready` is fully green. |
+
+Neither payments nor persistence touches the decision engine — it is pure and has no I/O.
+
+## Engine status — proven BEFORE the beta exists
+
+The deterministic engine (§10 gates, §13 score, §14 max-3, §11 evidence ladder) is **built and green**
+in the factory at `skus/waimd-housing/engine/` — real TypeScript, run natively by Node, zero
+dependencies, no I/O, no LLM, never reads the clock. It ports **verbatim** into the product repo.
+
+- `make waimd-engine-test` — unit + invariant suite (determinism, gate precedence, fail-closed evidence)
+- `make waimd-eval` — tier-1 eval vs a labeled corpus (F1 + gate-attribution accuracy)
+- `make waimd-ready` — the pre-$70 production-readiness gate; **exits non-zero until everything below is real**
+
 ## Standing constraints (apply to every phase)
 
 - **Never lie (§11, §19).** No fake reviews, fake inventory, invented "verified" badges, fake nurses, or
@@ -108,9 +131,10 @@ Never turn a stale calendar into fake certainty. Stale/unknown decays *downward*
       observed work.
 
 ## Day 4 — deterministic scoring + three-match Decision page (§10–§14)
-- [ ] Five gates implemented, fail-closed
-- [ ] 100-pt scorer (weights above), deterministic and unit-tested
-- [ ] Top-3 selection; "fewer than 3 → $0" path
+- [x] Five gates implemented, fail-closed → `engine/gates.ts`
+- [x] 100-pt scorer (weights above), deterministic and unit-tested → `engine/score.ts`
+- [x] Top-3 selection; "fewer than 3 → $0" path → `engine/decide.ts`
+- [ ] Port `engine/` into the product repo verbatim and wire it to the Decision page
 - [ ] **Housing Decision Card (§12)**: `Match 01` · `94% WAIMD Fit` · price · estimated commute · type ·
       requirement ✓s · **Availability** state + "Source last checked: 2h 14m ago" · **Why WAIMD chose
       it** · **Watch-outs** (surfaces honest uncertainty, e.g. "Pet policy unclear") · **Source: View
@@ -119,7 +143,7 @@ Never turn a stale calendar into fake certainty. Stale/unknown decays *downward*
 
 ## Day 5 — free preview + $29 unlock + instrumentation (§15, §22)
 - [ ] **Free**: mission + **Match #1 preview**
-- [ ] **$29 (Stripe Checkout, one-time, TEST mode)** unlocks the complete Decision: 3 strongest choices,
+- [ ] **$29 (Polar, one-time, TEST mode)** unlocks the complete Decision: 3 strongest choices,
       evidence status, direct source, total estimated cost, commute comparison, required-feature
       comparison, deposits/known fees, risk flags, recommendation, next action
 - [ ] No subscription. No commissions. No landlord advertising. **No payment before value.**
@@ -140,8 +164,11 @@ Never turn a stale calendar into fake certainty. Stale/unknown decays *downward*
 - [ ] Factory acceptance: `make design-check SKU=../waimd-housing` (D18) ·
       `make closed-loop-check SKU=../waimd-housing` (D19) · `make caching-check SKU=../waimd-housing`
       (D22 — expected to pass at **0 call sites**)
-- [ ] **Founder approves the PRD + authorizes the $70** ($10/day × 7) — the PRD's NEXT DECISION GATE
-- [ ] Publish+charge (D5): flip Stripe test→live with `PUBLISH_APPROVAL_TOKEN`
+- [x] **Founder approves the PRD** (2026-07-31)
+- [ ] **`make waimd-ready` fully GREEN** — the founder's precondition for the money: beta built, evals
+      tested, everything tested, production-grade. The gate exits non-zero until then.
+- [ ] **Founder authorizes the $70** ($10/day × 7) — only after the gate is green
+- [ ] Publish+charge (D5): flip Polar test→live with `PUBLISH_APPROVAL_TOKEN`
 - [ ] Launch Meta; real customers replace test cases immediately
 
 ---

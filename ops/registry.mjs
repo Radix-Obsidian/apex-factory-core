@@ -18,6 +18,20 @@ try { process.loadEnvFile?.(path.join(HERE, '..', '.env')); } catch { /* no/odd 
 
 const STATUSES = new Set(['staged', 'live', 'paused', 'killed']);
 
+// Providers that move real money. Each one MUST name a read-only key env var (never the key itself).
+// Adding a provider here is what makes the secret_env requirement apply to it — D27 added `polar`
+// after the founder moved off Stripe; a hardcoded 'stripe' check would have silently exempted it.
+export const PAID_PROVIDERS = new Set(['stripe', 'polar']);
+
+// Provider-agnostic raw-key shapes. secret_env holds a NAME; if it looks like an actual credential
+// from ANY provider we reject it, so a paste-in never reaches git. Stripe: sk_/rk_/pk_ live|test.
+// Polar: polar_oat_ (organization access token) / polar_. GitHub: ghp_/gho_/ghs_/ghu_/ghr_.
+//
+// Deliberately CASE-SENSITIVE: real credentials carry lowercase prefixes, while env var NAMES are
+// UPPER_SNAKE_CASE. Without that distinction the guard flags its own env var (WAIMD_HOUSING_POLAR_RO_KEY
+// contains "POLAR_RO") and rejects a perfectly valid registry entry.
+export const RAW_KEY_SHAPE = /((sk|rk|pk)_(live|test)_[A-Za-z0-9]|polar_(oat_)?[a-z0-9]{4,}|gh[pousr]_[A-Za-z0-9]{8,})/;
+
 export function loadRegistry(p = REGISTRY_PATH) {
   const reg = JSON.parse(fs.readFileSync(p, 'utf8'));
   if (!reg || !Array.isArray(reg.skus)) throw new Error('registry: missing skus[]');
@@ -38,8 +52,8 @@ export function validateRegistry(reg) {
     if (!STATUSES.has(s.status)) errors.push(`${at}: status must be one of ${[...STATUSES].join('|')}`);
     if (!s.repo) errors.push(`${at}: missing repo`);
     const b = s.billing;
-    if (b && b.provider === 'stripe' && !b.secret_env) errors.push(`${at}: stripe billing requires secret_env (env var NAME)`);
-    if (b && b.secret_env && /sk_(live|test)_/.test(b.secret_env)) errors.push(`${at}: secret_env looks like a RAW KEY — it must be an env var NAME, never the key`);
+    if (b && PAID_PROVIDERS.has(b.provider) && !b.secret_env) errors.push(`${at}: ${b.provider} billing requires secret_env (env var NAME)`);
+    if (b && b.secret_env && RAW_KEY_SHAPE.test(b.secret_env)) errors.push(`${at}: secret_env looks like a RAW KEY — it must be an env var NAME, never the key`);
   }
   return { ok: errors.length === 0, errors };
 }

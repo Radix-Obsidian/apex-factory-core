@@ -76,6 +76,12 @@ async function allSubscriptions(key) {
 
 export async function skuRevenue(sku) {
   if (!sku.billing?.secret_env) return { slug: sku.slug, ok: false, reason: 'no billing configured' };
+  // This module speaks Stripe ONLY. Never send another provider's credential to api.stripe.com —
+  // that would leak a live token to a third party (D27: the portfolio moved to Polar after Stripe was
+  // compromised). A non-Stripe provider reports n/a until its own reader exists.
+  const provider = sku.billing.provider || 'stripe';
+  if (provider !== 'stripe')
+    return { slug: sku.slug, ok: false, reason: `n/a — ${provider} revenue reader not implemented (this reader is Stripe-only)` };
   const key = process.env[sku.billing.secret_env];
   if (!key) return { slug: sku.slug, ok: false, reason: `n/a — ${sku.billing.secret_env} not set` };
   const r = await allSubscriptions(key);

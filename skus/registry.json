@@ -67,12 +67,13 @@
       "deploy": { "target": "railway", "service": "waimd-housing-app" },
       "health": { "path": "/", "slow_ms": 3000 },
       "billing": {
-        "provider": "stripe",
+        "provider": "polar",
         "mode": "test",
         "model": "freemium preview → $29 one-time unlock (PRD §15): free = Housing Mission + Match #1 preview; $29 unlocks the full 3-choice Decision (evidence, sources, total cost, comparisons, fees, risk flags, recommendation, next action)",
         "price_usd": 29,
-        "note": "No subscription, no commissions, no landlord advertising, NO payment before value. If WAIMD cannot produce three qualifying options the customer pays $0. Stripe Checkout, TEST mode until the D5 publish+charge gate — flip test→live only with PUBLISH_APPROVAL_TOKEN.",
-        "secret_env": "WAIMD_HOUSING_STRIPE_RO_KEY"
+        "note": "No subscription, no commissions, no landlord advertising, NO payment before value. If WAIMD cannot produce three qualifying options the customer pays $0. TEST mode until the D5 publish+charge gate — flip test→live only with PUBLISH_APPROVAL_TOKEN.",
+        "secret_env": "WAIMD_HOUSING_POLAR_RO_KEY",
+        "provider_note": "D27 — Polar, NOT Stripe. The PRD (§15/§26) names Stripe Checkout; the founder overrode it after Stripe was compromised and declined to remediate. Polar is the payment gateway for this SKU and the portfolio going forward. ops/revenue.mjs is a Stripe-only reader and reports n/a for polar rather than sending a Polar credential to api.stripe.com."
       },
       "fulfillment": {
         "mode": "founder-in-the-loop",
@@ -98,6 +99,22 @@
         "note": "PRD §24 — executable via ops/waimd-gate.mjs so the finish condition actually fires (D24 lesson: prose gates never did)."
       },
       "analytics": { "provider": "posthog-free-tier", "note": "PRD §22/§26 — simple event store; instrument only what affects the hypothesis." },
+      "data_layer": {
+        "stage": "prisma",
+        "target": "supabase-postgres",
+        "note": "D27 founder override of PRD §26 (Supabase free tier from day one): Prisma for this stage, then scale into Supabase Postgres — a datasource swap, not a rewrite. ASSUMPTION: 'Prism' = Prisma ORM; if Stoplight Prism was meant, this field is wrong and the data layer needs revisiting. The decision engine is persistence-free, so neither choice affects it."
+      },
+      "engine": {
+        "path": "skus/waimd-housing/engine",
+        "language": "typescript",
+        "note": "Deterministic decision engine (PRD §10 five gates, §13 100-pt score, §14 max-3, §11 evidence ladder). Pure, zero-dependency, no I/O, no LLM, never reads the clock (asOf is always explicit). Proven in the factory BEFORE the beta exists, and ports verbatim into the product repo.",
+        "tests": "tests/waimd-housing/engine.test.ts (make waimd-engine-test)",
+        "eval": "evals/waimd-engine.mjs + evals/waimd-engine-corpus.jsonl (make waimd-eval)"
+      },
+      "readiness_gate": {
+        "command": "make waimd-ready",
+        "note": "D27 — the founder withholds the $70 Meta authorization until the beta is built and tested. This gate scores that condition mechanically and exits non-zero while NOT READY; it cannot go green while the product repo or the beta is absent."
+      },
       "critical_path_llm": "none — PRD §26 pins a deterministic first decision engine and no paid LLM on the critical path. D22 caching-check PASSES at zero call sites; never add an LLM to the critical path to satisfy a checker.",
       "support": {
         "source": "inbox-file",

@@ -9,12 +9,17 @@
   "core_object": "Housing Mission (not user, not listing, not landlord — PRD §6, §30)",
   "framework": "chassis",
   "model_tier": "factory-builder",
-  "stack": "Next.js + TypeScript (mobile-first), Supabase free tier, Stripe Checkout, PostHog free tier",
+  "stack": "Next.js + TypeScript (mobile-first), Prisma → Supabase Postgres, Polar checkout, PostHog free tier",
+  "stack_deviations": {
+    "payments": "Polar replaces Stripe (PRD §15/§26). Founder override, D27: Stripe was compromised and declined to remediate, so the portfolio moved its paywall gateway to Polar.",
+    "data_layer": "Prisma for this stage, then scale into Supabase Postgres (PRD §26 names Supabase from day one). ASSUMPTION: 'Prism' = Prisma ORM.",
+    "meta": "Meta ads deferred until the beta is built and fully tested — founder sequencing; the $70 is withheld until then."
+  },
   "deploy_target": "railway",
   "deploy_service": "waimd-housing-app",
   "domain": "waimd.org",
   "domain_note": "Repurposed from the killed dot-navigator (D24, FMCSA). waimd.org must be detached from dot-navigator-app and that deploy torn down BEFORE this SKU goes live on the domain (founder-gated). Trust architecture (§19): .org must never imply nonprofit — WAIMD is a product of Voco Technologies Inc.",
-  "billing": "freemium preview → $29 one-time unlock (TEST until the D5 publish gate); $0 if fewer than three qualifying options",
+  "billing": "Polar — freemium preview → $29 one-time unlock (TEST until the D5 publish gate); $0 if fewer than three qualifying options",
   "fulfillment": "founder-in-the-loop for the first 10–50 missions (PRD §18) — interventions are labeled data (manual_reason enum) that become the automation backlog",
   "admin_surface": "Mission Queue (PRD §28)",
   "gtm": ["meta-ads"],
@@ -25,7 +30,8 @@
   "supply_constraint": "PRD §17 — $0 owned inventory; do NOT scrape sources whose terms prohibit it. Public/authorized information + founder-assisted verification only.",
   "critical_path_llm": "none — PRD §26 (deterministic engine). D22 caching-check passes at zero call sites; do not add an LLM to satisfy a checker.",
   "env_keys": [
-    "WAIMD_HOUSING_STRIPE_RO_KEY",
+    "WAIMD_HOUSING_POLAR_RO_KEY",
+    "WAIMD_HOUSING_DATABASE_URL",
     "WAIMD_HOUSING_SUPABASE_URL",
     "WAIMD_HOUSING_SUPABASE_KEY",
     "WAIMD_HOUSING_POSTHOG_KEY",
@@ -33,6 +39,13 @@
   ],
   "spec": "skus/waimd-housing/PRD.md",
   "build_checklist": "skus/waimd-housing/BUILD-CHECKLIST.md",
+  "engine": {
+    "path": "skus/waimd-housing/engine",
+    "tests": "make waimd-engine-test",
+    "eval": "make waimd-eval",
+    "note": "Deterministic, pure, zero-dependency; proven before the beta exists and ports verbatim into the product repo."
+  },
+  "readiness_gate": "make waimd-ready — must be fully GREEN before the $70 Meta authorization",
   "metrics": {
     "qualified_mission_cac_usd_max": 14,
     "mission_solvability_min_pct": 80,

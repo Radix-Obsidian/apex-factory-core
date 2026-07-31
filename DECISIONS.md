@@ -618,4 +618,69 @@ the answer to D24's "still open" item, now confirmed by the founder rather than 
 **Unchanged and still founder-gated:** the product repo (D21), the waimd.org repoint (tear down `dot-navigator-app`
 first), the Meta Housing Special Ad Category + the **$70** cap, and the Stripe test→live flip (D5). The PRD's own NEXT
 DECISION GATE — *"Founder approves PRD + authorizes maximum $70 Meta validation spend"* — is the founder's; nothing in
-this commit spends, publishes, or charges.
+this commit spends, publishes, or charges. *(Superseded in part by D27: payments moved to Polar.)*
+
+## D27 — PRD approved, $70 withheld; prove the engine, move off Stripe (2026-07-31)
+**Decision.** The founder **approved the PRD** and **split the NEXT DECISION GATE in two**: approval is granted, but the
+**$70 Meta authorization is withheld** until *"the finished beta has been tested / evals have been tested / everything's
+tested / stable on a production-grade level."* That is the PRD's own Definition of Done, so it is adopted as a hard
+precondition rather than treated as extra caution.
+
+**Three founder overrides to the approved PRD.** `PRD.md` stays **byte-identical** (it is the verbatim constitution);
+deviations live in the derived artifacts and here.
+1. **Polar replaces Stripe** (PRD §15/§26 name Stripe Checkout). **Reason: Stripe was compromised — an issue that
+   occurred on Stripe's end — and Stripe declined to help resolve it.** Polar is the paywall gateway for this SKU and
+   the portfolio going forward.
+2. **Prisma this stage → scale into Supabase Postgres** (PRD §26 names Supabase from day one). A datasource swap, not a
+   rewrite. **Recorded assumption:** "Prism" is read as **Prisma ORM**; if Stoplight Prism was meant, `data_layer` in
+   the registry is wrong. It does not affect this commit — the engine is persistence-free.
+3. **Meta deferred** until the beta is built and fully tested.
+
+**Built the engine, and proved it before the beta exists.** The product repo is still founder-gated, so the part that
+must never be wrong was built where it can be tested today: `skus/waimd-housing/engine/` — the five gates (§10), the
+100-pt score (§13), max-3 + $0-under-3 (§14/§15), and the LISTED→CHECKED→CONFIRMED ladder (§11). Pure, zero-dependency,
+no I/O, no LLM, and it **never reads the clock** (every entry point takes an explicit `asOf`), which is what makes a
+decision reproducible and auditable. Written in **real TypeScript executed natively by Node 22** — deliberately *not*
+the `skus/haboob/*.ts` pattern, which is staged TypeScript that no Makefile target or eval ever runs and whose tests
+cover a different `.mjs` file. This engine ports **verbatim** into the product repo.
+- **`make waimd-engine-test`** — 29 tests: determinism (identical output over 50 runs), each gate's rejection, **gate
+  precedence** (earliest failure wins), fail-closed evidence (stale/malformed/future timestamps and unknown states all
+  collapse to LISTED; a state can never outrank its input), weights sum to 100, **score cannot be injected**, ranking is
+  a deterministic total order under shuffling, and `paid` cannot be forged by the input.
+- **`make waimd-eval`** — tier-1 eval over a 35-case labeled corpus in the existing `eval-regex-gate.mjs` shape,
+  importing the **same engine the product ships**: F1 **100%**, and **gate-attribution 100%** (a candidate rejected for
+  the *wrong reason* is a bug even when the verdict is right — §13 debuggability).
+
+**`make waimd-ready` — the pre-$70 gate.** Turns the founder's four conditions into a verdict nobody has to take on
+trust, including me. 15 blocking checks (spec, registry, engine, eval, honesty gate, kill gate, ops, product repo, beta
+slice, e2e on the 3 synthetic missions, payments, TEST mode, D18/D19/D22). **Fail-closed:** missing evidence is RED not
+"probably fine"; **AMBER also blocks** (unproven ≠ proven); it **cannot go green while the product repo or beta is
+absent**; and it exits non-zero so NOT READY can never read as approval. Today: **8/15 green, NOT READY** — the honest
+state. `tests/waimd-ready.test.sh` asserts the *properties* (verdict/exit-code agreement, no-repo⇒never-ready,
+read-only) rather than today's output.
+
+**Moving off Stripe exposed four real defects in the factory — Polar was not a config swap:**
+- `skus/schema/sku.schema.json` — the provider enum was `["stripe","none"]`; **`polar` was invalid** under the canonical
+  contract. Now `["stripe","polar","none"]`.
+- `ops/registry.mjs:41` — only `provider === 'stripe'` required `secret_env`, so a Polar SKU would have **silently lost
+  the key-hygiene requirement**. Replaced with a `PAID_PROVIDERS` set.
+- `ops/registry.mjs:42` — the raw-key guard was Stripe-shaped (`sk_(live|test)_`), so a pasted `polar_oat_…` token
+  **would have committed cleanly**. Now provider-agnostic. *Bug found while building it:* the first version was
+  case-insensitive and flagged its own env var **name** (`WAIMD_HOUSING_POLAR_RO_KEY` contains `POLAR_RO`), rejecting a
+  valid registry. Real credentials use lowercase prefixes and env var names are UPPER_SNAKE, so the guard is now
+  case-sensitive.
+- `ops/revenue.mjs` — hardcoded to `api.stripe.com` and keyed off `secret_env` alone. Once `WAIMD_HOUSING_POLAR_RO_KEY`
+  is set it would have **sent a Polar credential to Stripe**. Now gated on `provider === 'stripe'`, reporting
+  `n/a — polar revenue reader not implemented` instead. Given *why* we left Stripe, shipping a credential to them would
+  have been the worst possible version of this bug. Covered by three new `ops/ops.test.mjs` cases.
+- **Not built:** a Polar revenue reader. No credentials exist, so it could not be honestly tested — and `revenue.mjs`
+  reads **subscriptions only**, which cannot measure a one-time $29 SKU regardless. Both are recorded follow-ups.
+
+**⚠ Open founder action, now security-relevant.** The killed `dot-navigator` SKU still carries `billing.mode: "live"`
+and a `DOTNAV_STRIPE_RO_KEY` reference, and its D24 teardown ("stop live Stripe billing / archive prices") is still
+open. With Stripe compromised, **revoking that key and stopping that billing is no longer housekeeping**. It remains
+surfaced by `ops/digest.mjs` as `[dot-navigator · TEARDOWN]` until `teardown_complete: true`.
+
+**Still blocked, and why:** the Next.js app, intake screens, Decision page, Admin Mission Queue, Prisma schema, Polar
+checkout, Meta instrumentation, and the §32 Day-6 end-to-end run all require the product repo and accounts that do not
+exist yet. Nothing outward-facing happened in this commit: no repo created, no spend, no publish, no charge.

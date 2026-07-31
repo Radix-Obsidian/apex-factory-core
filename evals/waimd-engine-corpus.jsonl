@@ -1,0 +1,35 @@
+{"id":1,"label":"qualify","note":"baseline — everything inside every limit","candidate":{}}
+{"id":2,"label":"disqualify","gate":"dates","note":"opens after the assignment starts","candidate":{"availability_start":"2026-08-20"}}
+{"id":3,"label":"disqualify","gate":"dates","note":"closes before the assignment ends","candidate":{"availability_end":"2026-10-01"}}
+{"id":4,"label":"disqualify","gate":"dates","note":"one day late is still late","candidate":{"availability_start":"2026-08-18"}}
+{"id":5,"label":"qualify","gate":null,"note":"boundary — opens exactly on the start date","candidate":{"availability_start":"2026-08-17"}}
+{"id":6,"label":"qualify","gate":null,"note":"boundary — closes exactly on the end date","candidate":{"availability_end":"2026-11-16"}}
+{"id":7,"label":"disqualify","gate":"economics","note":"sticker price over the ceiling","candidate":{"monthly_price":2200}}
+{"id":8,"label":"disqualify","gate":"economics","note":"one dollar over is over","candidate":{"monthly_price":1801}}
+{"id":9,"label":"qualify","gate":null,"note":"boundary — exactly at the budget ceiling","candidate":{"monthly_price":1800}}
+{"id":10,"label":"disqualify","gate":"economics","note":"cheap sticker, punishing TOTAL cost — the gate reads total, not the headline","candidate":{"monthly_price":900,"estimated_total_cost":9000}}
+{"id":11,"label":"qualify","gate":null,"note":"total cost supplied and genuinely within budget","candidate":{"monthly_price":1900,"estimated_total_cost":5000}}
+{"id":12,"label":"disqualify","gate":"commute","note":"one minute over tolerance","candidate":{"commute_minutes":21}}
+{"id":13,"label":"qualify","gate":null,"note":"boundary — exactly at the commute limit","candidate":{"commute_minutes":20}}
+{"id":14,"label":"disqualify","gate":"commute","note":"far outside tolerance","candidate":{"commute_minutes":55}}
+{"id":15,"label":"disqualify","gate":"requirements","note":"missing furnished — one failure rejects","candidate":{"requirements":{"furnished":false}}}
+{"id":16,"label":"disqualify","gate":"requirements","note":"missing parking","candidate":{"requirements":{"parking":false}}}
+{"id":17,"label":"disqualify","gate":"requirements","note":"missing laundry","candidate":{"requirements":{"laundry":false}}}
+{"id":18,"label":"disqualify","gate":"requirements","note":"private room when the mission needs an entire place","candidate":{"housing_type":"private_room"}}
+{"id":19,"label":"qualify","gate":null,"note":"extra amenities beyond the must-haves are harmless","candidate":{"requirements":{"private_bath":true,"pets":true}}}
+{"id":20,"label":"disqualify","gate":"requirements","note":"mission requires pets; candidate does not allow them","mission":{"requirements":{"pets":true}},"candidate":{}}
+{"id":21,"label":"disqualify","gate":"evidence","note":"a bare listing claim never qualifies","candidate":{"evidence_status":"LISTED"}}
+{"id":22,"label":"disqualify","gate":"evidence","note":"CONFIRMED but 31 days old — decays to LISTED","candidate":{"evidence_status":"CONFIRMED","evidence_checked_at":"2026-07-01"}}
+{"id":23,"label":"disqualify","gate":"evidence","note":"CHECKED but 5 days old — past its 3-day TTL","candidate":{"evidence_status":"CHECKED","evidence_checked_at":"2026-07-27"}}
+{"id":24,"label":"qualify","gate":null,"note":"CHECKED 2 days ago — still inside its TTL","candidate":{"evidence_status":"CHECKED","evidence_checked_at":"2026-07-30"}}
+{"id":25,"label":"qualify","gate":null,"note":"CONFIRMED today — the strongest evidence","candidate":{"evidence_status":"CONFIRMED"}}
+{"id":26,"label":"qualify","gate":null,"note":"CONFIRMED 6 days ago — inside the 7-day TTL","candidate":{"evidence_status":"CONFIRMED","evidence_checked_at":"2026-07-26"}}
+{"id":27,"label":"disqualify","gate":"evidence","note":"malformed timestamp — we cannot prove freshness, so we claim nothing","candidate":{"evidence_status":"CONFIRMED","evidence_checked_at":"not-a-date"}}
+{"id":28,"label":"disqualify","gate":"evidence","note":"timestamp in the future — nonsense must not buy certainty","candidate":{"evidence_status":"CONFIRMED","evidence_checked_at":"2026-09-01"}}
+{"id":29,"label":"disqualify","gate":"evidence","note":"unknown evidence state fails closed","candidate":{"evidence_status":"TOTALLY_VERIFIED"}}
+{"id":30,"label":"disqualify","gate":"dates","note":"precedence — fails dates AND economics AND commute; the earliest wins","candidate":{"availability_start":"2026-09-01","monthly_price":5000,"commute_minutes":90}}
+{"id":31,"label":"disqualify","gate":"economics","note":"precedence — dates fine, economics is now the earliest failure","candidate":{"monthly_price":5000,"commute_minutes":90}}
+{"id":32,"label":"qualify","gate":null,"note":"cheap, close and confirmed — the ideal match","candidate":{"monthly_price":1100,"commute_minutes":5,"evidence_status":"CONFIRMED"}}
+{"id":33,"label":"qualify","gate":null,"note":"tight but legitimate on every axis at once","candidate":{"monthly_price":1795,"commute_minutes":19,"availability_start":"2026-08-17","availability_end":"2026-11-16"}}
+{"id":34,"label":"disqualify","gate":"requirements","note":"private room offered, private room wanted, but laundry missing","mission":{"housing_type":"private_room"},"candidate":{"housing_type":"private_room","requirements":{"laundry":false}}}
+{"id":35,"label":"qualify","gate":null,"note":"private-room mission matched by a private room","mission":{"housing_type":"private_room"},"candidate":{"housing_type":"private_room"}}

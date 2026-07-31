@@ -36,7 +36,7 @@
             "type": "object",
             "required": ["provider"],
             "properties": {
-              "provider": { "type": "string", "enum": ["stripe", "none"] },
+              "provider": { "type": "string", "enum": ["stripe", "polar", "none"] },
               "mode": { "type": "string", "enum": ["test", "live"] },
               "model": { "type": "string" },
               "price_usd": { "type": "number" },
