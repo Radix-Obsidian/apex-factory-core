@@ -57,6 +57,8 @@
       "slug": "waimd-housing",
       "name": "WAIMD — Work Assignment. Instant Move Decision.",
       "domain": "Travel-nurse housing decisions (a confirmed assignment → 3 evidence-backed housing choices)",
+      "icp": "A U.S. travel nurse who has ACCEPTED a temporary hospital assignment, starts within 30 days, and has not secured housing (PRD §1). Qualification is a hard gate — 'not yet accepted' is a dead end by design: no newsletter funnel, no generic leads, no contamination of the experiment (§7).",
+      "constitution": "WAIMD transforms a travel nurse's accepted assignment into three evidence-backed housing choices. Nothing else until strangers pay for that outcome.",
       "status": "staged",
       "repo": "https://github.com/Radix-Obsidian/waimd-housing",
       "local_path": "../waimd-housing",
@@ -67,11 +69,36 @@
       "billing": {
         "provider": "stripe",
         "mode": "test",
-        "model": "one-time ($29 per decision — charged only when 3 viable options are found)",
+        "model": "freemium preview → $29 one-time unlock (PRD §15): free = Housing Mission + Match #1 preview; $29 unlocks the full 3-choice Decision (evidence, sources, total cost, comparisons, fees, risk flags, recommendation, next action)",
         "price_usd": 29,
-        "note": "TEST mode until the D5 publish+charge gate. Refund/no-charge if fewer than 3 viable options. Flip test→live only with PUBLISH_APPROVAL_TOKEN.",
+        "note": "No subscription, no commissions, no landlord advertising, NO payment before value. If WAIMD cannot produce three qualifying options the customer pays $0. Stripe Checkout, TEST mode until the D5 publish+charge gate — flip test→live only with PUBLISH_APPROVAL_TOKEN.",
         "secret_env": "WAIMD_HOUSING_STRIPE_RO_KEY"
       },
+      "fulfillment": {
+        "mode": "founder-in-the-loop",
+        "note": "PRD §18 — a FEATURE, not a stopgap. For the first 10–50 missions software handles qualification/schema/requirements/filtering/scoring/presentation/payments/analytics; the founder handles difficult discovery, unclear availability, manual verification, and edge cases. Every intervention is labeled data (manual_reason enum) that becomes the automation backlog. Don't automate guesses — automate observed work.",
+        "admin_surface": "Mission Queue (PRD §28)"
+      },
+      "supply": {
+        "inventory_owned": "none ($0 — the scarce asset is converting fragmented inventory into a decision, not the inventory itself)",
+        "constraint": "PRD §17 — do NOT scrape sources whose terms prohibit it. V0 combines public/authorized information with founder-assisted verification; licensed feeds/APIs/partnerships only later."
+      },
+      "metrics": {
+        "qualified_mission_cac_usd_max": 14,
+        "mission_solvability_min_pct": 80,
+        "paid_decision_rate_min_pct": 30,
+        "note": "PRD §23. CAC = ad spend / completed qualified missions. Solvability = can we produce three qualifying options. Paid rate = purchases / completed solvable missions."
+      },
+      "kill_criteria": {
+        "kill_acquisition": "$70 spent AND <5 qualified missions → do not spend another $70 automatically",
+        "kill_proposition": "10 successfully fulfilled missions AND 0 purchases → do not build more features",
+        "investigate": "10 fulfilled AND 1–2 purchases → signal but not enough; interview behavior and change ONE variable",
+        "continue": "10 fulfilled AND ≥3 purchases → earned another iteration",
+        "gate_command": "make waimd-gate",
+        "note": "PRD §24 — executable via ops/waimd-gate.mjs so the finish condition actually fires (D24 lesson: prose gates never did)."
+      },
+      "analytics": { "provider": "posthog-free-tier", "note": "PRD §22/§26 — simple event store; instrument only what affects the hypothesis." },
+      "critical_path_llm": "none — PRD §26 pins a deterministic first decision engine and no paid LLM on the critical path. D22 caching-check PASSES at zero call sites; never add an LLM to the critical path to satisfy a checker.",
       "support": {
         "source": "inbox-file",
         "inbox": "ops/inbox/waimd-housing.jsonl",

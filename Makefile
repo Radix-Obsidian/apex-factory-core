@@ -31,6 +31,12 @@ waimd-freeze-test: ## D24 — killed-SKU outreach freeze covers every sender ent
 honesty-auditor-test: ## D25 — the never-lie gate: honesty-auditor blocks fabricated proof / fake scarcity / un-timestamped certainty
 	@bash tests/honesty-auditor.test.sh
 
+waimd-gate-test: ## D26 — the waimd-housing validation gate fires every PRD §24 verdict (fixtures, $0)
+	@bash tests/waimd-gate.test.sh
+
+waimd-gate: ## D26 — waimd-housing validation verdict from PRD §23 metrics ($0, read-only; exit 1 on a KILL)
+	@node ops/waimd-gate.mjs
+
 chat: ## D23 — launch a Sonnet interactive session (writing/brainstorm/research; NOT code)
 	@claude --model claude-sonnet-4-6
 
@@ -102,7 +108,7 @@ operate: ## Ops — ONE post-launch tick (health + revenue + support) over all l
 ops-verify: ## Ops — deterministic tests for the operations layer ($0 LLM)
 	@node --test ops/ops.test.mjs && echo "── ops-verify GREEN ──"
 
-verify: preflight guard-test router-test model-guard-test usage-gate-test waimd-freeze-test honesty-auditor-test gate auth-guard ops-verify caching-verify ## run mechanical acceptance checks (fast)
+verify: preflight guard-test router-test model-guard-test usage-gate-test waimd-freeze-test honesty-auditor-test waimd-gate-test gate auth-guard ops-verify caching-verify ## run mechanical acceptance checks (fast)
 	@echo "── verify GREEN ──"
 
 launch: ## fire the REAL gated cycle (⚠ spends shared Anthropic + Higgsfield pools)
@@ -141,4 +147,4 @@ worktree-status: ## show all worktrees + the loop branch
 worktree-remove: ## tear down the loop worktree (keeps the loop/auto branch + history)
 	@bash scripts/worktree.sh remove
 
-.PHONY: help preflight copytest guard-test router-test model-guard-test usage-gate-test waimd-freeze-test honesty-auditor-test chat watch gate auth-guard dryrun heartbeat usage recycled-verify recycled-scan recycled-metrics recycled-ideate design-check closed-loop-check caching-check caching-verify cachingtest verify launch cron-enable cron-disable crashcron-install crashcron-uninstall hooks-install worktree-setup worktree-status worktree-remove
+.PHONY: help preflight copytest guard-test router-test model-guard-test usage-gate-test waimd-freeze-test honesty-auditor-test waimd-gate-test waimd-gate chat watch gate auth-guard dryrun heartbeat usage recycled-verify recycled-scan recycled-metrics recycled-ideate design-check closed-loop-check caching-check caching-verify cachingtest verify launch cron-enable cron-disable crashcron-install crashcron-uninstall hooks-install worktree-setup worktree-status worktree-remove

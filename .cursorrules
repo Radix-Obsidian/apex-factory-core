@@ -44,11 +44,15 @@ Persuasion is not permission to fabricate. All external copy also passes the hon
 hook, which **rejects at write time**:
 - **Fabricated social proof** — invented customer/review counts or star ratings ("Trusted by 12,000
   nurses", "Rated 4.9 stars"). A pre-launch product has none. Show real proof only.
+- **Fabricated personas** — a quoted testimonial attributed to a named nurse/customer. No fake nurses.
 - **Fake scarcity / inventory** — "only N left", "N viewing now", "N booked today" and similar dark
   patterns. Never a fabricated counter.
-- **Un-timestamped certainty** — availability asserted as certain ("availability confirmed",
-  "guaranteed available") with no evidence marker. Every availability claim ships an as-of date and an
-  evidence state: **LISTED → CHECKED → CONFIRMED** (fail-closed — stale/unverified is never CONFIRMED).
+- **Invented trust badges** — "✓ Verified landlord", "every listing is verified" with nothing behind it.
+  Say who verified what, and when.
+- **Certainty without CONFIRMED-grade evidence** — availability asserted as certain ("availability
+  confirmed", "guaranteed available"). The evidence ladder is **LISTED → CHECKED → CONFIRMED**, and
+  **only CONFIRMED** — a direct landlord/property-rep confirmation — may say it. A bare date, LISTED, or
+  CHECKED is NOT enough. Fail-closed: never turn a stale calendar into fake certainty.
 - Escape hatch for a genuinely backed claim: an inline `<!-- honesty-ok: <where the evidence lives> -->`.
   Use it only when the evidence is real; it is auditable.
 

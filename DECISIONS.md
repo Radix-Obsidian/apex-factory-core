@@ -554,3 +554,68 @@ waimd.org from `dot-navigator-app` and tear down that FMCSA deploy before attach
 Meta ad account to the **Housing Special Ad Category** and authorize the **$70** validation cap; flip Stripe test→live
 with `PUBLISH_APPROVAL_TOKEN` only after the vertical slice passes (D5). Supersedes the D24 "still open — awaiting a
 founder brief": the brief arrived, and it's WAIMD 2.0.
+
+## D26 — the real PRD v0.1 lands, supersedes the D25 reconstruction (2026-07-31)
+**Problem.** D25 stood up `waimd-housing` from a **reconstruction** of the founder's brief (the verbatim text wasn't in
+context) — flagged as such at the time. The founder has now sent the **actual PRD v0.1** plus the VOCO OS state block.
+It is materially sharper than the reconstruction and **contradicts it where it matters**, so the reconstruction is
+replaced rather than patched, and the deltas are recorded here so the correction is auditable instead of a silent
+overwrite.
+
+**`skus/waimd-housing/PRD.md` is now the founder's verbatim text** (state block + §0–§32 + the constitution line:
+*"WAIMD transforms a travel nurse's accepted assignment into three evidence-backed housing choices. Nothing else until
+strangers pay for that outcome."*). It is the canonical spec — where any derived artifact disagrees, the PRD wins.
+
+**Six substantive deltas the reconstruction got wrong** (all now corrected in the registry + `BUILD-CHECKLIST.md`):
+1. **Monetization is freemium, not pay-on-success.** §15: free = mission + **Match #1 preview**; **$29 unlocks the full
+   3-choice Decision**; $0 if fewer than three qualify. D25 registered a flat "charged only if 3 found" and lost the
+   preview paywall — which is the funnel's pivot (`preview_viewed` → `checkout_started`).
+2. **Founder-in-the-loop is a designed feature with its own surface.** §18 + §28: for the first 10–50 missions the
+   founder does the hard verification, and every intervention is **labeled data** (`manual_reason` enum) that becomes
+   the automation backlog ("don't automate guesses; automate observed work"). The **Admin Mission Queue** was missing
+   entirely — now Day 3 of the build.
+3. **The data model is specified.** §27: `missions`, `requirements`, `candidates`, `candidate_requirements`,
+   `interventions`, `orders`, and **no landlord table** (intentional). D25 invented a per-fact `candidate_facts` and a
+   `decisions` table and dropped three real ones; evidence lives on the candidate (`evidence_status`,
+   `evidence_checked_at`).
+4. **Qualification is a hard gate.** §7 Screen 2: "not yet accepted" is a **dead end** — no newsletter funnel, no
+   generic leads, "no contamination of the experiment."
+5. **Metrics and kill criteria are numeric** (§23/§24), not one vague gate: CAC ≤ **$14**, solvability ≥ **80%**, paid
+   decision rate ≥ **30%**; four verdicts (kill acquisition / kill proposition / investigate / continue).
+6. **Supply is $0 and compliance-bounded.** §17: **do not scrape sources whose terms prohibit it** — public/authorized
+   data plus founder verification only. Left unstated, a builder agent writes a scraper; it is now a standing
+   constraint in the checklist and the registry.
+
+**Made the kill criteria executable — `ops/waimd-gate.mjs` + `make waimd-gate`.** D24's own finding was
+decision-tracking at **0/15 positive outcomes** because finish conditions were prose that never fired. This gate is
+deterministic, read-only, $0 (no model, no network): it computes the §23 metrics and returns the §24 verdict, exiting
+**non-zero on a KILL** so a kill can't be mistaken for a pass. Missing metrics → "no data yet" (never a false verdict);
+malformed → loud exit 2. `tests/waimd-gate.test.sh` (15 cases: all four verdicts, the early-verdict boundaries, the
+metric math, inclusive targets, and the robustness paths).
+
+**Hardened the honesty gate against three fabrications the founder names explicitly** (§11, §19) — all three were
+confirmed **allowed** by probe before the fix:
+- **CONFIRMED-tiering (§11).** "Availability confirmed" now requires **CONFIRMED-grade** evidence — the uppercase state
+  token or an explicit landlord/property-rep confirmation. A bare date, `LISTED`, or `CHECKED` no longer authorizes it
+  ("never turn a stale calendar into fake certainty"). *Real bug found and fixed while building this:* the first pass
+  used a case-insensitive `\bCONFIRMED\b`, so the lowercase "confirmed" **inside the very phrase being gated**
+  satisfied its own guard. Evidence-state tokens are now matched case-**sensitively**; timestamps stay insensitive.
+- **Invented "verified" badges (§19)** — "✓ Verified landlord", "every listing is verified" with nothing behind it.
+- **Fabricated personas (§19 "no fake nurses")** — quoted testimonials attributed to a named nurse/customer.
+Test grew 11 → **19 cases**, including regression-locks that the §12 Decision Card ("Availability: CHECKED · source
+last checked 2h 14m ago"), landlord-confirmed copy, the money-back guarantee the copywriter gate *requires*, and the
+product's honest "3 choices" language all still pass. `.cursorrules` updated.
+
+**D22 caching-check is satisfied at zero call sites, by design.** §26 pins *no paid LLM on the critical path* (the
+first decision engine is deterministic; §13 forbids a fake "AI score"). Verified: `scripts/caching-check.mjs` exits 0
+with "no direct Anthropic calls (nothing to cache)". Recorded in the registry and the checklist so nobody "fixes" the
+checker by **adding** an LLM to the critical path — that would violate §26 and burn the pool.
+
+**Haboob is on hold** (founder instruction). `skus/haboob/` stays an untouched DRAFT; it never entered
+`skus/registry.json`, so there is nothing to pause or tear down. `waimd-housing` is the single active focus — this is
+the answer to D24's "still open" item, now confirmed by the founder rather than inferred.
+
+**Unchanged and still founder-gated:** the product repo (D21), the waimd.org repoint (tear down `dot-navigator-app`
+first), the Meta Housing Special Ad Category + the **$70** cap, and the Stripe test→live flip (D5). The PRD's own NEXT
+DECISION GATE — *"Founder approves PRD + authorizes maximum $70 Meta validation spend"* — is the founder's; nothing in
+this commit spends, publishes, or charges.
