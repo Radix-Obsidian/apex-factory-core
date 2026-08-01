@@ -758,14 +758,73 @@ including me, marking this done before it is proven. `make stripe-teardown-test`
 Only the fail-closed no-key path was run end-to-end (INDETERMINATE, exit 2, registry byte-identical). Everything else
 is proven against an injected fetch.
 
-**`yc-software/qm` assessed and set aside.** Offered as help for this task. It is real and reputable — *"a multiplayer
-agent harness for work. In Slack and on the web"*, TypeScript/Fastify/Postgres, MIT, ~4.2k stars — but it has no
-Stripe integration, no payments code, and no revocation capability. It cannot perform this task, and adopting an
-unvetted agent harness during an active credential incident would be scope creep in the wrong direction. Worth
-evaluating on its own merits as a factory component later; recorded here so the decision is traceable rather than
-silently dropped.
+**~~`yc-software/qm` assessed and set aside.~~ CORRECTED — see D30.** I assumed `qm` was offered as tooling for the
+revocation and evaluated it against that; the founder had actually offered it as **agent infrastructure** ("something
+we can use to make our agents smarter and work better together"). The technical read was accurate — it has no Stripe
+or payments code — but the framing was wrong, and judging a tool against a purpose it was never proposed for is a
+category error. Properly evaluated in **D30**.
 
 **Still the founder's, unchanged:** roll/delete the key, archive the $9/$39 prices, settle anything in flight, unset
 the host vars — and, because this was a compromise rather than a migration, roll *every* key and check Developers →
 API keys and Webhooks for anything not created by us. `teardown_complete` stays **false** until `make stripe-verify`
-proves otherwise.
+proves otherwise. *(Amended by D30: a DELETED key can never satisfy that proof — see the attestation grade.)*
+
+## D30 — evidence grades for a deleted key; `qm` evaluated for what it actually is (2026-07-31)
+
+### 1. A deleted key can never be proven — so proof was the wrong bar
+**Problem found by the founder's own report** ("I've revoked all these keys or deleted them"). D29's verifier tests a
+credential and accepts only a `401` as proof. But a **deleted** key leaves nothing to test: `secret_env` is unset, the
+tool returns INDETERMINATE, and `teardown_complete` could **never** go true. The most thorough teardown — deletion
+rather than rolling — was the one case the design handled worst. A gate that cannot close on the best outcome is a
+broken gate, not a strict one.
+
+**Fix — two evidence grades, labelled, never conflated:**
+- **`REVOKED`** — *machine-verified*: Stripe returned `401 invalid_api_key` for that credential.
+- **`REVOKED_ATTESTED`** — *founder attestation*: the key was deleted, so no credential remains to test. Attestation
+  is the only evidence that can exist here, and it is recorded **as attestation** (`revocation_evidence` states which
+  it is) rather than dressed up as proof. `make stripe-attest`.
+
+**Fail-closed properties kept:** `--attest-deleted` is **ignored when the credential still authenticates** — you
+cannot attest away a working key, or the attestation path would become a way to silence the real check. And a bug the
+tests caught while building this: `applyRevocation`'s `grade` parameter **defaulted to `PROVEN`**, so an omitted or
+`undefined` grade would have quietly recorded the *stronger* claim. For a security flag that is exactly the wrong
+direction — the parameter is now required, and an unrecognised grade throws. (18 cases in
+`tests/stripe-teardown.test.mjs`.)
+
+**Status:** the founder reports all Stripe keys revoked or deleted and is double-checking. Nothing has been flipped —
+`teardown_complete` is still `false` and `revocation_status` still `PENDING_FOUNDER`, because I have no evidence of
+either grade yet. `make stripe-attest` closes it out on confirmation.
+
+### 2. `qm` — evaluated as agent infrastructure (D29's framing was wrong)
+**What it is:** a headless agent core (TypeScript/Fastify/Postgres) with per-scope sandboxes, pluggable model
+harnesses (Pi, OpenCode, Codex, Claude Code), Slack + web + admin as optional plugins over an HTTP API, a per-scope
+keychain, skills that are scope-owned with admin-gated promotion, crons/watches, and three security postures
+(strict = approve every tool call / auto = classifier / dangerous). MIT, ~4.2k stars. Deploys to the operator's own
+Fly or AWS via `qm init`, with core kept byte-identical to upstream so merges stay small.
+
+**Where it is genuinely ahead of this factory:**
+- **Durable state.** The factory's memory is files plus an ephemeral container that gets reclaimed. qm has
+  Postgres-backed sessions, memory and job queues that survive — a real gap, felt in every session.
+- **A human surface.** Slack + web with one identity across both. The factory is cron/loop-driven with no operator
+  surface; the founder already works from Slack.
+- **Scoped keychain + audit + posture switch.** Directly relevant one week after a credential compromise: the factory
+  has env-var names in a registry and guardrail hooks, not a scoped, audited credential model.
+- **Same architectural instinct as chassis (D21):** org config in a deployment repo, core untouched upstream. That is
+  the chassis/DomainPack split, independently arrived at — mild evidence the D21 bet is sound.
+
+**Where this factory is ahead, and would regress by adopting it wholesale:**
+- **No model routing, no subagent tiering, no MCP.** `ops/model-router.mjs` + `hooks/model-guard.mjs` (D23) and the
+  `factory-*` roster are the factory's sharpest edge, built specifically to stop Opus burn. qm has none of that; it
+  swaps harnesses, it does not route by task rung.
+- **It solves an org problem we do not have yet.** qm's thesis is *employees* needing isolated workspaces. Voco is one
+  founder plus agents — the multiplayer value is mostly latent.
+- **It is infrastructure spend.** Postgres + Fly/AWS + a fork to track, against a PRD that says "behave like you're
+  broke" (§26) and a factory whose scoreboard is Stripe/Polar revenue.
+
+**Decision: sequence it, do not adopt it now — and do not confuse this with dismissing it.** The critical path is
+`make waimd-ready` going green (product repo, Prisma schema, Polar checkout, the beta); qm moves none of it, and
+standing up a second harness mid-build is how a one-ICP factory loses its scope lock. **Revisit immediately after the
+WAIMD validation gate resolves** — pass or fail, that is the natural seam. Two things worth borrowing **now, at zero
+infra cost**: qm's **security-posture switch** (strict/auto/dangerous) as a model for the factory's own hook layer,
+and its **scope-owned skills with admin-gated promotion** as a pattern for `.claude/skills`. Both are design ideas,
+not dependencies.

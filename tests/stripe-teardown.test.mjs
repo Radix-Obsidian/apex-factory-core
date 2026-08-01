@@ -12,6 +12,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 import {
+  EVIDENCE_GRADES,
   applyRevocation,
   classifyStatus,
   mayFlipTeardown,
@@ -136,7 +137,7 @@ describe('registry flip', () => {
 
   test('applyRevocation records evidence and completes the teardown', () => {
     withTempRegistry(p => {
-      applyRevocation('dot-navigator', '2026-08-01', p);
+      applyRevocation('dot-navigator', '2026-08-01', p, EVIDENCE_GRADES.PROVEN);
       const sku = JSON.parse(fs.readFileSync(p, 'utf8')).skus[0];
       assert.equal(sku.billing.revocation_status, 'REVOKED');
       assert.equal(sku.billing.revoked_at, '2026-08-01');
@@ -148,7 +149,38 @@ describe('registry flip', () => {
 
   test('an unknown slug throws rather than silently writing nothing', () => {
     withTempRegistry(p => {
-      assert.throws(() => applyRevocation('nope', '2026-08-01', p), /no SKU/);
+      assert.throws(() => applyRevocation('nope', '2026-08-01', p, EVIDENCE_GRADES.PROVEN), /no SKU/);
+    });
+  });
+
+  test('attested and proven are recorded as DIFFERENT grades, never conflated', () => {
+    withTempRegistry(p => {
+      applyRevocation('dot-navigator', '2026-08-01', p, EVIDENCE_GRADES.ATTESTED);
+      const sku = JSON.parse(fs.readFileSync(p, 'utf8')).skus[0];
+      assert.equal(sku.billing.revocation_status, 'REVOKED_ATTESTED');
+      assert.match(sku.billing.revocation_evidence, /founder attestation/);
+      assert.equal(sku.teardown_complete, true, 'a deleted key still completes the teardown');
+      // The label must never claim machine verification it does not have.
+      assert.equal(/machine-verified/.test(sku.billing.revocation_evidence), false);
+    });
+  });
+
+  test('a proven revocation says so explicitly', () => {
+    withTempRegistry(p => {
+      applyRevocation('dot-navigator', '2026-08-01', p, EVIDENCE_GRADES.PROVEN);
+      const sku = JSON.parse(fs.readFileSync(p, 'utf8')).skus[0];
+      assert.equal(sku.billing.revocation_status, 'REVOKED');
+      assert.match(sku.billing.revocation_evidence, /machine-verified/);
+    });
+  });
+
+  test('an unrecognised evidence grade is refused outright', () => {
+    withTempRegistry(p => {
+      for (const bogus of ['TOTALLY_REVOKED', 'true', '', undefined, 'PENDING_FOUNDER'])
+        assert.throws(() => applyRevocation('dot-navigator', '2026-08-01', p, bogus),
+          /unknown evidence grade/, `grade ${bogus} must be refused`);
+      // Nothing was written by any of the refused attempts.
+      assert.equal(JSON.parse(fs.readFileSync(p, 'utf8')).skus[0].teardown_complete, false);
     });
   });
 

@@ -58,6 +58,9 @@ stripe-audit: ## D29 — BEFORE revoking: what is still live on the Stripe accou
 stripe-verify: ## D29 — AFTER revoking: prove the key is dead, then complete the teardown (needs the real key)
 	@node ops/stripe-teardown.mjs verify
 
+stripe-attest: ## D30 — key DELETED (nothing left to test): record the teardown as founder-attested, not proven
+	@node ops/stripe-teardown.mjs verify --attest-deleted
+
 chat: ## D23 — launch a Sonnet interactive session (writing/brainstorm/research; NOT code)
 	@claude --model claude-sonnet-4-6
 
@@ -168,4 +171,4 @@ worktree-status: ## show all worktrees + the loop branch
 worktree-remove: ## tear down the loop worktree (keeps the loop/auto branch + history)
 	@bash scripts/worktree.sh remove
 
-.PHONY: help preflight copytest guard-test router-test model-guard-test usage-gate-test waimd-freeze-test honesty-auditor-test waimd-gate-test waimd-gate waimd-engine-test waimd-eval waimd-ready-test waimd-ready stripe-teardown-test stripe-audit stripe-verify chat watch gate auth-guard dryrun heartbeat usage recycled-verify recycled-scan recycled-metrics recycled-ideate design-check closed-loop-check caching-check caching-verify cachingtest verify launch cron-enable cron-disable crashcron-install crashcron-uninstall hooks-install worktree-setup worktree-status worktree-remove
+.PHONY: help preflight copytest guard-test router-test model-guard-test usage-gate-test waimd-freeze-test honesty-auditor-test waimd-gate-test waimd-gate waimd-engine-test waimd-eval waimd-ready-test waimd-ready stripe-teardown-test stripe-audit stripe-verify stripe-attest chat watch gate auth-guard dryrun heartbeat usage recycled-verify recycled-scan recycled-metrics recycled-ideate design-check closed-loop-check caching-check caching-verify cachingtest verify launch cron-enable cron-disable crashcron-install crashcron-uninstall hooks-install worktree-setup worktree-status worktree-remove

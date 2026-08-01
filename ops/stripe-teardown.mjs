@@ -157,15 +157,34 @@ export async function runVerify(key, fetchImpl = globalThis.fetch) {
   return { verdict: verifyVerdict(status), status, error };
 }
 
-/** Flip the teardown flags. Called ONLY on a proven revocation. */
-export function applyRevocation(slug, todayIso, registryPath = REGISTRY_PATH) {
+/**
+ * The two evidence grades, never conflated:
+ *   REVOKED           — PROVEN. Stripe rejected the credential with a 401. Machine-checked.
+ *   REVOKED_ATTESTED  — the founder states the key was DELETED. When a key is deleted rather than
+ *                       rolled, there is no credential left to test, so proof is impossible by
+ *                       construction and attestation is the only evidence that can ever exist.
+ *                       Recorded as attestation, labelled as such, never as proof.
+ */
+export const EVIDENCE_GRADES = Object.freeze({ PROVEN: 'REVOKED', ATTESTED: 'REVOKED_ATTESTED' });
+
+/**
+ * Flip the teardown flags. Called ONLY on a proven revocation or an explicit founder attestation.
+ * `grade` is REQUIRED and has no default: defaulting an unspecified evidence grade would quietly
+ * record the STRONGER claim, which is the wrong direction for a security flag. Unknown ⇒ refuse.
+ */
+export function applyRevocation(slug, todayIso, registryPath = REGISTRY_PATH, grade) {
+  if (grade !== EVIDENCE_GRADES.PROVEN && grade !== EVIDENCE_GRADES.ATTESTED)
+    throw new Error(`refusing to write an unknown evidence grade: ${grade}`);
   const raw = fs.readFileSync(registryPath, 'utf8');
   const reg = JSON.parse(raw);
   const sku = reg.skus.find(s => s.slug === slug);
   if (!sku) throw new Error(`no SKU '${slug}' in the registry`);
   sku.billing = sku.billing || {};
-  sku.billing.revocation_status = 'REVOKED';
+  sku.billing.revocation_status = grade;
   sku.billing.revoked_at = todayIso;
+  sku.billing.revocation_evidence = grade === EVIDENCE_GRADES.PROVEN
+    ? 'machine-verified: Stripe returned 401 invalid_api_key for this credential'
+    : 'founder attestation: the key was deleted, so no credential remains to test against';
   sku.teardown_complete = true;
   fs.writeFileSync(registryPath, JSON.stringify(reg, null, 2) + '\n');
   return sku;
@@ -198,7 +217,27 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const envName = sku.billing?.secret_env;
   const key = envName ? process.env[envName] : undefined;
 
+  const attest = argv.includes('--attest-deleted');
+
   if (!envName || !key) {
+    // A DELETED key leaves nothing to test. Proof is impossible by construction, so an explicit
+    // founder attestation is the only evidence that can ever exist — recorded as attestation.
+    if (mode === 'verify' && attest) {
+      const today = new Date().toISOString().slice(0, 10);
+      let updated;
+      try { updated = applyRevocation(slug, today, REGISTRY_PATH, EVIDENCE_GRADES.ATTESTED); }
+      catch (e) { console.error(`✗ registry update failed: ${e.message}`); process.exit(2); }
+      if (json) out({ mode, slug, verdict: 'REVOKED_ATTESTED', proven: false, registry_updated: true, attested_at: today }, 0);
+      console.log(`— STRIPE TEARDOWN VERIFY (${slug}) —\n`);
+      console.log('  ✓ RECORDED AS FOUNDER-ATTESTED (not machine-proven).');
+      console.log(`  ${envName} is absent here, so there is no credential left to test — which is`);
+      console.log('  what a DELETED key looks like. Attestation is the only possible evidence.');
+      console.log(`  Registry: revocation_status=REVOKED_ATTESTED, revoked_at=${today}, teardown_complete=true`);
+      console.log(`  (${updated.slug} drops out of the operator digest's TEARDOWN line.)`);
+      console.log('\n  Worth confirming in the Dashboard: no keys you did not create, and no webhook');
+      console.log('  endpoints you did not create — neither is visible from the API.');
+      process.exit(0);
+    }
     const msg = `INDETERMINATE — ${envName || 'billing.secret_env'} is not set in this environment.`;
     if (json) out({ mode, slug, verdict: 'INDETERMINATE', reason: msg }, 2);
     console.log(`— STRIPE TEARDOWN (${slug}) —\n`);
@@ -206,6 +245,11 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     console.log('  Run this on the host where the key lives. Nothing was changed.');
     console.log('\n  Note: Stripe has NO API to revoke a key — that step is Dashboard-only:');
     console.log('    Developers → API keys → roll or delete the restricted key.');
+    if (mode === 'verify') {
+      console.log('\n  If the key was DELETED (not just rolled), there is nothing left to test and this');
+      console.log('  will never turn green on its own. Record it as attested instead:');
+      console.log('    make stripe-attest      # or: node ops/stripe-teardown.mjs verify --attest-deleted');
+    }
     process.exit(2);
   }
 
@@ -235,7 +279,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 
   if (verdict === 'REVOKED' && mayFlipTeardown(verdict)) {
     let updated;
-    try { updated = applyRevocation(slug, today); } catch (e) {
+    try { updated = applyRevocation(slug, today, REGISTRY_PATH, EVIDENCE_GRADES.PROVEN); } catch (e) {
       console.error(`✗ key is revoked, but the registry update failed: ${e.message}`); process.exit(2);
     }
     if (json) out({ mode, slug, verdict, status, registry_updated: true, revoked_at: today }, 0);
@@ -253,6 +297,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     console.log(`— STRIPE TEARDOWN VERIFY (${slug}) —\n`);
     console.log(`  ✗ THE KEY IS STILL LIVE — Stripe accepted it (HTTP ${status}).`);
     console.log('  Nothing was changed. Revoke it: Developers → API keys → roll or delete.');
+    // Attestation is for a key that is GONE. A credential that still authenticates cannot be
+    // attested away — otherwise the attestation path would become a way to silence the real check.
+    if (attest) console.log('\n  --attest-deleted IGNORED: this credential still authenticates, so it is not deleted.');
     process.exit(1);
   }
 

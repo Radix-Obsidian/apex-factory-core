@@ -89,6 +89,12 @@ only thing accepted as proof of revocation; only then does it set `revocation_st
 the operator digest). A `200` means the key is **still live** → it refuses and changes nothing. A
 timeout, `5xx`, or scope error is **INDETERMINATE** → it changes nothing. A non-answer is never proof.
 
+**If the key was DELETED rather than rolled**, there is no credential left to test and `stripe-verify`
+can never go green — proof is impossible by construction. Use **`make stripe-attest`**, which records
+`revocation_status: REVOKED_ATTESTED` with `revocation_evidence` naming it as **founder attestation,
+not machine verification**. The two grades are stored distinctly and never conflated. Attestation is
+**ignored if the credential still authenticates** — you cannot attest away a working key.
+
 The key is read from the env var named by the registry's `secret_env`; it is never printed, logged,
 written, or committed.
 
