@@ -7,6 +7,7 @@
 // Audit logic lives in honesty-core.mjs so the test grades this exact gate.
 import { readFileSync } from 'node:fs';
 import { auditHonesty } from './honesty-core.mjs';
+import { applyPosture, resolvePosture } from '../ops/posture.mjs';
 
 let raw = '';
 try { raw = readFileSync(0, 'utf8'); } catch { process.exit(0); }
@@ -19,8 +20,13 @@ const ti = data.tool_input || {};
 const file = ti.file_path || '';
 const content = ti.content ?? ti.new_string ?? '';
 
-const { enforced, fails, warns } = auditHonesty(file, content);
-if (!enforced) process.exit(0);
+const audit = auditHonesty(file, content);
+if (!audit.enforced) process.exit(0);
+
+// D31 — 'honesty' is INVIOLABLE: posture may tighten it (strict promotes warnings) but no posture,
+// including `dangerous`, can soften it. A switch that turns off the never-lie gate would be the most
+// expensive convenience in this repo.
+const { fails, warns } = applyPosture('honesty', audit, resolvePosture());
 
 if (fails.length) {
   console.error('🏭 honesty-auditor BLOCKED this write (the never-lie charter):');

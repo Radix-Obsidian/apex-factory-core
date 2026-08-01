@@ -827,4 +827,40 @@ standing up a second harness mid-build is how a one-ICP factory loses its scope 
 WAIMD validation gate resolves** — pass or fail, that is the natural seam. Two things worth borrowing **now, at zero
 infra cost**: qm's **security-posture switch** (strict/auto/dangerous) as a model for the factory's own hook layer,
 and its **scope-owned skills with admin-gated promotion** as a pattern for `.claude/skills`. Both are design ideas,
-not dependencies.
+not dependencies. *(D31 took the first and rejected the second — see below.)*
+
+## D31 — the posture switch, hardened; and the uncomfortable P0 (2026-07-31)
+**Framing.** Asked to execute "the way a Google CTO would," the first output of that lens is not a feature, it is a
+priority call: **since the PRD was approved we have shipped six decision records of factory hardening and zero
+product.** `make waimd-ready` sits at 8/15 and all six reds trace to one dependency — the product repo does not
+exist. The engine is proven; the beta is not started. That is the P0, and it is founder-gated (D21), so the factory
+cannot self-serve it. Everything below is explicitly secondary to it.
+
+**Took one qm borrow, rejected the other.**
+- **Rejected: scope-owned skills with admin-gated promotion.** It solves an org problem — many employees, sharing
+  gated by permission. Voco is one founder plus agents. That was the *exact* argument for deferring qm itself
+  (D30); building it anyway would have contradicted it. Not built, on purpose.
+- **Took: the security posture switch**, justified independently of qm by last week's credential compromise. The
+  factory's guardrails had exactly one strictness with no way to tighten them under elevated risk.
+
+**`ops/posture.mjs` + `make posture` — with one deliberate divergence from qm.** In qm the posture governs the whole
+tool surface. Here it governs **advisory guards only**:
+- `strict` — warnings are promoted to blocks. **Tightening is permitted on every guard, including inviolable ones.**
+- `auto` — DEFAULT; today's behaviour (failures block, warnings warn).
+- `dangerous` — **taste-level** failures (copywriter, caching) degrade to warnings, and are still printed rather than
+  swallowed.
+
+**`INVIOLABLE` — what no posture may ever soften:** the publish gate (D5), deploy-guard (D28: live Stripe *and*
+Polar keys), secret detection, **honesty** (D25–D26), kill-guard (D24), the retired-provider rule (D28), and
+model-guard (D23). **An unknown guard is treated as inviolable**, so the safe default survives future guards nobody
+remembered to classify. `honesty` is on that list deliberately: for a product whose entire wedge is "we never
+fabricate," a switch that turns off the never-lie gate would be the most expensive convenience in the repo — and it
+is precisely the switch someone reaches for at 2am under deadline pressure. Resolution is fail-safe: an unrecognised,
+empty, or malformed `FACTORY_POSTURE` falls back to `auto`, **never** to `dangerous`.
+
+**Verified end-to-end, not just unit-tested.** Against the live hooks: fabricated social proof exits 2 under
+`auto`, `strict` **and** `dangerous`; generic copy exits 2 under `auto`/`strict` and 0 under `dangerous`. That is the
+whole design in one observation — the taste gate bends, the truth gate does not. 17 cases in `tests/posture.test.mjs`,
+including a per-guard assertion that every inviolable entry still blocks under `dangerous`, so removing one from the
+set fails a test rather than silently widening the blast radius. Folded into `make verify`; documented in
+`.cursorrules`.

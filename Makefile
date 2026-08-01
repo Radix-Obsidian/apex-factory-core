@@ -61,6 +61,12 @@ stripe-verify: ## D29 — AFTER revoking: prove the key is dead, then complete t
 stripe-attest: ## D30 — key DELETED (nothing left to test): record the teardown as founder-attested, not proven
 	@node ops/stripe-teardown.mjs verify --attest-deleted
 
+posture: ## D31 — show the active security posture + which guards no posture may relax ($0)
+	@node ops/posture.mjs
+
+posture-test: ## D31 — posture may tighten anything, and soften only taste-level guards
+	@node --test tests/posture.test.mjs
+
 chat: ## D23 — launch a Sonnet interactive session (writing/brainstorm/research; NOT code)
 	@claude --model claude-sonnet-4-6
 
@@ -132,7 +138,7 @@ operate: ## Ops — ONE post-launch tick (health + revenue + support) over all l
 ops-verify: ## Ops — deterministic tests for the operations layer ($0 LLM)
 	@node --test ops/ops.test.mjs && echo "── ops-verify GREEN ──"
 
-verify: preflight guard-test router-test model-guard-test usage-gate-test waimd-freeze-test honesty-auditor-test waimd-gate-test waimd-engine-test waimd-eval waimd-ready-test stripe-teardown-test gate auth-guard ops-verify caching-verify ## run mechanical acceptance checks (fast)
+verify: preflight guard-test router-test model-guard-test usage-gate-test waimd-freeze-test honesty-auditor-test waimd-gate-test waimd-engine-test waimd-eval waimd-ready-test stripe-teardown-test posture-test gate auth-guard ops-verify caching-verify ## run mechanical acceptance checks (fast)
 	@echo "── verify GREEN ──"
 
 launch: ## fire the REAL gated cycle (⚠ spends shared Anthropic + Higgsfield pools)
@@ -171,4 +177,4 @@ worktree-status: ## show all worktrees + the loop branch
 worktree-remove: ## tear down the loop worktree (keeps the loop/auto branch + history)
 	@bash scripts/worktree.sh remove
 
-.PHONY: help preflight copytest guard-test router-test model-guard-test usage-gate-test waimd-freeze-test honesty-auditor-test waimd-gate-test waimd-gate waimd-engine-test waimd-eval waimd-ready-test waimd-ready stripe-teardown-test stripe-audit stripe-verify stripe-attest chat watch gate auth-guard dryrun heartbeat usage recycled-verify recycled-scan recycled-metrics recycled-ideate design-check closed-loop-check caching-check caching-verify cachingtest verify launch cron-enable cron-disable crashcron-install crashcron-uninstall hooks-install worktree-setup worktree-status worktree-remove
+.PHONY: help preflight copytest guard-test router-test model-guard-test usage-gate-test waimd-freeze-test honesty-auditor-test waimd-gate-test waimd-gate waimd-engine-test waimd-eval waimd-ready-test waimd-ready stripe-teardown-test stripe-audit stripe-verify stripe-attest posture posture-test chat watch gate auth-guard dryrun heartbeat usage recycled-verify recycled-scan recycled-metrics recycled-ideate design-check closed-loop-check caching-check caching-verify cachingtest verify launch cron-enable cron-disable crashcron-install crashcron-uninstall hooks-install worktree-setup worktree-status worktree-remove

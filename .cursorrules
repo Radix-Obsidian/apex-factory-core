@@ -56,6 +56,17 @@ hook, which **rejects at write time**:
 - Escape hatch for a genuinely backed claim: an inline `<!-- honesty-ok: <where the evidence lives> -->`.
   Use it only when the evidence is real; it is auditable.
 
+## Security posture (D31)
+`FACTORY_POSTURE=strict|auto|dangerous` (default **auto**; anything unrecognised falls back to auto,
+never to dangerous). `make posture` shows the active setting.
+- **strict** — advisory warnings become blocks. Tightening is always permitted, on every guard.
+- **auto** — failures block, warnings warn.
+- **dangerous** — **taste-level** guards only (copywriter, caching) degrade to warnings.
+
+The posture **cannot** relax the publish gate, deploy-guard, secret detection, **honesty**, kill-guard,
+the retired-provider rule, or model-guard. An unknown guard is treated as inviolable. A switch that
+could silence the money or never-lie boundaries would be a footgun with a friendly name.
+
 ## Execution harness
 - Loop: ECC `loop-operator` against `PRD.md`, run inside tmux on the stable socket `~/.tmux/sock`.
 - `ralphy` is NOT trusted: never installed-as-loop and never handles secrets until `ecc-agentshield
