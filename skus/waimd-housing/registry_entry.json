@@ -11,8 +11,8 @@
   "model_tier": "factory-builder",
   "stack": "Next.js + TypeScript (mobile-first), Prisma → Supabase Postgres, Polar checkout, PostHog free tier",
   "stack_deviations": {
-    "payments": "Polar replaces Stripe (PRD §15/§26). Founder override, D27: Stripe was compromised and declined to remediate, so the portfolio moved its paywall gateway to Polar.",
-    "data_layer": "Prisma for this stage, then scale into Supabase Postgres (PRD §26 names Supabase from day one). ASSUMPTION: 'Prism' = Prisma ORM.",
+    "payments": "Polar replaces Stripe (PRD §15/§26). Founder override, D27: Stripe was compromised and declined to remediate. D28 retires Stripe portfolio-wide — the registry validator rejects a stripe provider in any mode other than 'killed'.",
+    "data_layer": "Prisma ORM for this stage, then scale into Supabase Postgres (PRD §26 names Supabase from day one). Confirmed by the founder 2026-07-31.",
     "meta": "Meta ads deferred until the beta is built and fully tested — founder sequencing; the $70 is withheld until then."
   },
   "deploy_target": "railway",

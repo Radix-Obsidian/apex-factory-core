@@ -37,7 +37,11 @@
             "required": ["provider"],
             "properties": {
               "provider": { "type": "string", "enum": ["stripe", "polar", "none"] },
-              "mode": { "type": "string", "enum": ["test", "live"] },
+              "mode": {
+                "type": "string",
+                "enum": ["test", "live", "killed"],
+                "description": "killed = the paywall is dead; nothing may charge through it. D28 retired every Stripe paywall — the validator rejects a stripe provider in any mode other than killed."
+              },
               "model": { "type": "string" },
               "price_usd": { "type": "number" },
               "secret_env": {

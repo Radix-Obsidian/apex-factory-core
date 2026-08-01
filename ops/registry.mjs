@@ -23,6 +23,12 @@ const STATUSES = new Set(['staged', 'live', 'paused', 'killed']);
 // after the founder moved off Stripe; a hardcoded 'stripe' check would have silently exempted it.
 export const PAID_PROVIDERS = new Set(['stripe', 'polar']);
 
+// D28 — RETIRED providers. Stripe was compromised and declined to remediate, so every Stripe paywall
+// is dead: a retired provider may exist in the registry ONLY as `mode: "killed"` (kept for audit under
+// R7 reversible-archive, never stripped). Any other mode is a validation ERROR, which makes resurrecting
+// or newly wiring a Stripe paywall structurally impossible rather than merely discouraged.
+export const RETIRED_PROVIDERS = new Set(['stripe']);
+
 // Provider-agnostic raw-key shapes. secret_env holds a NAME; if it looks like an actual credential
 // from ANY provider we reject it, so a paste-in never reaches git. Stripe: sk_/rk_/pk_ live|test.
 // Polar: polar_oat_ (organization access token) / polar_. GitHub: ghp_/gho_/ghs_/ghu_/ghr_.
@@ -54,6 +60,8 @@ export function validateRegistry(reg) {
     const b = s.billing;
     if (b && PAID_PROVIDERS.has(b.provider) && !b.secret_env) errors.push(`${at}: ${b.provider} billing requires secret_env (env var NAME)`);
     if (b && b.secret_env && RAW_KEY_SHAPE.test(b.secret_env)) errors.push(`${at}: secret_env looks like a RAW KEY — it must be an env var NAME, never the key`);
+    if (b && RETIRED_PROVIDERS.has(b.provider) && b.mode !== 'killed')
+      errors.push(`${at}: ${b.provider} is a RETIRED provider (D28) — every ${b.provider} paywall is dead. Set billing.mode to "killed" (the entry is retained for audit) or move the SKU to a supported provider.`);
   }
   return { ok: errors.length === 0, errors };
 }

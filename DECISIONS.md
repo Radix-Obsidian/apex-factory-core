@@ -684,3 +684,40 @@ surfaced by `ops/digest.mjs` as `[dot-navigator · TEARDOWN]` until `teardown_co
 **Still blocked, and why:** the Next.js app, intake screens, Decision page, Admin Mission Queue, Prisma schema, Polar
 checkout, Meta instrumentation, and the §32 Day-6 end-to-end run all require the product repo and accounts that do not
 exist yet. Nothing outward-facing happened in this commit: no repo created, no spend, no publish, no charge.
+
+## D28 — kill every Stripe paywall; Prisma confirmed (2026-07-31)
+**Decision.** Founder: *"I meant Prisma, kill all stripe paywalls."* D27 moved the **new** SKU to Polar but left the
+**old** paywall standing: `dot-navigator` was `status: killed` yet still carried `billing.provider: stripe` with
+**`mode: "live"`** and an un-revoked `DOTNAV_STRIPE_RO_KEY`. A killed SKU with a live paywall is exactly the gap an
+attacker keeps — and Stripe is the compromised provider. It is now dead in-repo and **structurally impossible to
+resurrect**.
+
+- **`dot-navigator` billing → `mode: "killed"`.** The entry is *retained*, not stripped (R7 reversible archive): the
+  model, price, and `secret_env` stay as **history**, annotated `paywall_killed_at` + `revocation_status:
+  "PENDING_FOUNDER"`. Nothing may charge through it.
+- **Enforced, not documented — `RETIRED_PROVIDERS` in `ops/registry.mjs`.** A `stripe` provider in **any** mode other
+  than `killed` is now a **validation error**. Wiring a new Stripe paywall, or flipping this one back, fails
+  `make sku-validate` — and therefore `make verify`, `ops-verify`, and `make waimd-ready`. Retiring a provider is a
+  one-line addition to that set. Schema `billing.mode` enum gains `"killed"`.
+- **`deploy-guard.sh` learned the current gateway.** It refused live *Stripe* keys on the autonomous preview path but
+  knew nothing about **Polar** — so after D27 it would have waved a live Polar token straight through. It now refuses
+  live tokens from either provider (`POLAR_ACCESS_TOKEN` / `WAIMD_HOUSING_POLAR_RO_KEY`), while still allowing sandbox
+  tokens. A guard that only recognises the *retired* provider is not a guard. (+3 cases in `tests/guard.test.sh`.)
+- **Tests (`ops/ops.test.mjs`):** a stripe paywall in `live`/`test`/unset mode is rejected and cites the retirement; a
+  `killed` stripe entry still validates (history must survive); and a standing assertion that **the shipped registry
+  contains no live stripe paywall** — so this can never silently regress.
+- **Docs de-fanged:** `.env.example` marks `STRIPE_*` **RETIRED — leave empty** (kept declared only so deploy-guard
+  keeps refusing a leftover key on a host); `ops/README.md` no longer instructs the founder to paste `rk_live_…` and
+  now states plainly that `make portfolio` reports `n/a` for Polar because **no Polar revenue reader exists yet** —
+  honest, not broken.
+
+**🔴 The one thing code cannot do.** `mode: "killed"` stops *this repo* from charging. It does **not** revoke anything
+on Stripe's side. **Open founder action, now the top entry in `dot-navigator.pending_founder_actions`:** revoke
+`DOTNAV_STRIPE_RO_KEY` in the Stripe dashboard, archive the $9/$39 prices, settle anything in flight, and unset
+`DOTNAV_STRIPE_RO_KEY` + `STRIPE_SECRET_KEY` on every host. Until then a live credential exists at a provider we no
+longer trust. `ops/digest.mjs` keeps surfacing it as `[dot-navigator · TEARDOWN]` until `teardown_complete: true`.
+
+**Prisma confirmed.** The D27 assumption was right — "Prism" = **Prisma ORM** (SQLite this stage → Supabase Postgres,
+a datasource swap). Hedging removed from the registry, the mirror entry, and the checklist; the Day-2 build item now
+says Prisma schema rather than Supabase schema. The decision engine remains persistence-free, so this touches no
+engine code.

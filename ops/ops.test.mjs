@@ -69,6 +69,33 @@ test('the raw-key guard is provider-agnostic — a pasted Polar token is rejecte
   assert.equal(ok.ok, true, `an env var NAME must validate: ${ok.errors.join('; ')}`);
 });
 
+// ── D28: every Stripe paywall is dead — enforced, not documented ──
+test('a stripe paywall in any mode other than "killed" is REJECTED', () => {
+  for (const mode of ['live', 'test', undefined]) {
+    const v = validateRegistry({
+      version: 1,
+      skus: [{ slug: 'zombie', name: 'z', status: 'live', repo: 'r', billing: { provider: 'stripe', mode, secret_env: 'X_RO_KEY' } }],
+    });
+    assert.equal(v.ok, false, `stripe mode:${mode} must not validate`);
+    assert.ok(v.errors.some(e => /RETIRED provider/.test(e)), `stripe mode:${mode} should cite the retirement`);
+  }
+});
+
+test('a killed stripe entry still validates — retained for audit (R7), not stripped', () => {
+  const v = validateRegistry({
+    version: 1,
+    skus: [{ slug: 'archived', name: 'a', status: 'killed', repo: 'r', billing: { provider: 'stripe', mode: 'killed', secret_env: 'X_RO_KEY' } }],
+  });
+  assert.equal(v.ok, true, `a killed stripe paywall must remain valid history: ${v.errors.join('; ')}`);
+});
+
+test('the SHIPPED registry contains no live stripe paywall', () => {
+  for (const s of loadRegistry().skus) {
+    if (s.billing?.provider === 'stripe')
+      assert.equal(s.billing.mode, 'killed', `${s.slug} still has a stripe paywall in mode ${s.billing.mode}`);
+  }
+});
+
 test('a non-Stripe provider never reaches the Stripe API', async () => {
   // Set the env var so the ONLY thing that can stop it is the provider check.
   process.env.TEST_POLAR_RO_KEY = 'polar_oat_would_leak_if_sent';

@@ -18,8 +18,8 @@ written. **These win over the PRD text where they conflict**; everything else in
 
 | PRD says | We do | Why |
 |---|---|---|
-| Stripe Checkout (§15, §26) | **Polar** | Stripe was compromised and declined to remediate an issue that occurred on their end. Polar is the paywall gateway for this SKU and the portfolio going forward. |
-| Supabase free tier from day one (§26) | **Prisma this stage → scale into Supabase Postgres** | A datasource swap, not a rewrite. *(Assumption: "Prism" = Prisma ORM — correct this if Stoplight Prism was meant.)* |
+| Stripe Checkout (§15, §26) | **Polar** | Stripe was compromised and declined to remediate an issue that occurred on their end. **D28 retires Stripe portfolio-wide** — the registry validator rejects a `stripe` provider in any mode other than `killed`, so this cannot drift back. |
+| Supabase free tier from day one (§26) | **Prisma ORM this stage → scale into Supabase Postgres** | A datasource swap, not a rewrite. Confirmed by the founder 2026-07-31. |
 | Meta launch at Day 7 (§20, §32) | **Meta deferred until the beta is built and fully tested** | The $70 is withheld until `make waimd-ready` is fully green. |
 
 Neither payments nor persistence touches the decision engine — it is pure and has no I/O.
@@ -111,7 +111,7 @@ Never turn a stale calendar into fake certainty. Stale/unknown decays *downward*
 - [ ] One question per screen: facility → start date → end date → budget → entire place/private room →
       max commute (10/20/30/45) → hard requirements (max five: parking, laundry, pet-friendly,
       furnished, private bathroom)
-- [ ] Supabase (free tier) schema **exactly per §27**: `missions`, `requirements`, `candidates`,
+- [ ] **Prisma** schema **exactly per §27** (datasource swaps to Supabase Postgres later): `missions`, `requirements`, `candidates`,
       `candidate_requirements`, `interventions`, `orders` — **no landlord table** (intentional)
 - [ ] **Anonymous mission creation** — no account required before value is demonstrated
 - [ ] Human-visible mission IDs (`WAIMD-0047`)

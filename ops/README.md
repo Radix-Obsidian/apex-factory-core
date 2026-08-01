@@ -50,10 +50,17 @@ factory-operator agent's job — run it via `make operate` then have the operato
 
 ## Wiring a SKU's revenue (founder, one-time)
 
-Create a **restricted, read-only** Stripe key (subscriptions + charges read scopes only), put it in
-`factory-core/.env` under the `secret_env` name from the registry (e.g. `DOTNAV_STRIPE_RO_KEY=rk_live_…`),
-and `make portfolio` flips from `n/a` to live numbers. Read-only by design: the loop reads revenue, it never
-moves money.
+Create a **restricted, read-only** key for the SKU's provider, put it in `factory-core/.env` under the
+`secret_env` **name** from the registry (e.g. `WAIMD_HOUSING_POLAR_RO_KEY=…`), and `make portfolio` flips
+from `n/a` to live numbers. Read-only by design: the loop reads revenue, it never moves money. The
+registry stores the env var NAME only — `ops/registry.mjs` rejects a pasted raw token in `secret_env`.
+
+> **Stripe is RETIRED (D28).** Every Stripe paywall is dead — the validator rejects a `stripe` provider
+> in any mode other than `killed`. `revenue.mjs` is still a Stripe-only reader, so it reports
+> `n/a — <provider> revenue reader not implemented` for Polar rather than sending a Polar credential to
+> `api.stripe.com`. **A Polar revenue reader is not built yet** (no credentials to test against, and this
+> reader handles subscriptions only, which cannot measure a one-time SKU). `make portfolio` therefore
+> reports `n/a` for `waimd-housing` — that is honest, not broken.
 
 ## Adding the next SKU
 

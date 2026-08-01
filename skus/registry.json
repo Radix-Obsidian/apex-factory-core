@@ -23,11 +23,15 @@
       "health": { "path": "/", "slow_ms": 3000 },
       "billing": {
         "provider": "stripe",
-        "mode": "live",
+        "mode": "killed",
         "model": "freemium + one-time (pay-per-doc + audit packet)",
         "price_usd": 39,
-        "note": "Free: full dated roadmap + MCS-150 prefill + reminders (free items + next deadline). Paid, one-time, NO subscription: $9 per individual doc; $39 Audit-Ready Packet (all docs + audit-window reminders) under an 'audit-ready or money back' guarantee. price_usd tracks the primary paid SKU (the $39 packet).",
-        "secret_env": "DOTNAV_STRIPE_RO_KEY"
+        "note": "Free: full dated roadmap + MCS-150 prefill + reminders (free items + next deadline). Paid, one-time, NO subscription: $9 per individual doc; $39 Audit-Ready Packet (all docs + audit-window reminders) under an 'audit-ready or money back' guarantee. price_usd tracks the primary paid SKU (the $39 packet). Retained for audit under R7 (reversible archive) — this is history, not configuration.",
+        "secret_env": "DOTNAV_STRIPE_RO_KEY",
+        "paywall_killed_at": "2026-07-31",
+        "kill_note": "D28 — every Stripe paywall is dead (Stripe was compromised and declined to remediate). mode:killed means nothing may charge through this. Was mode:live until 2026-07-31. The registry validator now REJECTS a stripe provider in any other mode, so this cannot be silently resurrected.",
+        "revocation_status": "PENDING_FOUNDER",
+        "revocation_action": "Revoke DOTNAV_STRIPE_RO_KEY in the Stripe dashboard, archive/deactivate the $9 and $39 prices, refund or settle anything in flight, and unset DOTNAV_STRIPE_RO_KEY + STRIPE_SECRET_KEY on every host. In-repo config is now dead, but only the founder can revoke the credential itself."
       },
       "support": {
         "source": "inbox-file",
@@ -44,7 +48,8 @@
       },
       "owning_agents": ["factory-operator", "factory-support"],
       "pending_founder_actions": [
-        "KILL TEARDOWN (D24): stop live Stripe billing / archive prices / handle any active subscriptions; take down or freeze the waimd.org Railway deploy; unset DOTNAV_STRIPE_RO_KEY + WAIMD_* on the sender host; stop gtm/waimd/daily-send.sh if cron-scheduled. Do NOT delete or gh-archive the dot-navigator repo — label-only/frozen per R7.",
+        "🔴 SECURITY / URGENT (D28): REVOKE DOTNAV_STRIPE_RO_KEY in the Stripe dashboard and archive the $9 + $39 prices. Stripe was compromised and declined to remediate; this SKU's paywall is now mode:killed in-repo, but an un-revoked credential is still live on Stripe's side until you revoke it. Also unset DOTNAV_STRIPE_RO_KEY + STRIPE_SECRET_KEY on every host.",
+        "KILL TEARDOWN (D24): handle any active subscriptions/in-flight charges; take down or freeze the waimd.org Railway deploy; unset WAIMD_* on the sender host; stop gtm/waimd/daily-send.sh if cron-scheduled. Do NOT delete or gh-archive the dot-navigator repo — label-only/frozen per R7.",
         "(obsolete — SKU killed) Reprice, test-purchase, warm outreach.waimd.org, set GTM env — retained for audit history only."
       ],
       "created": "2026-06-21",
@@ -102,7 +107,8 @@
       "data_layer": {
         "stage": "prisma",
         "target": "supabase-postgres",
-        "note": "D27 founder override of PRD §26 (Supabase free tier from day one): Prisma for this stage, then scale into Supabase Postgres — a datasource swap, not a rewrite. ASSUMPTION: 'Prism' = Prisma ORM; if Stoplight Prism was meant, this field is wrong and the data layer needs revisiting. The decision engine is persistence-free, so neither choice affects it."
+        "orm": "prisma",
+        "note": "D27 founder override of PRD §26 (Supabase free tier from day one): Prisma ORM for this stage, then scale into Supabase Postgres — a datasource swap, not a rewrite. Confirmed by the founder 2026-07-31. The decision engine is persistence-free, so the data layer never touches it."
       },
       "engine": {
         "path": "skus/waimd-housing/engine",
