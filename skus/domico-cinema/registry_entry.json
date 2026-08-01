@@ -1,0 +1,35 @@
+{
+  "slug": "domico-cinema",
+  "name": "Domico Cinema Content Dock",
+  "version": "0.1.0",
+  "status": "HACKATHON_DRAFT",
+  "description": "Agentic generative food photography pipeline. Produces restaurant-grade marketing assets for home cooks using DALL-E 3 and stores them with full provenance metadata in Backblaze B2. Built for the Backblaze Generative Media Hackathon.",
+  "framework": "chassis",
+  "model_tier": "factory-builder",
+  "model_id": "dall-e-3",
+  "orchestration_model": "gpt-4o-mini",
+  "deploy_target": "railway",
+  "domain": "domicoeats.com",
+  "storage_provider": "backblaze-b2",
+  "b2_bucket": "domico-cinema-dock",
+  "billing": "per_asset_generation",
+  "hackathon": {
+    "name": "Backblaze Generative Media Hackathon",
+    "devpost_slug": "domico-cinema-content-dock",
+    "prize_target": 7000,
+    "deadline": "2026-08-03",
+    "b2_required": true
+  },
+  "env_keys": [
+    "BACKBLAZE_ACCOUNT_ID",
+    "BACKBLAZE_MASTER_KEY",
+    "OPENAI_GENERIC_API_KEY"
+  ],
+  "veracity": {
+    "signing_algorithm": "HMAC-SHA256",
+    "marker": "VOCO_FACTORY_GENESIS",
+    "factory_version": "0.1.0"
+  },
+  "created_at": "2026-08-01",
+  "author": "factory-architect"
+}
