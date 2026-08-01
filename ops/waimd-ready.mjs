@@ -80,19 +80,30 @@ export function runChecks() {
     'node --test ops/ops.test.mjs');
 
   // ── 4. "The finished beta has been tested" — the product itself ──
-  const repoPath = sku?.local_path ?? `../${SLUG}`;
-  const repoHere = fs.existsSync(path.resolve(ROOT, repoPath));
-  add('repo', 'Product repo exists (chassis-scaffolded)',
-    repoHere ? 'GREEN' : 'RED', true,
-    repoHere ? repoPath : `${repoPath} not present — founder-gated (D21): create from the chassis template`);
+  // WAIMD_HOUSING_PATH lets a non-sibling checkout (container, CI, a different layout) point the gate
+  // at the real clone without editing committed config. The registry stays the source of truth.
+  const repoPath = process.env.WAIMD_HOUSING_PATH || sku?.local_path || `../${SLUG}`;
+  const repoAbs = path.resolve(ROOT, repoPath);
+  const dirHere = fs.existsSync(repoAbs);
+  // A directory is NOT a repo. An empty `git clone` of a fresh GitHub repo produces a directory
+  // containing only .git — checking existence alone would report "scaffolded" for nothing at all.
+  // Scaffolded means the spine is actually present: a package.json plus a Next.js app dir.
+  const scaffolded = dirHere
+    && fs.existsSync(path.join(repoAbs, 'package.json'))
+    && fs.existsSync(path.join(repoAbs, 'app'));
+  add('repo', 'Product repo scaffolded (chassis spine present)',
+    scaffolded ? 'GREEN' : 'RED', true,
+    scaffolded ? repoPath
+      : dirHere ? `${repoPath} exists but is EMPTY — no package.json/app: the chassis spine was never applied`
+        : `${repoPath} not present — founder-gated (D21): create from the chassis template`);
 
   add('beta', 'Beta vertical slice built (intake → decision → checkout)',
-    repoHere && fs.existsSync(path.resolve(ROOT, repoPath, 'package.json')) ? 'AMBER' : 'RED', true,
-    repoHere ? 'repo present; slice completeness not yet asserted' : 'blocked: no product repo');
+    scaffolded ? 'AMBER' : 'RED', true,
+    scaffolded ? 'spine present; slice completeness not yet asserted' : 'blocked: repo not scaffolded');
 
   add('e2e', 'End-to-end run on the 3 synthetic missions (§32 Day 6)',
     'RED', true,
-    repoHere ? 'not yet run' : 'blocked: no product repo. Synthetic fixtures only — no fake customer evidence');
+    scaffolded ? 'not yet run' : 'blocked: repo not scaffolded. Synthetic fixtures only — no fake customer evidence');
 
   // ── 5. Payment provider — Polar, and TEST mode until the publish gate ──
   const billing = sku?.billing ?? {};
@@ -109,14 +120,17 @@ export function runChecks() {
     `mode: ${billing.mode ?? 'unset'} — must be "test" until PUBLISH_APPROVAL_TOKEN`);
 
   // ── 6. Factory acceptance checks against the product repo (D18/D19/D22) ──
+  // These validators are structural: run against an EMPTY tree they scan nothing and can exit 0
+  // vacuously (caching-check literally passes at "0 direct Anthropic calls"). Gating them on
+  // `scaffolded` stops an empty directory from manufacturing a green.
   for (const [key, label, script] of [
     ['design', 'Brand kit / design-check (D18)', 'scripts/design-check.mjs'],
     ['closedloop', 'Owns the outcome / closed-loop-check (D19)', 'scripts/closed-loop-check.mjs'],
     ['caching', 'Prompt-caching discipline / caching-check (D22)', 'scripts/caching-check.mjs'],
   ]) {
     add(key, label,
-      repoHere && passes('node', [script, repoPath]) ? 'GREEN' : 'RED', true,
-      repoHere ? `node ${script} ${repoPath}` : 'blocked: no product repo');
+      scaffolded && passes('node', [script, repoPath]) ? 'GREEN' : 'RED', true,
+      scaffolded ? `node ${script} ${repoPath}` : 'blocked: repo not scaffolded (a vacuous pass is not a pass)');
   }
 
   // ── 7. Non-blocking posture note: the money gate itself ──
