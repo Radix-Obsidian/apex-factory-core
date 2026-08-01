@@ -721,3 +721,51 @@ longer trust. `ops/digest.mjs` keeps surfacing it as `[dot-navigator · TEARDOWN
 a datasource swap). Hedging removed from the registry, the mirror entry, and the checklist; the Day-2 build item now
 says Prisma schema rather than Supabase schema. The decision engine remains persistence-free, so this touches no
 engine code.
+
+## D29 — Stripe teardown: automate everything except the click; gate the flags on evidence (2026-07-31)
+**Problem.** The founder asked the factory to perform the revocation. It cannot: **Stripe exposes no API for revoking
+an API key** — creation, rolling and deletion are Dashboard-only, by Stripe's design. No connector, credential, or
+third-party tool changes that. (This session also has no Stripe auth, and the container has no `.env` and no Stripe
+vars set — checked, not assumed.) The remaining risk was subtler: `teardown_complete` would have been flipped on the
+founder's say-so, so the registry would assert a revoked credential it had never verified — exactly the fabricated
+certainty the honesty charter exists to prevent.
+
+**Decision — `ops/stripe-teardown.mjs` + `make stripe-audit` / `make stripe-verify`.** Deterministic, read-only
+against Stripe, $0, and it never prints, logs, writes, or commits the key (read from the env var named by the
+registry's `secret_env`, on the founder's host).
+- **`audit`** (run BEFORE revoking, while the key still works) enumerates what is genuinely still live: active
+  subscriptions, un-archived prices/products, payments in flight, enabled webhook endpoints. **Fail-closed:** any
+  probe it cannot read — scope error, outage, already-revoked key — is reported **UNVERIFIED**, and unverified alone
+  is enough to block a "clear" verdict. It states explicitly that **API keys cannot be enumerated via the API**, so
+  it never implies it covered them.
+- **`verify`** (run AFTER revoking) makes one authenticated read. **Only a genuine `401 invalid_api_key` counts as
+  proof**, and `mayFlipTeardown()` is the single gate on writing the registry. `200` ⇒ the key is STILL LIVE, refuse,
+  change nothing. Timeout/`5xx`/network ⇒ INDETERMINATE, change nothing. A non-answer is never proof.
+- **The subtle case, handled:** a **403** means the request lacked scope but the credential *authenticated* — so
+  verification treats 403 as **STILL_LIVE**, not as "couldn't tell". Auditing treats the same 403 as UNVERIFIED.
+  Same status, two correct readings, because the questions differ.
+- On proof only: `revocation_status: PENDING_FOUNDER → REVOKED`, `revoked_at`, `teardown_complete: true` — which is
+  also what retires the `[dot-navigator · TEARDOWN]` line from the operator digest.
+
+**Tests — `tests/stripe-teardown.test.mjs` (15 cases, injected fetch, no network).** Every status maps to the right
+verdict; `mayFlipTeardown` rejects everything except `REVOKED`; the key never appears in any output; unverified alone
+blocks "clear"; `applyRevocation` retains `secret_env`/`mode:killed` as history (R7) rather than stripping them; and a
+standing assertion that **the shipped registry still shows `teardown_complete: false`** — a guard against anyone,
+including me, marking this done before it is proven. `make stripe-teardown-test` folds into `make verify`;
+`stripe-audit`/`stripe-verify` deliberately do **not** (they need live credentials and must never run in CI).
+
+**Honest limits.** The live network paths cannot be exercised here — there is no key, and I should never hold one.
+Only the fail-closed no-key path was run end-to-end (INDETERMINATE, exit 2, registry byte-identical). Everything else
+is proven against an injected fetch.
+
+**`yc-software/qm` assessed and set aside.** Offered as help for this task. It is real and reputable — *"a multiplayer
+agent harness for work. In Slack and on the web"*, TypeScript/Fastify/Postgres, MIT, ~4.2k stars — but it has no
+Stripe integration, no payments code, and no revocation capability. It cannot perform this task, and adopting an
+unvetted agent harness during an active credential incident would be scope creep in the wrong direction. Worth
+evaluating on its own merits as a factory component later; recorded here so the decision is traceable rather than
+silently dropped.
+
+**Still the founder's, unchanged:** roll/delete the key, archive the $9/$39 prices, settle anything in flight, unset
+the host vars — and, because this was a compromise rather than a migration, roll *every* key and check Developers →
+API keys and Webhooks for anything not created by us. `teardown_complete` stays **false** until `make stripe-verify`
+proves otherwise.

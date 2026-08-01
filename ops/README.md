@@ -55,6 +55,43 @@ Create a **restricted, read-only** key for the SKU's provider, put it in `factor
 from `n/a` to live numbers. Read-only by design: the loop reads revenue, it never moves money. The
 registry stores the env var NAME only — `ops/registry.mjs` rejects a pasted raw token in `secret_env`.
 
+## Stripe teardown runbook (founder, one-time)
+
+**Stripe has no API for revoking an API key** — creation, rolling and deletion are Dashboard-only, by
+Stripe's design. No tool here can do it for you. What the factory *can* do is make the steps either
+side of that click concrete, and make the teardown flags evidence-gated instead of trust-gated.
+
+```
+1.  make stripe-audit     # BEFORE revoking, on the host where the key lives
+2.  <two Dashboard actions — see below>
+3.  make stripe-verify    # AFTER revoking — proves the key is dead, then updates the registry
+```
+
+**Step 1 — `make stripe-audit`** enumerates what is still live on the account: active subscriptions,
+un-archived prices/products, payments in flight, and enabled webhook endpoints. Anything it cannot
+read (scope error, outage) is reported **UNVERIFIED, never clean**, and exits non-zero. Run it while
+the key still works — after revocation it can no longer see anything.
+
+**Step 2 — in the Stripe Dashboard:**
+- **Developers → API keys** → roll or delete the restricted key behind `DOTNAV_STRIPE_RO_KEY`.
+- **Archive the products/prices** ($9 per-doc, $39 Audit-Ready Packet) so nothing new can be bought.
+- Settle anything the audit flagged as in flight (cancel / capture / refund).
+- Unset `DOTNAV_STRIPE_RO_KEY` and `STRIPE_SECRET_KEY` on every host.
+
+> **Because this was a compromise, not just a migration:** roll *every* key on the account, and check
+> **Developers → API keys** and **Webhooks** for anything **you did not create**. An attacker-added key
+> or webhook endpoint survives rotating the one key you knew about. API keys cannot be enumerated via
+> the API, so that check is Dashboard-only — the audit says so rather than implying it covered them.
+
+**Step 3 — `make stripe-verify`** makes one authenticated read. A genuine `401 invalid_api_key` is the
+only thing accepted as proof of revocation; only then does it set `revocation_status: REVOKED`,
+`revoked_at`, and `teardown_complete: true` (which also stops the `[dot-navigator · TEARDOWN]` line in
+the operator digest). A `200` means the key is **still live** → it refuses and changes nothing. A
+timeout, `5xx`, or scope error is **INDETERMINATE** → it changes nothing. A non-answer is never proof.
+
+The key is read from the env var named by the registry's `secret_env`; it is never printed, logged,
+written, or committed.
+
 > **Stripe is RETIRED (D28).** Every Stripe paywall is dead — the validator rejects a `stripe` provider
 > in any mode other than `killed`. `revenue.mjs` is still a Stripe-only reader, so it reports
 > `n/a — <provider> revenue reader not implemented` for Polar rather than sending a Polar credential to

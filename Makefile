@@ -49,6 +49,15 @@ waimd-ready-test: ## D27 — the pre-$70 readiness gate is honest + fail-closed 
 waimd-ready: ## D27 — pre-$70 production-readiness scorecard ($0, read-only; exit 1 while NOT READY)
 	@node ops/waimd-ready.mjs
 
+stripe-teardown-test: ## D29 — teardown verdicts are evidence-gated (mocked fetch, no network, $0)
+	@node --test tests/stripe-teardown.test.mjs
+
+stripe-audit: ## D29 — BEFORE revoking: what is still live on the Stripe account (needs the real key; read-only)
+	@node ops/stripe-teardown.mjs audit
+
+stripe-verify: ## D29 — AFTER revoking: prove the key is dead, then complete the teardown (needs the real key)
+	@node ops/stripe-teardown.mjs verify
+
 chat: ## D23 — launch a Sonnet interactive session (writing/brainstorm/research; NOT code)
 	@claude --model claude-sonnet-4-6
 
@@ -120,7 +129,7 @@ operate: ## Ops — ONE post-launch tick (health + revenue + support) over all l
 ops-verify: ## Ops — deterministic tests for the operations layer ($0 LLM)
 	@node --test ops/ops.test.mjs && echo "── ops-verify GREEN ──"
 
-verify: preflight guard-test router-test model-guard-test usage-gate-test waimd-freeze-test honesty-auditor-test waimd-gate-test waimd-engine-test waimd-eval waimd-ready-test gate auth-guard ops-verify caching-verify ## run mechanical acceptance checks (fast)
+verify: preflight guard-test router-test model-guard-test usage-gate-test waimd-freeze-test honesty-auditor-test waimd-gate-test waimd-engine-test waimd-eval waimd-ready-test stripe-teardown-test gate auth-guard ops-verify caching-verify ## run mechanical acceptance checks (fast)
 	@echo "── verify GREEN ──"
 
 launch: ## fire the REAL gated cycle (⚠ spends shared Anthropic + Higgsfield pools)
@@ -159,4 +168,4 @@ worktree-status: ## show all worktrees + the loop branch
 worktree-remove: ## tear down the loop worktree (keeps the loop/auto branch + history)
 	@bash scripts/worktree.sh remove
 
-.PHONY: help preflight copytest guard-test router-test model-guard-test usage-gate-test waimd-freeze-test honesty-auditor-test waimd-gate-test waimd-gate waimd-engine-test waimd-eval waimd-ready-test waimd-ready chat watch gate auth-guard dryrun heartbeat usage recycled-verify recycled-scan recycled-metrics recycled-ideate design-check closed-loop-check caching-check caching-verify cachingtest verify launch cron-enable cron-disable crashcron-install crashcron-uninstall hooks-install worktree-setup worktree-status worktree-remove
+.PHONY: help preflight copytest guard-test router-test model-guard-test usage-gate-test waimd-freeze-test honesty-auditor-test waimd-gate-test waimd-gate waimd-engine-test waimd-eval waimd-ready-test waimd-ready stripe-teardown-test stripe-audit stripe-verify chat watch gate auth-guard dryrun heartbeat usage recycled-verify recycled-scan recycled-metrics recycled-ideate design-check closed-loop-check caching-check caching-verify cachingtest verify launch cron-enable cron-disable crashcron-install crashcron-uninstall hooks-install worktree-setup worktree-status worktree-remove
