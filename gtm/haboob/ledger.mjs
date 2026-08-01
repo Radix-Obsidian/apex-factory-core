@@ -237,7 +237,7 @@ async function main() {
   const apiKey = process.env["NOTION_API_KEY"];
   const dbId =
     process.env["HABOOB_NOTION_DB_ID"] ||
-    "3a9cd596-9872-8114-9d82-fef0bde51c05";
+    "3afcd596-9872-8157-81df-d5650227f47a";
 
   if (!apiKey) {
     console.error(
